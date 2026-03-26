@@ -5,134 +5,295 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Reading Coach</title>
     <style>
-        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; line-height: 1.6; background: #f4f7f6; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        textarea { width: 100%; height: 100px; margin: 10px 0; }
-        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px 0; }
-        button:disabled { background: #ccc; }
-        .hidden { display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
-        #passageDisplay { font-size: 1.2em; font-weight: bold; color: #333; background: #fffde7; padding: 15px; border-left: 5px solid #ffd600; }
+        :root {
+            --system-blue: #007aff;
+            --system-green: #34c759;
+            --system-red: #ff3b30;
+            --system-gray-bg: #f5f5f7;
+            --system-card-bg: #ffffff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --radius: 16px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            background-color: var(--system-gray-bg);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 80px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1 { font-weight: 600; font-size: 24px; position: fixed; top: 20px; left: 30px; margin: 0; }
+
+        /* Navigation */
+        .mode-nav {
+            position: fixed; top: 20px; right: 30px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            padding: 4px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);
+            display: flex; gap: 4px; z-index: 1000;
+        }
+
+        .mode-btn {
+            border: none; background: transparent; padding: 6px 14px;
+            border-radius: 9px; font-size: 13px; font-weight: 500; cursor: pointer;
+            transition: all 0.2s; color: var(--text-secondary);
+        }
+
+        .mode-btn.active { background: white; color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+        /* Container & Cards */
+        .container { width: 100%; max-width: 600px; display: none; animation: fadeIn 0.4s ease; }
+        .container.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--system-card-bg); padding: 30px; border-radius: var(--radius); box-shadow: 0 4px 24px rgba(0,0,0,0.04); margin-bottom: 20px; }
+        
+        input, textarea {
+            width: 100%; padding: 14px; border: 1px solid #d2d2d7; border-radius: 12px;
+            font-size: 16px; margin-bottom: 12px; box-sizing: border-box; outline: none; font-family: inherit;
+        }
+
+        .apple-btn {
+            background: var(--text-primary); color: white; border: none;
+            padding: 14px 24px; border-radius: 24px; font-weight: 600;
+            cursor: pointer; width: 100%; font-size: 15px; transition: all 0.2s;
+        }
+        .apple-btn:active { transform: scale(0.98); opacity: 0.9; }
+        .apple-btn.secondary { background: #e5e5ea; color: var(--text-primary); margin-top: 10px; }
+
+        /* Feedback UI */
+        #passageDisplay { font-size: 20px; font-weight: 500; line-height: 1.5; margin: 20px 0; min-height: 60px; }
+        #feedbackArea { font-size: 20px; font-weight: 500; line-height: 1.5; margin: 20px 0; }
+        .word-correct { color: var(--system-green); }
+        .word-wrong { color: var(--system-red); text-decoration: underline; }
+        
+        .progress-text { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; color: var(--text-secondary); font-size: 12px; padding: 10px; border-bottom: 1px solid #eee; }
+        td { padding: 14px 10px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+
+        .id-badge {
+            background: #f2f2f7; padding: 20px; border-radius: 14px;
+            text-align: center; font-family: monospace; font-size: 24px; color: var(--system-blue);
+            margin: 20px 0; border: 2px dashed #d2d2d7;
+        }
     </style>
 </head>
 <body>
 
-    <h2>📖 AI Reading Coach</h2>
+    <h1>Reading</h1>
 
-    <div id="roleSelect" class="card">
-        <button onclick="showView('teacherView')">I am a Teacher</button>
-        <button onclick="showView('studentView')">I am a Student</button>
+    <div class="mode-nav">
+        <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
+        <button class="mode-btn" id="btnTeacher" onclick="switchView('teacher')">Teacher Hub</button>
     </div>
 
-    <div id="teacherView" class="card hidden">
-        <h3>Teacher Hub</h3>
-        <button onclick="toggleTeacherMode('setup')">Create New Task</button>
-        <button onclick="toggleTeacherMode('scores')">Check Scores</button>
-        <hr>
-        <div id="setupMode">
-            <input type="email" id="tEmail" placeholder="Your Email">
-            <textarea id="tPassage" placeholder="Paste reading passage here..."></textarea>
-            <button onclick="createTask()">Generate Task ID</button>
-            <p id="idDisplay"></p>
+    <div id="studentView" class="container active">
+        <div class="card" id="studentEntry">
+            <h2 style="margin-top:0">Practice Reading</h2>
+            <input type="text" id="sTaskId" placeholder="Enter Task ID from teacher">
+            <button class="apple-btn" onclick="fetchTask()">Join Task</button>
         </div>
-        <div id="scoreMode" class="hidden">
+
+        <div id="readingSection" class="card" style="display:none">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+                <input type="text" id="sClass" placeholder="Class">
+                <input type="number" id="sNo" placeholder="No.">
+            </div>
+            <input type="text" id="sName" placeholder="Name">
+            
+            <div class="progress-text" id="chunkProgress"></div>
+            <div id="passageDisplay"></div>
+            <div id="feedbackArea"></div>
+
+            <button id="recordBtn" class="apple-btn" onclick="startReading()">🎤 Start Recording</button>
+            <button id="nextChunkBtn" class="apple-btn" style="display:none; background: var(--system-blue)" onclick="nextChunk()">Next Sentence →</button>
+            
+            <p id="studentStatus" style="text-align:center; font-size:13px; color:var(--system-blue); margin-top:15px"></p>
+        </div>
+    </div>
+
+    <div id="teacherView" class="container">
+        <div style="display:flex; gap:10px; margin-bottom:20px">
+            <button class="mode-btn active" id="subSet" onclick="toggleTeacherMode('setup')">Setup Task</button>
+            <button class="mode-btn" id="subScore" onclick="toggleTeacherMode('scores')">Check Scores</button>
+        </div>
+
+        <div id="setupMode" class="card">
+            <input type="email" id="tEmail" placeholder="Teacher Email">
+            <textarea id="tPassage" placeholder="Paste full reading passage here... (App will auto-split into sentences)"></textarea>
+            <button class="apple-btn" onclick="createTask()">Generate Task ID</button>
+            <div id="generatedIdArea" style="display:none">
+                <div class="id-badge" id="displayId"></div>
+                <p style="text-align:center; font-size:12px; color:var(--text-secondary)">Students enter this ID to start.</p>
+            </div>
+        </div>
+
+        <div id="scoreMode" class="card" style="display:none">
             <input type="text" id="tSearchId" placeholder="Enter Task ID">
-            <button onclick="loadScores()">View Results</button>
-            <div id="scoresTable"></div>
-        </div>
-        <button onclick="location.reload()" style="background:#666">Back</button>
-    </div>
-
-    <div id="studentView" class="card hidden">
-        <h3>Student Portal</h3>
-        <input type="text" id="sTaskId" placeholder="Task ID from Teacher">
-        <button onclick="fetchPassage()">Start Task</button>
-        
-        <div id="readingArea" class="hidden">
-            <input type="text" id="sClass" placeholder="Class (e.g. 4A)">
-            <input type="number" id="sNo" placeholder="Class No.">
-            <input type="text" id="sName" placeholder="Full Name">
-            <p id="passageDisplay"></p>
-            <button id="recordBtn" onclick="startRecording()">🎤 Start Reading Aloud</button>
-            <p id="status"></p>
+            <button class="apple-btn" onclick="getScores()">Load Scores</button>
+            <div id="scoreTableArea"></div>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
+        // REPLACE WITH YOUR GOOGLE SCRIPT URL
+        const API_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
 
-        function showView(id) {
-            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
+        let chunks = [];
+        let currentChunkIdx = 0;
+        let totalMatches = 0;
+        let totalWords = 0;
+
+        function switchView(view) {
+            document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(view + 'View').classList.add('active');
+            document.getElementById('btn' + view.charAt(0).toUpperCase() + view.slice(1)).classList.add('active');
         }
 
         function toggleTeacherMode(mode) {
-            document.getElementById('setupMode').classList.toggle('hidden', mode !== 'setup');
-            document.getElementById('scoreMode').classList.toggle('hidden', mode !== 'scores');
+            document.getElementById('setupMode').style.display = (mode === 'setup') ? 'block' : 'none';
+            document.getElementById('scoreMode').style.display = (mode === 'scores') ? 'block' : 'none';
+            document.getElementById('subSet').classList.toggle('active', mode === 'setup');
+            document.getElementById('subScore').classList.toggle('active', mode === 'scores');
         }
 
-        // TEACHER LOGIC
+        // --- TEACHER HUB ---
         async function createTask() {
             const email = document.getElementById('tEmail').value;
             const passage = document.getElementById('tPassage').value;
-            const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: 'createTask', email, passage}) });
+            if(!passage) return;
+
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'createTask', email, passage })
+            });
             const id = await res.text();
-            document.getElementById('idDisplay').innerHTML = `<strong>Task ID: ${id}</strong> (Share this with students)`;
+            document.getElementById('displayId').innerText = id;
+            document.getElementById('generatedIdArea').style.display = 'block';
         }
 
-        async function loadScores() {
+        async function getScores() {
             const taskId = document.getElementById('tSearchId').value;
-            const res = await fetch(`${SCRIPT_URL}?action=getScores&taskId=${taskId}`);
+            const res = await fetch(`${API_URL}?action=getScores&taskId=${taskId}`);
             const data = await res.json();
-            let html = `<table><tr><th>Name</th><th>Class</th><th>Score</th><th>Time</th></tr>`;
-            data.forEach(r => html += `<tr><td>${r[4]}</td><td>${r[2]}</td><td>${r[5]}</td><td>${new Date(r[1]).toLocaleString()}</td></tr>`);
-            document.getElementById('scoresTable').innerHTML = html + `</table>`;
+            
+            let html = `<table><tr><th>Student</th><th>Class</th><th>Score</th><th>Attempt</th></tr>`;
+            data.reverse().forEach(row => {
+                const time = new Date(row[1]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                html += `<tr><td><b>${row[4]}</b></td><td>${row[2]}-${row[3]}</td><td style="color:var(--system-green); font-weight:700">${row[5]}</td><td>${time}</td></tr>`;
+            });
+            document.getElementById('scoreTableArea').innerHTML = html + `</table>`;
         }
 
-        // STUDENT LOGIC
-        let targetText = "";
-        async function fetchPassage() {
+        // --- STUDENT HUB ---
+        async function fetchTask() {
             const taskId = document.getElementById('sTaskId').value;
-            const res = await fetch(`${SCRIPT_URL}?action=getTask&taskId=${taskId}`);
+            const res = await fetch(`${API_URL}?action=getTask&taskId=${taskId}`);
             const data = await res.json();
-            targetText = data.passage;
-            document.getElementById('passageDisplay').innerText = targetText;
-            document.getElementById('readingArea').classList.remove('hidden');
+            
+            if(data.passage === "NOT_FOUND") return alert("Invalid ID");
+            
+            // Split passage into chunks by sentence
+            chunks = data.passage.match(/[^.!?]+[.!?]+/g) || [data.passage];
+            currentChunkIdx = 0;
+            totalMatches = 0;
+            totalWords = 0;
+            
+            document.getElementById('studentEntry').style.display = 'none';
+            document.getElementById('readingSection').style.display = 'block';
+            showChunk();
         }
 
-        function startRecording() {
+        function showChunk() {
+            document.getElementById('chunkProgress').innerText = `Sentence ${currentChunkIdx + 1} of ${chunks.length}`;
+            document.getElementById('passageDisplay').innerText = chunks[currentChunkIdx];
+            document.getElementById('feedbackArea').innerHTML = "";
+            document.getElementById('recordBtn').style.display = "block";
+            document.getElementById('recordBtn').innerText = "🎤 Start Recording";
+            document.getElementById('nextChunkBtn').style.display = "none";
+        }
+
+        function startReading() {
             const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             recognition.lang = 'en-US';
-            document.getElementById('recordBtn').disabled = true;
-            document.getElementById('status').innerText = "Listening...";
-
+            document.getElementById('recordBtn').innerText = "🔴 Listening...";
+            
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                analyze(transcript);
+                processChunkResult(transcript);
+            };
+            recognition.onerror = () => {
+                alert("Mic error. Please refresh.");
+                location.reload();
             };
             recognition.start();
         }
 
-        async function analyze(transcript) {
-            const clean = (s) => s.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/);
-            const tWords = clean(targetText);
-            const sWords = clean(transcript);
-            let matches = tWords.filter(w => sWords.includes(w)).length;
-            const score = Math.round((matches / tWords.length) * 100);
+        function processChunkResult(transcript) {
+            const clean = (s) => s.toLowerCase().replace(/[^\w\s]/g, "");
+            const targetWords = chunks[currentChunkIdx].trim().split(/\s+/);
+            const attemptWords = clean(transcript).split(/\s+/);
+            
+            let html = "";
+            let matches = 0;
 
-            document.getElementById('status').innerHTML = `Done! Score: ${score}% <br> <small>You said: "${transcript}"</small>`;
-            document.getElementById('recordBtn').disabled = false;
+            targetWords.forEach(word => {
+                const cleanTarget = clean(word);
+                if(attemptWords.includes(cleanTarget)) {
+                    html += `<span class="word-correct">${word} </span>`;
+                    matches++;
+                } else {
+                    html += `<span class="word-wrong">${word} </span>`;
+                }
+            });
 
-            // Auto-save to Google Sheet
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({
-                action: 'submitScore',
-                taskId: document.getElementById('sTaskId').value,
-                className: document.getElementById('sClass').value,
-                classNo: document.getElementById('sNo').value,
-                name: document.getElementById('sName').value,
-                score: score
-            })});
+            totalMatches += matches;
+            totalWords += targetWords.length;
+
+            document.getElementById('passageDisplay').innerText = "";
+            document.getElementById('feedbackArea').innerHTML = html;
+            document.getElementById('recordBtn').style.display = "none";
+            document.getElementById('nextChunkBtn').style.display = "block";
+            
+            if(currentChunkIdx === chunks.length - 1) {
+                document.getElementById('nextChunkBtn').innerText = "Finish & Submit Score";
+            }
+        }
+
+        async function nextChunk() {
+            if(currentChunkIdx < chunks.length - 1) {
+                currentChunkIdx++;
+                showChunk();
+            } else {
+                const finalScore = Math.round((totalMatches / totalWords) * 100);
+                document.getElementById('studentStatus').innerText = `Submitting score: ${finalScore}%...`;
+                
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'submitScore',
+                        taskId: document.getElementById('sTaskId').value,
+                        className: document.getElementById('sClass').value,
+                        classNo: document.getElementById('sNo').value,
+                        name: document.getElementById('sName').value,
+                        score: finalScore
+                    })
+                });
+                
+                alert(`Well done! Your final score is ${finalScore}%`);
+                location.reload();
+            }
         }
     </script>
 </body>
