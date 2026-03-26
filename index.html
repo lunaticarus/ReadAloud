@@ -55,7 +55,6 @@
         /* Container & Cards */
         .container { width: 100%; max-width: 600px; display: none; animation: fadeIn 0.4s ease; }
         .container.active { display: block; }
-
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
         .card { background: var(--system-card-bg); padding: 30px; border-radius: var(--radius); box-shadow: 0 4px 24px rgba(0,0,0,0.04); margin-bottom: 20px; }
@@ -79,11 +78,10 @@
             display: grid; grid-template-columns: 1fr 44px;
             align-items: center; gap: 16px; margin: 30px 0; min-height: 80px;
         }
-        #textContainer { position: relative; }
         #passageDisplay, #feedbackArea { font-size: 22px; font-weight: 500; line-height: 1.5; margin: 0; }
         .word-correct { color: var(--system-green); }
         .word-wrong { color: var(--system-red); text-decoration: underline; }
-        .progress-text { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .progress-text { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; }
 
         .speak-icon {
             width: 44px; height: 44px; background: #f2f2f7; border: none; border-radius: 50%;
@@ -93,9 +91,9 @@
         .speak-icon svg { width: 20px; height: 20px; fill: var(--text-secondary); }
 
         /* Tables */
-        table { width: 100%; max-width: 540px; margin: 20px auto; border-collapse: collapse; text-align: left; }
-        th { background: #f9f9fb; color: var(--text-secondary); font-size: 11px; padding: 12px 15px; border-bottom: 1px solid #eee; text-transform: uppercase; }
-        td { padding: 14px 15px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+        table { width: 100%; max-width: 540px; margin: 15px auto; border-collapse: collapse; text-align: left; }
+        th { background: #f9f9fb; color: var(--text-secondary); font-size: 10px; padding: 10px 15px; border-bottom: 1px solid #eee; text-transform: uppercase; }
+        td { padding: 12px 15px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
 
         .id-badge {
             background: #f2f2f7; padding: 20px; border-radius: 14px; text-align: center;
@@ -154,7 +152,7 @@
                 <div style="font-size: 42px; font-weight: 700; color: var(--system-green); margin-bottom: 20px;" id="finalScoreDisplay">0%</div>
                 
                 <div id="studentLeaderboard" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
-                    <h3 style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Top Performers</h3>
+                    <h3 style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Top Performers</h3>
                     <div id="leaderboardList"></div>
                 </div>
 
@@ -192,30 +190,29 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
         let chunks = [], currentChunkIdx = 0, totalMatches = 0, totalWords = 0, currentScores = [];
 
-        // --- SECRET TEACHER GATE ---
+        // --- SECRET TEACHER GATE (5 Second Long Press) ---
         let pressTimer;
         const teacherBtn = document.getElementById('btnTeacher');
         
-        teacherBtn.addEventListener('mousedown', () => {
+        const startPress = (e) => {
+            e.preventDefault();
             teacherBtn.style.opacity = "0.4";
             pressTimer = setTimeout(() => {
                 teacherBtn.style.opacity = "1";
                 teacherBtn.style.color = "var(--system-blue)";
                 executeSwitch('teacher');
             }, 5000);
-        });
+        };
         
-        teacherBtn.addEventListener('mouseup', () => { clearTimeout(pressTimer); teacherBtn.style.opacity = "1"; });
-        teacherBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            teacherBtn.style.opacity = "0.4";
-            pressTimer = setTimeout(() => { executeSwitch('teacher'); }, 5000);
-        });
-        teacherBtn.addEventListener('touchend', () => { clearTimeout(pressTimer); teacherBtn.style.opacity = "1"; });
+        const endPress = () => { clearTimeout(pressTimer); teacherBtn.style.opacity = "1"; };
+        
+        teacherBtn.addEventListener('mousedown', startPress);
+        teacherBtn.addEventListener('mouseup', endPress);
+        teacherBtn.addEventListener('mouseleave', endPress);
+        teacherBtn.addEventListener('touchstart', startPress);
+        teacherBtn.addEventListener('touchend', endPress);
 
-        function switchView(view) {
-            if(view === 'student') executeSwitch('student');
-        }
+        function switchView(view) { if(view === 'student') executeSwitch('student'); }
 
         function executeSwitch(view) {
             document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
@@ -225,15 +222,7 @@
             if(view === 'teacher') toggleTeacherMode('setup');
         }
 
-        // --- VOICE ---
-        function playText() {
-            window.speechSynthesis.cancel();
-            const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
-            utter.lang = 'en-US'; utter.rate = 0.85;
-            window.speechSynthesis.speak(utter);
-        }
-
-        // --- TEACHER ACTIONS ---
+        // --- TEACHER HUB LOGIC ---
         function toggleTeacherMode(mode) {
             document.getElementById('setupMode').style.display = (mode === 'setup') ? 'block' : 'none';
             document.getElementById('scoreMode').style.display = (mode === 'scores') ? 'block' : 'none';
@@ -282,7 +271,7 @@
             a.click();
         }
 
-        // --- STUDENT ACTIONS ---
+        // --- STUDENT READING LOGIC ---
         async function fetchTask() {
             const taskId = document.getElementById('sTaskId').value;
             if(!taskId) return;
@@ -302,14 +291,30 @@
             document.getElementById('passageDisplay').innerText = chunks[currentChunkIdx];
             document.getElementById('passageDisplay').style.display = "block";
             document.getElementById('feedbackArea').innerHTML = "";
-            document.getElementById('recordBtn').style.display = "block";
+            const rb = document.getElementById('recordBtn');
+            rb.style.display = "block";
+            rb.innerText = "🎤 Start Reading";
+            rb.disabled = false;
             document.getElementById('nextChunkBtn').style.display = "none";
+        }
+
+        function playText() {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
+            utter.lang = 'en-US'; utter.rate = 0.85;
+            window.speechSynthesis.speak(utter);
         }
 
         function startReading() {
             const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             recognition.lang = 'en-US';
-            document.getElementById('recordBtn').innerText = "🔴 Listening...";
+            const rb = document.getElementById('recordBtn');
+
+            recognition.onstart = () => {
+                rb.innerText = "🔴 Listening...";
+                rb.disabled = true;
+            };
+
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 const clean = (s) => s.toLowerCase().replace(/[^\w\s]/g, "");
@@ -323,12 +328,24 @@
                 totalMatches += matches; totalWords += targetWords.length;
                 document.getElementById('passageDisplay').style.display = "none";
                 document.getElementById('feedbackArea').innerHTML = html;
-                document.getElementById('recordBtn').style.display = "none";
+                rb.style.display = "none";
                 document.getElementById('nextChunkBtn').style.display = "block";
                 recognition.stop();
             };
-            recognition.onend = () => { if(document.getElementById('recordBtn').style.display !== "none") document.getElementById('recordBtn').innerText = "🎤 Start Reading"; };
-            recognition.start();
+
+            recognition.onend = () => {
+                if(rb.style.display !== "none") {
+                    rb.innerText = "🎤 Start Reading";
+                    rb.disabled = false;
+                }
+            };
+
+            try {
+                recognition.start();
+            } catch (e) {
+                recognition.abort();
+                setTimeout(() => recognition.start(), 150);
+            }
         }
 
         async function nextChunk() {
@@ -346,7 +363,7 @@
                 top5.forEach((r, i) => {
                     const m = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
                     let sv = parseFloat(r[5]);
-                    board += `<tr><td>${m} ${r[2]}-${r[3]} ${r[4]}</td><td style="text-align:right"><b>${sv<2?Math.round(sv*100):Math.round(sv)}%</b></td></tr>`;
+                    board += `<tr><td style="font-size:13px">${m} ${r[2]}-${r[3]} ${r[4]}</td><td style="text-align:right"><b>${sv<2?Math.round(sv*100):Math.round(sv)}%</b></td></tr>`;
                 });
                 document.getElementById('leaderboardList').innerHTML = board + `</table>`;
                 document.getElementById('studentInfo').style.display = 'none';
