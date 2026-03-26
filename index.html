@@ -34,6 +34,7 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* Navigation */
         .mode-nav {
             position: fixed; top: 20px; right: 30px;
             background: rgba(255, 255, 255, 0.7);
@@ -46,12 +47,15 @@
             border: none; background: transparent; padding: 6px 14px;
             border-radius: 9px; font-size: 13px; font-weight: 500; cursor: pointer;
             transition: all 0.2s; color: var(--text-secondary);
+            user-select: none; -webkit-user-select: none;
         }
 
         .mode-btn.active { background: white; color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
+        /* Container & Cards */
         .container { width: 100%; max-width: 600px; display: none; animation: fadeIn 0.4s ease; }
         .container.active { display: block; }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
         .card { background: var(--system-card-bg); padding: 30px; border-radius: var(--radius); box-shadow: 0 4px 24px rgba(0,0,0,0.04); margin-bottom: 20px; }
@@ -70,38 +74,32 @@
         .apple-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .apple-btn.secondary { background: #f2f2f7; color: var(--text-primary); }
 
-        /* FIXED LAYOUT */
+        /* Reading Layout */
         .passage-wrapper {
-            display: grid;
-            grid-template-columns: 1fr 44px; /* Text takes most space, icon is fixed width */
-            align-items: center;
-            gap: 16px;
-            margin: 30px 0;
-            min-height: 80px;
+            display: grid; grid-template-columns: 1fr 44px;
+            align-items: center; gap: 16px; margin: 30px 0; min-height: 80px;
         }
-        
         #textContainer { position: relative; }
-        
-        #passageDisplay, #feedbackArea { 
-            font-size: 22px; font-weight: 500; line-height: 1.5;
-            margin: 0;
-        }
-
+        #passageDisplay, #feedbackArea { font-size: 22px; font-weight: 500; line-height: 1.5; margin: 0; }
         .word-correct { color: var(--system-green); }
         .word-wrong { color: var(--system-red); text-decoration: underline; }
         .progress-text { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
 
         .speak-icon {
-            width: 44px; height: 44px;
-            background: #f2f2f7; border: none; border-radius: 50%;
+            width: 44px; height: 44px; background: #f2f2f7; border: none; border-radius: 50%;
             cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
         }
         .speak-icon:hover { background: #e5e5ea; transform: scale(1.05); }
         .speak-icon svg { width: 20px; height: 20px; fill: var(--text-secondary); }
 
+        /* Tables */
+        table { width: 100%; max-width: 540px; margin: 20px auto; border-collapse: collapse; text-align: left; }
+        th { background: #f9f9fb; color: var(--text-secondary); font-size: 11px; padding: 12px 15px; border-bottom: 1px solid #eee; text-transform: uppercase; }
+        td { padding: 14px 15px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+
         .id-badge {
-            background: #f2f2f7; padding: 20px; border-radius: 14px;
-            text-align: center; font-family: monospace; font-size: 24px; color: var(--system-blue);
+            background: #f2f2f7; padding: 20px; border-radius: 14px; text-align: center;
+            font-family: monospace; font-size: 24px; color: var(--system-blue);
             margin: 20px 0; border: 2px dashed #d2d2d7;
         }
     </style>
@@ -112,7 +110,7 @@
 
     <div class="mode-nav">
         <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
-        <button class="mode-btn" id="btnTeacher" onclick="switchView('teacher')">Teacher Hub</button>
+        <button class="mode-btn" id="btnTeacher">Teacher Hub</button>
     </div>
 
     <div id="studentView" class="container active">
@@ -135,17 +133,15 @@
             
             <div id="practiceArea">
                 <div class="progress-text" id="chunkProgress"></div>
-                
                 <div class="passage-wrapper">
                     <div id="textContainer">
                         <div id="passageDisplay"></div>
                         <div id="feedbackArea"></div>
                     </div>
-                    <button class="speak-icon" id="speakBtn" onclick="playText()">
+                    <button class="speak-icon" onclick="playText()">
                         <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     </button>
                 </div>
-
                 <button id="recordBtn" class="apple-btn" onclick="startReading()">🎤 Start Reading</button>
                 <button id="nextChunkBtn" class="apple-btn" style="display:none; background: var(--system-blue)" onclick="nextChunk()">
                     <div class="spinner" id="spinSubmit"></div> Next Sentence →
@@ -155,8 +151,14 @@
             <div id="resultScreen" style="display:none; text-align:center; padding: 20px 0;">
                 <div style="font-size: 48px; margin-bottom: 10px;">🎉</div>
                 <h2 style="margin-bottom:5px">Mission Complete!</h2>
-                <div style="font-size: 42px; font-weight: 700; color: var(--system-green); margin-bottom: 30px;" id="finalScoreDisplay">0%</div>
-                <button class="apple-btn secondary" onclick="location.reload()">Back to Home</button>
+                <div style="font-size: 42px; font-weight: 700; color: var(--system-green); margin-bottom: 20px;" id="finalScoreDisplay">0%</div>
+                
+                <div id="studentLeaderboard" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <h3 style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Top Performers</h3>
+                    <div id="leaderboardList"></div>
+                </div>
+
+                <button class="apple-btn secondary" onclick="location.reload()" style="margin-top: 20px;">Back to Home</button>
             </div>
         </div>
     </div>
@@ -173,9 +175,7 @@
             <button class="apple-btn" id="btnCreate" onclick="createTask()">
                 <div class="spinner" id="spinCreate"></div> Generate Task ID
             </button>
-            <div id="generatedIdArea" style="display:none">
-                <div class="id-badge" id="displayId"></div>
-            </div>
+            <div id="generatedIdArea" style="display:none"><div class="id-badge" id="displayId"></div></div>
         </div>
 
         <div id="scoreMode" class="card" style="display:none">
@@ -184,46 +184,40 @@
                 <div class="spinner" id="spinScores"></div> Load Scores
             </button>
             <div id="scoreTableArea"></div>
+            <button id="btnDownload" class="apple-btn secondary" style="display:none; margin-top:20px;" onclick="downloadCSV()">Download CSV</button>
         </div>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
+        let chunks = [], currentChunkIdx = 0, totalMatches = 0, totalWords = 0, currentScores = [];
 
-        let chunks = [];
-        let currentChunkIdx = 0;
-        let totalMatches = 0;
-        let totalWords = 0;
-
-        // Better Voice Logic
-        let voices = [];
-        window.speechSynthesis.onvoiceschanged = () => {
-            voices = window.speechSynthesis.getVoices();
-        };
-
-        function playText() {
-            window.speechSynthesis.cancel(); // Stop current speech
-            const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
-            
-            // Try to find a high-quality female or clear US voice
-            const preferred = voices.find(v => v.name.includes("Google US English") || v.name.includes("Samantha") || (v.lang === 'en-US' && v.name.includes("Natural")));
-            if(preferred) utter.voice = preferred;
-            
-            utter.lang = 'en-US';
-            utter.rate = 0.85;
-            utter.pitch = 1.0;
-            window.speechSynthesis.speak(utter);
-        }
-
-        function setLoading(btnId, spinId, isLoading, text) {
-            const btn = document.getElementById(btnId);
-            const spin = document.getElementById(spinId);
-            if(btn) btn.disabled = isLoading;
-            if(spin) spin.style.display = isLoading ? "inline-block" : "none";
-            if(btn && text) btn.innerHTML = isLoading ? `<div class="spinner" style="display:inline-block"></div> Please wait...` : text;
-        }
+        // --- SECRET TEACHER GATE ---
+        let pressTimer;
+        const teacherBtn = document.getElementById('btnTeacher');
+        
+        teacherBtn.addEventListener('mousedown', () => {
+            teacherBtn.style.opacity = "0.4";
+            pressTimer = setTimeout(() => {
+                teacherBtn.style.opacity = "1";
+                teacherBtn.style.color = "var(--system-blue)";
+                executeSwitch('teacher');
+            }, 5000);
+        });
+        
+        teacherBtn.addEventListener('mouseup', () => { clearTimeout(pressTimer); teacherBtn.style.opacity = "1"; });
+        teacherBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            teacherBtn.style.opacity = "0.4";
+            pressTimer = setTimeout(() => { executeSwitch('teacher'); }, 5000);
+        });
+        teacherBtn.addEventListener('touchend', () => { clearTimeout(pressTimer); teacherBtn.style.opacity = "1"; });
 
         function switchView(view) {
+            if(view === 'student') executeSwitch('student');
+        }
+
+        function executeSwitch(view) {
             document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.mode-nav > .mode-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(view + 'View').classList.add('active');
@@ -231,6 +225,15 @@
             if(view === 'teacher') toggleTeacherMode('setup');
         }
 
+        // --- VOICE ---
+        function playText() {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
+            utter.lang = 'en-US'; utter.rate = 0.85;
+            window.speechSynthesis.speak(utter);
+        }
+
+        // --- TEACHER ACTIONS ---
         function toggleTeacherMode(mode) {
             document.getElementById('setupMode').style.display = (mode === 'setup') ? 'block' : 'none';
             document.getElementById('scoreMode').style.display = (mode === 'scores') ? 'block' : 'none';
@@ -238,34 +241,45 @@
             document.getElementById('subScore').classList.toggle('active', mode === 'scores');
         }
 
-        // --- TEACHER ACTIONS ---
         async function createTask() {
-            const passage = document.getElementById('tPassage').value;
-            if(!passage) return;
+            const p = document.getElementById('tPassage').value;
+            if(!p) return;
             setLoading('btnCreate', 'spinCreate', true);
-            try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'createTask', email: document.getElementById('tEmail').value, passage })
-                });
-                document.getElementById('displayId').innerText = await res.text();
-                document.getElementById('generatedIdArea').style.display = 'block';
-            } finally { setLoading('btnCreate', 'spinCreate', false, 'Generate Task ID'); }
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'createTask', email: document.getElementById('tEmail').value, passage: p }) });
+            document.getElementById('displayId').innerText = await res.text();
+            document.getElementById('generatedIdArea').style.display = 'block';
+            setLoading('btnCreate', 'spinCreate', false, 'Generate Task ID');
         }
 
         async function getScores() {
             const taskId = document.getElementById('tSearchId').value;
             if(!taskId) return;
             setLoading('btnScores', 'spinScores', true);
-            try {
-                const res = await fetch(`${API_URL}?action=getScores&taskId=${taskId}`);
-                const data = await res.json();
-                let html = `<table><tr><th>Student</th><th>Class</th><th>Score</th></tr>`;
-                data.reverse().forEach(row => {
-                    html += `<tr><td><b>${row[4]}</b></td><td>${row[2]}-${row[3]}</td><td style="color:var(--system-green); font-weight:700">${row[5]}%</td></tr>`;
-                });
-                document.getElementById('scoreTableArea').innerHTML = html + `</table>`;
-            } finally { setLoading('btnScores', 'spinScores', false, 'Load Scores'); }
+            const res = await fetch(`${API_URL}?action=getScores&taskId=${taskId}`);
+            currentScores = await res.json();
+            let html = `<table><tr><th>Student</th><th>Class</th><th>Score</th></tr>`;
+            currentScores.slice().reverse().forEach(row => {
+                let s = parseFloat(row[5]);
+                let d = s < 2 ? Math.round(s * 100) : Math.round(s);
+                html += `<tr><td><b>${row[4]}</b></td><td>${row[2]}-${row[3]}</td><td style="color:var(--system-green); font-weight:700">${d}%</td></tr>`;
+            });
+            document.getElementById('scoreTableArea').innerHTML = html + `</table>`;
+            document.getElementById('btnDownload').style.display = 'flex';
+            setLoading('btnScores', 'spinScores', false, 'Load Scores');
+        }
+
+        function downloadCSV() {
+            let csv = "Class,No,Name,Score\n";
+            currentScores.forEach(row => {
+                let s = parseFloat(row[5]);
+                csv += `${row[2]},${row[3]},"${row[4]}",${s < 2 ? Math.round(s*100) : Math.round(s)}%\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `Scores_${document.getElementById('tSearchId').value}.csv`);
+            a.click();
         }
 
         // --- STUDENT ACTIONS ---
@@ -273,16 +287,14 @@
             const taskId = document.getElementById('sTaskId').value;
             if(!taskId) return;
             setLoading('btnJoin', 'spinJoin', true);
-            try {
-                const res = await fetch(`${API_URL}?action=getTask&taskId=${taskId}`);
-                const data = await res.json();
-                if(data.passage === "NOT_FOUND") return alert("Invalid ID");
-                chunks = data.passage.match(/[^.!?]+[.!?]+/g) || [data.passage];
-                currentChunkIdx = 0; totalMatches = 0; totalWords = 0;
-                document.getElementById('studentEntry').style.display = 'none';
-                document.getElementById('readingSection').style.display = 'block';
-                showChunk();
-            } finally { setLoading('btnJoin', 'spinJoin', false, 'Join Task'); }
+            const res = await fetch(`${API_URL}?action=getTask&taskId=${taskId}`);
+            const data = await res.json();
+            if(data.passage === "NOT_FOUND") return alert("Invalid ID");
+            chunks = data.passage.match(/[^.!?]+[.!?]+/g) || [data.passage];
+            document.getElementById('studentEntry').style.display = 'none';
+            document.getElementById('readingSection').style.display = 'block';
+            showChunk();
+            setLoading('btnJoin', 'spinJoin', false, 'Join Task');
         }
 
         function showChunk() {
@@ -291,7 +303,6 @@
             document.getElementById('passageDisplay').style.display = "block";
             document.getElementById('feedbackArea').innerHTML = "";
             document.getElementById('recordBtn').style.display = "block";
-            document.getElementById('recordBtn').innerText = "🎤 Start Reading";
             document.getElementById('nextChunkBtn').style.display = "none";
         }
 
@@ -304,45 +315,53 @@
                 const clean = (s) => s.toLowerCase().replace(/[^\w\s]/g, "");
                 const targetWords = chunks[currentChunkIdx].trim().split(/\s+/);
                 const attemptWords = clean(transcript).split(/\s+/);
-                
                 let html = "", matches = 0;
                 targetWords.forEach(word => {
                     if(attemptWords.includes(clean(word))) { html += `<span class="word-correct">${word} </span>`; matches++; }
                     else { html += `<span class="word-wrong">${word} </span>`; }
                 });
-
                 totalMatches += matches; totalWords += targetWords.length;
-                document.getElementById('passageDisplay').style.display = "none"; // Hide plain text
+                document.getElementById('passageDisplay').style.display = "none";
                 document.getElementById('feedbackArea').innerHTML = html;
                 document.getElementById('recordBtn').style.display = "none";
                 document.getElementById('nextChunkBtn').style.display = "block";
-                if(currentChunkIdx === chunks.length - 1) document.getElementById('nextChunkBtn').innerText = "Finish & Submit Score";
+                recognition.stop();
             };
+            recognition.onend = () => { if(document.getElementById('recordBtn').style.display !== "none") document.getElementById('recordBtn').innerText = "🎤 Start Reading"; };
             recognition.start();
         }
 
         async function nextChunk() {
-            if(currentChunkIdx < chunks.length - 1) {
-                currentChunkIdx++;
-                showChunk();
-            } else {
-                const finalScore = Math.round((totalMatches / totalWords) * 100);
-                setLoading('nextChunkBtn', null, true, 'Saving Score...');
-                try {
-                    await fetch(API_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            action: 'submitScore', taskId: document.getElementById('sTaskId').value,
-                            className: document.getElementById('sClass').value, classNo: document.getElementById('sNo').value,
-                            name: document.getElementById('sName').value, score: finalScore
-                        })
-                    });
-                    document.getElementById('studentInfo').style.display = 'none';
-                    document.getElementById('practiceArea').style.display = 'none';
-                    document.getElementById('resultScreen').style.display = 'block';
-                    document.getElementById('finalScoreDisplay').innerText = finalScore + "%";
-                } catch(e) { alert("Error saving score."); }
+            if(currentChunkIdx < chunks.length - 1) { currentChunkIdx++; showChunk(); }
+            else {
+                const s = Math.round((totalMatches / totalWords) * 100);
+                const taskId = document.getElementById('sTaskId').value;
+                setLoading('nextChunkBtn', null, true, 'Saving...');
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitScore', taskId, className: document.getElementById('sClass').value, classNo: document.getElementById('sNo').value, name: document.getElementById('sName').value, score: s }) });
+                
+                const res = await fetch(`${API_URL}?action=getScores&taskId=${taskId}`);
+                const all = await res.json();
+                const top5 = all.sort((a,b) => b[5]-a[5]).slice(0,5);
+                let board = `<table>`;
+                top5.forEach((r, i) => {
+                    const m = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+                    let sv = parseFloat(r[5]);
+                    board += `<tr><td>${m} ${r[2]}-${r[3]} ${r[4]}</td><td style="text-align:right"><b>${sv<2?Math.round(sv*100):Math.round(sv)}%</b></td></tr>`;
+                });
+                document.getElementById('leaderboardList').innerHTML = board + `</table>`;
+                document.getElementById('studentInfo').style.display = 'none';
+                document.getElementById('practiceArea').style.display = 'none';
+                document.getElementById('resultScreen').style.display = 'block';
+                document.getElementById('finalScoreDisplay').innerText = s + "%";
             }
+        }
+
+        function setLoading(btnId, spinId, isLoading, text) {
+            const btn = document.getElementById(btnId);
+            const spin = document.getElementById(spinId);
+            if(btn) btn.disabled = isLoading;
+            if(spin) spin.style.display = isLoading ? "inline-block" : "none";
+            if(btn && text) btn.innerHTML = isLoading ? `<div class="spinner" style="display:inline-block"></div> Wait...` : text;
         }
     </script>
 </body>
