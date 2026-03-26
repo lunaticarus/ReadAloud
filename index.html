@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Reading Coach</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; line-height: 1.6; background: #f4f7f6; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px 0; }
+        button:disabled { background: #ccc; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
+        #passageDisplay { font-size: 1.2em; font-weight: bold; color: #333; background: #fffde7; padding: 15px; border-left: 5px solid #ffd600; }
+    </style>
+</head>
+<body>
+
+    <h2>📖 AI Reading Coach</h2>
+
+    <div id="roleSelect" class="card">
+        <button onclick="showView('teacherView')">I am a Teacher</button>
+        <button onclick="showView('studentView')">I am a Student</button>
+    </div>
+
+    <div id="teacherView" class="card hidden">
+        <h3>Teacher Hub</h3>
+        <button onclick="toggleTeacherMode('setup')">Create New Task</button>
+        <button onclick="toggleTeacherMode('scores')">Check Scores</button>
+        <hr>
+        <div id="setupMode">
+            <input type="email" id="tEmail" placeholder="Your Email">
+            <textarea id="tPassage" placeholder="Paste reading passage here..."></textarea>
+            <button onclick="createTask()">Generate Task ID</button>
+            <p id="idDisplay"></p>
+        </div>
+        <div id="scoreMode" class="hidden">
+            <input type="text" id="tSearchId" placeholder="Enter Task ID">
+            <button onclick="loadScores()">View Results</button>
+            <div id="scoresTable"></div>
+        </div>
+        <button onclick="location.reload()" style="background:#666">Back</button>
+    </div>
+
+    <div id="studentView" class="card hidden">
+        <h3>Student Portal</h3>
+        <input type="text" id="sTaskId" placeholder="Task ID from Teacher">
+        <button onclick="fetchPassage()">Start Task</button>
+        
+        <div id="readingArea" class="hidden">
+            <input type="text" id="sClass" placeholder="Class (e.g. 4A)">
+            <input type="number" id="sNo" placeholder="Class No.">
+            <input type="text" id="sName" placeholder="Full Name">
+            <p id="passageDisplay"></p>
+            <button id="recordBtn" onclick="startRecording()">🎤 Start Reading Aloud</button>
+            <p id="status"></p>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
+
+        function showView(id) {
+            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function toggleTeacherMode(mode) {
+            document.getElementById('setupMode').classList.toggle('hidden', mode !== 'setup');
+            document.getElementById('scoreMode').classList.toggle('hidden', mode !== 'scores');
+        }
+
+        // TEACHER LOGIC
+        async function createTask() {
+            const email = document.getElementById('tEmail').value;
+            const passage = document.getElementById('tPassage').value;
+            const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: 'createTask', email, passage}) });
+            const id = await res.text();
+            document.getElementById('idDisplay').innerHTML = `<strong>Task ID: ${id}</strong> (Share this with students)`;
+        }
+
+        async function loadScores() {
+            const taskId = document.getElementById('tSearchId').value;
+            const res = await fetch(`${SCRIPT_URL}?action=getScores&taskId=${taskId}`);
+            const data = await res.json();
+            let html = `<table><tr><th>Name</th><th>Class</th><th>Score</th><th>Time</th></tr>`;
+            data.forEach(r => html += `<tr><td>${r[4]}</td><td>${r[2]}</td><td>${r[5]}</td><td>${new Date(r[1]).toLocaleString()}</td></tr>`);
+            document.getElementById('scoresTable').innerHTML = html + `</table>`;
+        }
+
+        // STUDENT LOGIC
+        let targetText = "";
+        async function fetchPassage() {
+            const taskId = document.getElementById('sTaskId').value;
+            const res = await fetch(`${SCRIPT_URL}?action=getTask&taskId=${taskId}`);
+            const data = await res.json();
+            targetText = data.passage;
+            document.getElementById('passageDisplay').innerText = targetText;
+            document.getElementById('readingArea').classList.remove('hidden');
+        }
+
+        function startRecording() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            document.getElementById('recordBtn').disabled = true;
+            document.getElementById('status').innerText = "Listening...";
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                analyze(transcript);
+            };
+            recognition.start();
+        }
+
+        async function analyze(transcript) {
+            const clean = (s) => s.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/);
+            const tWords = clean(targetText);
+            const sWords = clean(transcript);
+            let matches = tWords.filter(w => sWords.includes(w)).length;
+            const score = Math.round((matches / tWords.length) * 100);
+
+            document.getElementById('status').innerHTML = `Done! Score: ${score}% <br> <small>You said: "${transcript}"</small>`;
+            document.getElementById('recordBtn').disabled = false;
+
+            // Auto-save to Google Sheet
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({
+                action: 'submitScore',
+                taskId: document.getElementById('sTaskId').value,
+                className: document.getElementById('sClass').value,
+                classNo: document.getElementById('sNo').value,
+                name: document.getElementById('sName').value,
+                score: score
+            })});
+        }
+    </script>
+</body>
+</html>
