@@ -238,6 +238,11 @@
             <button class="apple-btn" id="btnLoadScores" onclick="getScores()">
                 <div class="spinner" id="spinScores"></div> Load Scores
             </button>
+            <div id="scoreActionArea" style="display:none; margin-top: 15px;">
+                <button class="apple-btn" onclick="downloadCSV()" style="font-size: 13px; padding: 10px; background: white; border: 1px solid #d2d2d7;">
+                    📥 Download CSV
+                </button>
+            </div>
             <div id="scoreTableArea"></div>
         </div>
     </div>
@@ -247,6 +252,7 @@
         let chunks = [], currentChunkIdx = 0, totalMatches = 0, totalWords = 0;
         let recognition, isRecording = false, tempMatches = 0, tempTotal = 0;
         let pressTimer;
+        let currentScores = [];
 
         window.onload = () => {
             document.getElementById('sClass').value = localStorage.getItem('reader_class') || '';
@@ -422,22 +428,73 @@
             document.getElementById('btn' + view.charAt(0).toUpperCase() + view.slice(1)).classList.add('active');
         }
 
+        function formatDate(isoStr) {
+            try {
+                const date = new Date(isoStr);
+                if (isNaN(date.getTime())) return isoStr;
+                const d = String(date.getDate()).padStart(2, '0');
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const y = date.getFullYear();
+                const hh = String(date.getHours()).padStart(2, '0');
+                const mm = String(date.getMinutes()).padStart(2, '0');
+                return `${d}/${m}/${y} ${hh}:${mm}`;
+            } catch(e) { return isoStr; }
+        }
+
         async function getScores() {
             const taskId = document.getElementById('tSearchId').value.trim();
             if(!taskId || taskId === "ID-") return;
             setBtnLoading('btnLoadScores', 'spinScores', true, 'Load Scores');
             try {
                 const res = await fetch(`${API_URL}?action=getScores&taskId=${encodeURIComponent(taskId)}`);
-                const scores = await res.json();
-                let html = `<table><tr><th>Class</th><th>Student</th><th>Score</th></tr>`;
-                scores.slice().reverse().forEach(row => {
+                currentScores = await res.json();
+                document.getElementById('scoreActionArea').style.display = currentScores.length ? 'block' : 'none';
+                
+                let html = `<table><tr><th>Timestamp</th><th>Class</th><th>Student</th><th>Score</th></tr>`;
+                currentScores.slice().reverse().forEach(row => {
                     let score = parseFloat(row[5]);
                     let displayScore = Math.round(score < 2 ? score * 100 : score);
-                    html += `<tr><td>${row[2]}-${row[3]}</td><td><b>${row[4]}</b></td><td style="color:var(--system-green); font-weight:700">${displayScore}%</td></tr>`;
+                    let ts = formatDate(row[0]);
+                    html += `<tr>
+                        <td style="color:#888; font-size:11px">${ts}</td>
+                        <td>${row[2]}-${row[3]}</td>
+                        <td><b>${row[4]}</b></td>
+                        <td style="color:var(--system-green); font-weight:700">${displayScore}%</td>
+                    </tr>`;
                 });
                 document.getElementById('scoreTableArea').innerHTML = html + `</table>`;
             } catch (e) { alert("Error loading scores."); }
             setBtnLoading('btnLoadScores', 'spinScores', false, 'Load Scores');
+        }
+
+        function downloadCSV() {
+            if (!currentScores.length) return;
+            const headers = ["Timestamp", "TaskID", "Class", "No", "Name", "Score"];
+            const csvContent = [
+                headers.join(","),
+                ...currentScores.map(row => {
+                    const score = parseFloat(row[5]);
+                    const displayScore = Math.round(score < 2 ? score * 100 : score);
+                    return [
+                        `"${formatDate(row[0])}"`,
+                        `"${row[1]}"`,
+                        `"${row[2]}"`,
+                        `"${row[3]}"`,
+                        `"${row[4]}"`,
+                        `"${displayScore}%"`
+                    ].join(",");
+                })
+            ].join("\n");
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `reading_scores_${document.getElementById('tSearchId').value}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         async function createTask() {
