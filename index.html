@@ -157,7 +157,7 @@
                 <div class="mic-visualizer">
                     <div class="mic-bar" id="micBar"></div>
                 </div>
-                <button onclick="startMicTest()" style="font-size:11px; padding:6px 10px; border-radius:8px; border:none; background:#007aff; color:white; cursor:pointer; font-weight:600;" id="micTestBtn">Test Mic</button>
+                <button onclick="startMicTest(event)" style="font-size:11px; padding:6px 10px; border-radius:8px; border:none; background:#007aff; color:white; cursor:pointer; font-weight:600;" id="micTestBtn">Test Mic</button>
             </div>
 
             <button class="apple-btn" id="btnJoin" onclick="fetchTask()">
@@ -245,10 +245,16 @@
                 recognition.onresult = (e) => processResult(e.results[e.results.length - 1][0].transcript);
             }
             setupTeacherAccess();
+            
+            // Fix: Chrome requires voices to be fetched after voiceschanged event
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+            }
             window.speechSynthesis.getVoices();
         };
 
-        async function startMicTest() {
+        async function startMicTest(event) {
+            if(event) event.preventDefault();
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 document.getElementById('micDot').classList.add('active');
@@ -378,6 +384,13 @@
             if (isRecording) toggleRecording();
         }
 
+        // Helper to consistently parse scores regardless of spreadsheet formatting (0.85 vs 85)
+        function parseScore(val) {
+            let num = parseFloat(val);
+            if (isNaN(num)) return 0;
+            return (num < 2) ? Math.round(num * 100) : Math.round(num);
+        }
+
         async function nextChunk() {
             totalMatches += tempMatches; totalWords += tempTotal;
             if(currentChunkIdx < chunks.length - 1) { currentChunkIdx++; showChunk(); }
@@ -393,11 +406,13 @@
                 })});
                 const res = await fetch(`${API_URL}?action=getScores&taskId=${encodeURIComponent(tId)}`);
                 const all = await res.json();
-                let top = all.sort((a,b) => (parseFloat(b[5])<2?parseFloat(b[5])*100:parseFloat(b[5])) - (parseFloat(a[5])<2?parseFloat(a[5])*100:parseFloat(a[5]))).slice(0,5);
+                
+                // Fix: Standardized leaderboard sorting
+                let top = all.sort((a, b) => parseScore(b[5]) - parseScore(a[5])).slice(0, 5);
                 let board = `<table>`;
                 top.forEach((r, i) => {
                     const icon = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
-                    const sVal = Math.round(parseFloat(r[5])<2?parseFloat(r[5])*100:parseFloat(r[5]));
+                    const sVal = parseScore(r[5]);
                     board += `<tr><td>${icon} ${r[2]}-${r[3]} ${r[4]}</td><td style="text-align:right"><b>${sVal}%</b></td></tr>`;
                 });
                 document.getElementById('leaderboardList').innerHTML = board + `</table>`;
@@ -442,8 +457,7 @@
                 document.getElementById('scoreActionArea').style.display = currentScores.length ? 'block' : 'none';
                 let h = `<table><tr><th>Time</th><th>Class</th><th>Student</th><th>Score</th></tr>`;
                 currentScores.slice().reverse().forEach(r => {
-                    const s = Math.round(parseFloat(r[5])<2?parseFloat(r[5])*100:parseFloat(r[5]));
-                    // Changed to use index 1 (Column B from Sheet) for Timestamp
+                    const s = parseScore(r[5]);
                     const rawDate = r[1]; 
                     let dateDisplay = "N/A";
                     if (rawDate) {
@@ -460,7 +474,7 @@
         function downloadCSV() {
             if (!currentScores.length) return;
             const content = ["Timestamp,TaskID,Class,No,Name,Score", ...currentScores.map(r => {
-                const s = Math.round(parseFloat(r[5])<2?parseFloat(r[5])*100:parseFloat(r[5]));
+                const s = parseScore(r[5]);
                 return `"${r[1]}","${r[0]}","${r[2]}","${r[3]}","${r[4]}","${s}%"`;
             })].join("\n");
             const blob = new Blob([content], { type: 'text/csv' });
