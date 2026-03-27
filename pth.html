@@ -1,579 +1,117 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>普通話朗讀練習</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocab Bank - Standard Putonghua</title>
     <style>
         :root {
-            --system-blue: #007aff;
-            --system-green: #34c759;
-            --system-red: #ff3b30;
-            --system-gray-bg: #f5f5f7;
-            --system-card-bg: #ffffff;
-            --system-btn-grey: #efeff4;
-            --system-btn-active: #d1d1d6;
-            --text-primary: #1d1d1f;
-            --text-secondary: #86868b;
-            --radius: 20px;
+            --apple-gray: #f5f5f7;
+            --apple-blue: #0071e3;
         }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro TC", "PingFang HK", "Heiti TC", sans-serif;
-            background-color: var(--system-gray-bg);
-            color: var(--text-primary);
-            margin: 0; padding: 100px 20px 40px 20px;
-            display: flex; flex-direction: column; align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
             -webkit-font-smoothing: antialiased;
-            overscroll-behavior-y: contain;
         }
-
-        header {
-            position: fixed; top: 0; left: 0; right: 0; height: 74px;
-            background: rgba(245, 245, 247, 0.8); backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px); z-index: 900;
-            display: flex; align-items: center; padding: 0 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        .container {
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
         }
-        
-        header::after {
-            content: ""; position: absolute; bottom: -20px; left: 0; right: 0; height: 20px;
-            background: linear-gradient(to bottom, rgba(245, 245, 247, 0.8), transparent);
-            pointer-events: none;
+        h1 {
+            font-weight: 600;
+            font-size: 24px;
+            letter-spacing: -0.5px;
+            margin-bottom: 40px;
         }
-
-        h1 { font-weight: 600; font-size: 24px; margin: 0; }
-
-        .spinner {
-            display: none; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.1);
-            border-top-color: currentColor; border-radius: 50%;
-            animation: spin 0.8s linear infinite; margin-right: 8px;
+        .vocab-card {
+            background: white;
+            padding: 40px;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            border: 1px solid #d2d2d7;
+            margin-bottom: 20px;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .mode-nav {
-            position: fixed; top: 20px; right: 30px;
-            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px); padding: 4px; border-radius: 12px;
-            border: 1px solid rgba(0,0,0,0.05); display: flex; gap: 4px; z-index: 1000;
+        .vocab-item {
+            font-size: 32px;
+            font-weight: 500;
+            color: #1d1d1f;
+            display: block;
+            margin-bottom: 10px;
         }
-
-        .mode-btn {
-            border: none; background: transparent; padding: 6px 14px;
-            border-radius: 9px; font-size: 13px; font-weight: 500; cursor: pointer;
-            transition: all 0.2s; color: var(--text-secondary);
+        button {
+            background-color: var(--apple-blue);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 980px;
+            font-size: 16px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-
-        .mode-btn.active { background: white; color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-
-        .container { width: 100%; max-width: 600px; display: none; animation: fadeIn 0.4s ease; }
-        .container.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-        .card { background: var(--system-card-bg); padding: 30px; border-radius: var(--radius); box-shadow: 0 4px 24px rgba(0,0,0,0.04); margin-bottom: 20px; }
-        
-        input, textarea {
-            width: 100%; padding: 14px; border: 1px solid #d2d2d7; border-radius: 12px;
-            font-size: 16px; margin-bottom: 12px; box-sizing: border-box; outline: none; font-family: inherit;
-            background: #fafafa; transition: all 0.2s;
+        button:hover {
+            opacity: 0.9;
+            transform: scale(0.98);
         }
-        input:focus { border-color: var(--system-blue); background: white; }
-        input.error { border-color: var(--system-red) !important; background: #fffcfc; }
-        .uppercase-input { text-transform: uppercase; }
-
-        .apple-btn {
-            background: var(--system-btn-grey); color: var(--text-primary); border: none;
-            padding: 14px 24px; border-radius: 24px; font-weight: 600;
-            cursor: pointer; width: 100%; font-size: 15px; transition: all 0.2s;
-            display: flex; align-items: center; justify-content: center;
+        button:active {
+            transform: scale(0.95);
         }
-        .apple-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .apple-btn.recording { background: var(--system-red); color: white; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
-
-        .mic-test-container {
-            margin: 10px 0 20px 0; padding: 14px; background: #f9f9fb;
-            border-radius: 12px; display: flex; align-items: center; gap: 12px; font-size: 13px;
-            border: 1px solid #efeff4;
-        }
-        .mic-visualizer { flex-grow: 1; height: 6px; background: #e3e3e8; border-radius: 3px; overflow: hidden; position: relative; }
-        .mic-bar { height: 100%; width: 0%; background: var(--system-green); transition: width 0.1s ease; }
-        .mic-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #d1d1d6; }
-        .mic-status-dot.active { background: var(--system-green); box-shadow: 0 0 8px var(--system-green); }
-
-        .passage-wrapper {
-            display: grid; grid-template-columns: 1fr 44px;
-            align-items: center; gap: 16px; margin: 30px 0 10px 0; min-height: 80px;
-        }
-        #passageDisplay, #feedbackArea { font-size: 22px; font-weight: 500; line-height: 1.5; margin: 0; letter-spacing: 1px; }
-        .word-correct { color: var(--system-green); }
-        .word-wrong { color: var(--system-red); border-bottom: 2px solid var(--system-red); }
-        
-        .translation-text { font-size: 15px; color: var(--text-secondary); opacity: 0.7; margin-bottom: 25px; }
-
-        .progress-text { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; }
-
-        .speak-icon {
-            width: 44px; height: 44px; background: var(--system-btn-grey); border: none; border-radius: 50%;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-        }
-
-        #scoreTableArea { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; margin: 15px 0; }
-        th { background: #f9f9fb; color: var(--text-secondary); font-size: 10px; padding: 12px 10px; border-bottom: 1px solid #eee; text-transform: uppercase; }
-        td { padding: 12px 10px; border-bottom: 1px solid #f9f9f9; font-size: 13px; }
-
-        .id-badge {
-            background: var(--system-btn-grey); padding: 20px; border-radius: 14px; text-align: center;
-            font-family: monospace; font-size: 24px; color: var(--text-primary);
-            margin: 20px 0; border: 1px solid #d2d2d7;
+        .hint {
+            font-size: 12px;
+            color: #86868b;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>普通話朗讀練習</h1>
-    </header>
-
-    <div class="mode-nav">
-        <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">學生端</button>
-        <button class="mode-btn" id="btnTeacher">教師端</button>
-    </div>
-
-    <div id="studentView" class="container active">
-        <div class="card" id="studentEntry">
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-                <input type="text" id="sClass" placeholder="班別 (如 1A)">
-                <input type="number" id="sNo" placeholder="學號">
-            </div>
-            <input type="text" id="sName" placeholder="姓名">
-            <input type="text" id="sTaskId" class="uppercase-input" placeholder="輸入任務 ID" value="ID-" oninput="handleTaskIdInput(this)">
-            
-            <div class="mic-test-container">
-                <div class="mic-status-dot" id="micDot"></div>
-                <div style="flex-shrink: 0; font-weight: 500;" id="micLabel">麥克風測試：</div>
-                <div class="mic-visualizer">
-                    <div class="mic-bar" id="micBar"></div>
-                </div>
-                <button onclick="startMicTest(event)" style="font-size:11px; padding:6px 10px; border-radius:8px; border:none; background:#007aff; color:white; cursor:pointer; font-weight:600;" id="micTestBtn">測試音量</button>
-            </div>
-
-            <button class="apple-btn" id="btnJoin" onclick="fetchTask()">
-                <div class="spinner" id="spinJoin"></div> 進入任務
-            </button>
+    <div class="container">
+        <h1>Vocab Bank</h1>
+        
+        <div class="vocab-card">
+            <span class="vocab-item" id="vocabText">環境保護</span>
+            <button onclick="speakPutonghua()">播放發音</button>
         </div>
 
-        <div id="readingSection" class="card" style="display:none">
-            <div id="practiceArea">
-                <div class="progress-text" id="chunkProgress"></div>
-                <div class="passage-wrapper">
-                    <div id="textContainer">
-                        <div id="passageDisplay"></div>
-                        <div id="feedbackArea"></div>
-                    </div>
-                    <button class="speak-icon" onclick="playText()">
-                        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                    </button>
-                </div>
-                <div id="translationText" class="translation-text"></div>
-                <button id="recordBtn" class="apple-btn" onclick="toggleRecording()">🎤 開始朗讀</button>
-                <div id="postReadingActions" style="display:none; flex-direction: column; align-items: center; width: 100%;">
-                    <button id="nextChunkBtn" class="apple-btn" style="color: var(--system-blue)" onclick="nextChunk()">
-                        <div class="spinner" id="spinNext"></div> <span id="nextBtnText">下一句 →</span>
-                    </button>
-                    <button style="background:none; border:none; color:var(--text-secondary); margin-top:15px; text-decoration:underline; cursor:pointer;" onclick="retrySentence()">重讀本句</button>
-                </div>
-            </div>
-
-            <div id="resultScreen" style="display:none; text-align:center; padding: 20px 0;">
-                <div style="font-size: 48px; margin-bottom: 10px;">🎉</div>
-                <h2 style="margin-bottom:5px">任務完成！</h2>
-                <div style="font-size: 42px; font-weight: 700; color: var(--system-green); margin-bottom: 20px;" id="finalScoreDisplay">0%</div>
-                <div id="studentLeaderboard" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
-                    <h3 style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">排行榜</h3>
-                    <div id="leaderboardList"></div>
-                </div>
-                <button class="apple-btn" onclick="location.reload()" style="margin-top: 20px;">返回首頁</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="teacherView" class="container">
-        <div class="sub-nav" style="display:flex; gap:8px; margin-bottom:20px; background:#e3e3e8; padding:5px; border-radius:14px; width:fit-content;">
-            <button class="mode-btn active" id="subSet" onclick="toggleTeacherMode('setup')">設置任務</button>
-            <button class="mode-btn" id="subScore" onclick="toggleTeacherMode('scores')">查看分數</button>
-        </div>
-        <div id="setupMode" class="card">
-            <input type="text" id="tName" placeholder="教師姓名">
-            <textarea id="tPassage" placeholder="請在此貼上朗讀段落..." rows="5"></textarea>
-            <button class="apple-btn" id="btnCreate" onclick="createTask()">
-                <div class="spinner" id="spinCreate"></div> 生成任務 ID
-            </button>
-            <div id="generatedIdArea" style="display:none"><div class="id-badge" id="displayId"></div></div>
-        </div>
-        <div id="scoreMode" class="card" style="display:none">
-            <input type="text" id="tSearchId" class="uppercase-input" placeholder="輸入任務 ID" value="ID-" oninput="handleTaskIdInput(this)">
-            <button class="apple-btn" id="btnLoadScores" onclick="getScores()">
-                <div class="spinner" id="spinScores"></div> 載入分數
-            </button>
-            <div id="scoreActionArea" style="display:none; margin-top: 15px;">
-                <button class="apple-btn" onclick="downloadCSV()" style="font-size: 13px; padding: 10px; background: white; border: 1px solid #d2d2d7;">📥 下載 CSV</button>
-            </div>
-            <div id="scoreTableArea"></div>
-        </div>
+        <div class="hint">使用 Google TTS 高音質普通話接口</div>
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
-        let chunks = [], currentChunkIdx = 0, totalMatches = 0, totalWords = 0;
-        let recognition, isRecording = false, tempMatches = 0, tempTotal = 0;
-        let pressTimer, currentScores = [], isSubmitting = false;
-        let audioContext, analyser, microphone, scriptProcessor;
-
-        window.onload = () => {
-            document.getElementById('sClass').value = localStorage.getItem('reader_class') || '';
-            document.getElementById('sNo').value = localStorage.getItem('reader_no') || '';
-            document.getElementById('sName').value = localStorage.getItem('reader_name') || '';
+        /**
+         * 強制使用 Google Translate TTS 發音
+         * 優點：無視裝置系統語言，確保 100% 普通話，音質極佳。
+         */
+        function speakPutonghua() {
+            const text = document.getElementById('vocabText').innerText;
             
-            const SpeechRecognition = window.SpeechRecognition || window.webkitRecognition || window.webkitSpeechRecognition;
-            if (SpeechRecognition) {
-                recognition = new SpeechRecognition();
-                // 切換為普通話辨識
-                recognition.lang = 'zh-CN'; 
-                recognition.continuous = true;
-                recognition.interimResults = false;
-                
-                recognition.onresult = (e) => {
-                    const transcript = e.results[e.results.length - 1][0].transcript;
-                    processResult(transcript);
-                };
+            // 構建 Google TTS URL
+            // tl=zh-CN 指定普通話
+            // client=tw-ob 是目前最穩定的開源參數
+            const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=zh-CN&client=tw-ob`;
 
-                recognition.onend = () => {
-                    if (isRecording) {
-                        try { recognition.start(); } catch(e) {}
-                    }
-                };
-                
-                recognition.onerror = (e) => {
-                    if (e.error === 'not-allowed') alert("麥克風已被封鎖，請檢查權限設定。");
-                };
-            }
-            setupTeacherAccess();
-            
-            if (window.speechSynthesis.onvoiceschanged !== undefined) {
-                window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-            }
-        };
+            const audio = new Audio(url);
 
-        async function startMicTest(event) {
-            if(event) event.preventDefault();
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                document.getElementById('micDot').classList.add('active');
-                document.getElementById('micLabel').innerText = "麥克風運作中：";
-                document.getElementById('micTestBtn').innerText = "成功！";
-                document.getElementById('micTestBtn').style.opacity = "0.6";
-
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
-                microphone = audioContext.createMediaStreamSource(stream);
-                scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
-
-                analyser.smoothingTimeConstant = 0.8;
-                analyser.fftSize = 1024;
-                microphone.connect(analyser);
-                analyser.connect(scriptProcessor);
-                scriptProcessor.connect(audioContext.destination);
-
-                scriptProcessor.onaudioprocess = () => {
-                    const array = new Uint8Array(analyser.frequencyBinCount);
-                    analyser.getByteFrequencyData(array);
-                    let val = 0;
-                    for (let i = 0; i < array.length; i++) val += array[i];
-                    document.getElementById('micBar').style.width = Math.min(100, (val/array.length) * 2.5) + "%";
-                };
-            } catch (err) { alert("無法取得麥克風權限或瀏覽器不支援。"); }
-        }
-
-        function handleTaskIdInput(input) {
-            if (!input.value.startsWith("ID-")) input.value = "ID-";
-            input.value = input.value.toUpperCase();
-        }
-
-        async function fetchTask() {
-            const sClass = document.getElementById('sClass'), sNo = document.getElementById('sNo');
-            const sName = document.getElementById('sName'), sTaskId = document.getElementById('sTaskId');
-            
-            [sClass, sNo, sName, sTaskId].forEach(el => el.classList.remove('error'));
-            let err = false;
-            if(!sClass.value.trim()) { sClass.classList.add('error'); err = true; }
-            if(!sNo.value.trim()) { sNo.classList.add('error'); err = true; }
-            if(!sName.value.trim()) { sName.classList.add('error'); err = true; }
-            const cleanedId = sTaskId.value.trim().toUpperCase();
-            if(!cleanedId || cleanedId === "ID-") { sTaskId.classList.add('error'); err = true; }
-            if(err) return;
-
-            localStorage.setItem('reader_class', sClass.value.trim());
-            localStorage.setItem('reader_no', sNo.value.trim());
-            localStorage.setItem('reader_name', sName.value.trim());
-
-            if (audioContext) audioContext.close();
-
-            setBtnLoading('btnJoin', 'spinJoin', true, '進入任務');
-            try {
-                const res = await fetch(`${API_URL}?action=getTask&taskId=${encodeURIComponent(cleanedId)}`);
-                const data = await res.json();
-                if(data.passage === "NOT_FOUND") {
-                    sTaskId.classList.add('error');
-                    alert("ID 無效，請重新檢查。");
-                } else {
-                    // 中文分句邏輯：主要以。！？及分行切分
-                    chunks = data.passage.match(/[^。！？\n]+[。！？\n]*/g) || [data.passage];
-                    chunks = chunks.map(c => c.trim()).filter(c => c.length > 0);
-                    document.getElementById('studentEntry').style.display = 'none';
-                    document.getElementById('readingSection').style.display = 'block';
-                    currentChunkIdx = 0;
-                    totalMatches = 0;
-                    totalWords = 0;
-                    showChunk();
-                }
-            } catch (e) { alert("網路錯誤，請檢查連接。"); }
-            setBtnLoading('btnJoin', 'spinJoin', false, '進入任務');
-        }
-
-        async function showChunk() {
-            const text = chunks[currentChunkIdx];
-            document.getElementById('chunkProgress').innerText = `進度：第 ${currentChunkIdx + 1} 句 / 共 ${chunks.length} 句`;
-            document.getElementById('passageDisplay').innerText = text;
-            document.getElementById('passageDisplay').style.display = "block";
-            document.getElementById('feedbackArea').innerHTML = "";
-            document.getElementById('recordBtn').style.display = "block";
-            document.getElementById('postReadingActions').style.display = "none";
-            document.getElementById('nextBtnText').innerText = (currentChunkIdx === chunks.length - 1) ? "完成並提交 🎉" : "下一句 →";
-            
-            // 這裡可以選擇顯示翻譯或是拼音提示
-            const trans = document.getElementById('translationText');
-            trans.innerText = "準備就緒...";
-        }
-
-function playText() {
-    const text = chunks[currentChunkIdx];
-    // 使用 Google Translate 的 TTS 接口，強制指定 zh-CN
-    const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=zh-CN&client=tw-ob`;
-    
-    const audio = new Audio(audioUrl);
-    audio.play();
-}
-
-        function toggleRecording() {
-            const rb = document.getElementById('recordBtn');
-            if (!recognition) {
-                alert("此瀏覽器不支持語音辨識，請使用 Chrome 或 Safari。");
-                return;
-            }
-
-            if (!isRecording) {
-                try { 
-                    recognition.start(); 
-                    isRecording = true; 
-                    rb.innerText = "⏹ 停止並分析"; 
-                    rb.classList.add('recording'); 
-                } 
-                catch(e) { console.error("辨識啟動失敗:", e); }
-            } else {
-                isRecording = false;
-                recognition.stop(); 
-                rb.innerText = "🎤 開始朗讀"; 
-                rb.classList.remove('recording');
-            }
-        }
-
-        function processResult(transcript) {
-            if (!transcript) return;
-            
-            // 中文處理：去除標點符號，將句子拆解為單個字進行比對
-            const clean = (s) => s.replace(/[^\u4e00-\u9fa5]/g, "");
-            const targetStr = clean(chunks[currentChunkIdx]);
-            const userStr = clean(transcript);
-            
-            let html = "", matches = 0;
-            const targetChars = targetStr.split("");
-            
-            // 簡單比對邏輯：檢查目標字是否出現在用戶辨識結果中
-            // 註：中文比對比英文複雜，這裡採用逐字檢查是否存在
-            targetChars.forEach(char => {
-                if(userStr.includes(char)) { 
-                    html += `<span class="word-correct">${char}</span>`; 
-                    matches++; 
-                } else {
-                    html += `<span class="word-wrong">${char}</span>`;
-                }
+            // 播放處理
+            audio.play().catch(e => {
+                console.error("播放失敗：可能是瀏覽器自動播放限制或網路問題", e);
+                alert("無法播放，請確保網路連線正常。");
             });
-            
-            tempMatches = matches; 
-            tempTotal = targetChars.length;
-            
-            document.getElementById('passageDisplay').style.display = "none";
-            document.getElementById('feedbackArea').innerHTML = html;
-            document.getElementById('recordBtn').style.display = "none";
-            document.getElementById('postReadingActions').style.display = "flex";
-            
-            if (isRecording) {
-                isRecording = false;
-                recognition.stop();
-                const rb = document.getElementById('recordBtn');
-                rb.innerText = "🎤 開始朗讀";
-                rb.classList.remove('recording');
+        }
+
+        // 針對鍵盤愛好者的優化：按 Enter 鍵觸發發音
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                speakPutonghua();
             }
-        }
-
-        function parseScore(val) {
-            let num = parseFloat(val);
-            if (isNaN(num)) return 0;
-            return (num < 2) ? Math.round(num * 100) : Math.round(num);
-        }
-
-        async function nextChunk() {
-            if (isSubmitting) return;
-
-            totalMatches += tempMatches; 
-            totalWords += tempTotal;
-            
-            if(currentChunkIdx < chunks.length - 1) { 
-                currentChunkIdx++; 
-                showChunk(); 
-            } else {
-                isSubmitting = true;
-                setBtnLoading('nextChunkBtn', 'spinNext', true, '提交中...');
-                
-                const score = Math.max(0, Math.min(100, Math.round((totalMatches / totalWords) * 100)));
-                const tId = document.getElementById('sTaskId').value.trim().toUpperCase();
-                
-                try {
-                    await fetch(API_URL, { 
-                        method: 'POST', 
-                        mode: 'no-cors',
-                        body: JSON.stringify({ 
-                            action: 'submitScore', taskId: tId, 
-                            className: document.getElementById('sClass').value, 
-                            classNo: document.getElementById('sNo').value, 
-                            name: document.getElementById('sName').value, score 
-                        })
-                    });
-
-                    const res = await fetch(`${API_URL}?action=getScores&taskId=${encodeURIComponent(tId)}`);
-                    const all = await res.json();
-                    
-                    let top = all.sort((a, b) => parseScore(b[5]) - parseScore(a[5])).slice(0, 5);
-                    let board = `<table>`;
-                    top.forEach((r, i) => {
-                        const icon = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
-                        const sVal = parseScore(r[5]);
-                        board += `<tr><td>${icon} ${r[2]}-${r[3]} ${r[4]}</td><td style="text-align:right"><b>${sVal}%</b></td></tr>`;
-                    });
-                    
-                    document.getElementById('leaderboardList').innerHTML = board + `</table>`;
-                    document.getElementById('practiceArea').style.display = 'none';
-                    document.getElementById('resultScreen').style.display = 'block';
-                    document.getElementById('finalScoreDisplay').innerText = score + "%";
-                } catch(err) {
-                    alert("提交出錯，分數可能未能存檔。");
-                    isSubmitting = false;
-                }
-                setBtnLoading('nextChunkBtn', 'spinNext', false, '下一句 →');
-            }
-        }
-
-        function retrySentence() { 
-            tempMatches = 0;
-            tempTotal = 0;
-            showChunk(); 
-        }
-
-        function setupTeacherAccess() {
-            const btn = document.getElementById('btnTeacher');
-            const start = (e) => { 
-                if (e.type === 'touchstart') e.preventDefault(); 
-                pressTimer = setTimeout(() => executeSwitch('teacher'), 2500);
-            };
-            const stop = () => clearTimeout(pressTimer);
-            btn.addEventListener('touchstart', start); btn.addEventListener('touchend', stop);
-            btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', stop);
-        }
-
-        function toggleTeacherMode(m) {
-            document.getElementById('setupMode').style.display = m === 'setup' ? 'block' : 'none';
-            document.getElementById('scoreMode').style.display = m === 'scores' ? 'block' : 'none';
-            document.getElementById('subSet').className = m === 'setup' ? 'mode-btn active' : 'mode-btn';
-            document.getElementById('subScore').className = m === 'scores' ? 'mode-btn active' : 'mode-btn';
-        }
-
-        function switchView(v) { if(v==='student') executeSwitch('student'); }
-        function executeSwitch(v) {
-            document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
-            document.getElementById(v + 'View').classList.add('active');
-            document.querySelectorAll('.mode-nav .mode-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('btn' + v.charAt(0).toUpperCase() + v.slice(1)).classList.add('active');
-        }
-
-        async function getScores() {
-            const tId = document.getElementById('tSearchId').value.trim().toUpperCase();
-            if(!tId || tId === "ID-") return;
-            setBtnLoading('btnLoadScores', 'spinScores', true, '載入中...');
-            try {
-                const res = await fetch(`${API_URL}?action=getScores&taskId=${encodeURIComponent(tId)}`);
-                currentScores = await res.json();
-                document.getElementById('scoreActionArea').style.display = currentScores.length ? 'block' : 'none';
-                let h = `<table><tr><th>時間</th><th>班別</th><th>學生</th><th>分數</th></tr>`;
-                currentScores.slice().reverse().forEach(r => {
-                    const s = parseScore(r[5]);
-                    const rawDate = r[1]; 
-                    let dateDisplay = "N/A";
-                    if (rawDate) {
-                        const d = new Date(rawDate);
-                        dateDisplay = isNaN(d) ? rawDate : `${d.toLocaleDateString()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
-                    }
-                    h += `<tr><td style="font-size:10px;color:#888">${dateDisplay}</td><td>${r[2]}-${r[3]}</td><td><b>${r[4]}</b></td><td style="color:var(--system-green);font-weight:700">${s}%</td></tr>`;
-                });
-                document.getElementById('scoreTableArea').innerHTML = h + `</table>`;
-            } catch(e) { alert("分數載入失敗。"); }
-            setBtnLoading('btnLoadScores', 'spinScores', false, '載入分數');
-        }
-
-        function downloadCSV() {
-            if (!currentScores.length) return;
-            const content = ["Timestamp,TaskID,Class,No,Name,Score", ...currentScores.map(r => {
-                const s = parseScore(r[5]);
-                return `"${r[1]}","${r[0]}","${r[2]}","${r[3]}","${r[4]}","${s}%"`;
-            })].join("\n");
-            const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), content], { type: 'text/csv;charset=utf-8' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `Mandarin_scores_${document.getElementById('tSearchId').value}.csv`;
-            link.click();
-        }
-
-        async function createTask() {
-            const p = document.getElementById('tPassage').value.trim(), t = document.getElementById('tName').value.trim();
-            if(!p || !t) return;
-            setBtnLoading('btnCreate', 'spinCreate', true, '生成中...');
-            try {
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'createTask', email: t, passage: p }) });
-                const newId = await res.text();
-                document.getElementById('displayId').innerText = newId;
-                document.getElementById('generatedIdArea').style.display = 'block';
-            } catch (e) { alert("任務 ID 生成失敗。"); }
-            setBtnLoading('btnCreate', 'spinCreate', false, '生成任務 ID');
-        }
-
-        function setBtnLoading(id, spin, load, text) {
-            const b = document.getElementById(id), s = document.getElementById(spin);
-            b.disabled = load;
-            if(s) s.style.display = load ? "inline-block" : "none";
-            if(load) b.innerText = "請稍候..."; else b.innerHTML = (spin) ? `<div class="spinner" id="${spin}"></div> ${text}` : text;
-        }
+        });
     </script>
 </body>
 </html>
