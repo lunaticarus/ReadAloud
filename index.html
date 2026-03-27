@@ -11,6 +11,8 @@
             --system-red: #ff3b30;
             --system-gray-bg: #f5f5f7;
             --system-card-bg: #ffffff;
+            --system-btn-grey: #f2f2f7;
+            --system-btn-active: #e5e5ea;
             --text-primary: #1d1d1f;
             --text-secondary: #86868b;
             --radius: 20px;
@@ -34,7 +36,7 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Navigation */
+        /* Navigation - Grey/Glass Style */
         .mode-nav {
             position: fixed; top: 20px; right: 30px;
             background: rgba(255, 255, 255, 0.7);
@@ -50,7 +52,11 @@
             user-select: none; -webkit-user-select: none;
         }
 
-        .mode-btn.active { background: var(--text-primary); color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .mode-btn.active { 
+            background: white; 
+            color: var(--text-primary); 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+        }
 
         .container { width: 100%; max-width: 600px; display: none; animation: fadeIn 0.4s ease; }
         .container.active { display: block; }
@@ -61,16 +67,17 @@
         input, textarea {
             width: 100%; padding: 14px; border: 1px solid #d2d2d7; border-radius: 12px;
             font-size: 16px; margin-bottom: 12px; box-sizing: border-box; outline: none; font-family: inherit;
+            background: #fafafa;
         }
 
         .apple-btn {
-            background: var(--text-primary); color: white; border: none;
+            background: var(--system-btn-grey); color: var(--text-primary); border: none;
             padding: 14px 24px; border-radius: 24px; font-weight: 600;
             cursor: pointer; width: 100%; font-size: 15px; transition: all 0.2s;
             display: flex; align-items: center; justify-content: center;
         }
+        .apple-btn:active { background: var(--system-btn-active); transform: scale(0.98); }
         .apple-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .apple-btn.secondary { background: #f2f2f7; color: var(--text-primary); }
 
         /* Reading Layout */
         .passage-wrapper {
@@ -83,7 +90,7 @@
         .progress-text { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; }
 
         .speak-icon {
-            width: 44px; height: 44px; background: #f2f2f7; border: none; border-radius: 50%;
+            width: 44px; height: 44px; background: var(--system-btn-grey); border: none; border-radius: 50%;
             cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
         }
         .speak-icon svg { width: 20px; height: 20px; fill: var(--text-secondary); }
@@ -95,9 +102,9 @@
         td { padding: 12px 10px; border-bottom: 1px solid #f9f9f9; font-size: 13px; white-space: nowrap; }
 
         .id-badge {
-            background: #f2f2f7; padding: 20px; border-radius: 14px; text-align: center;
+            background: var(--system-btn-grey); padding: 20px; border-radius: 14px; text-align: center;
             font-family: monospace; font-size: 24px; color: var(--text-primary);
-            margin: 20px 0; border: 2px dashed #d2d2d7;
+            margin: 20px 0; border: 1px solid #d2d2d7;
         }
 
         .browser-warning {
@@ -146,9 +153,9 @@
                 </div>
                 
                 <button id="recordBtn" class="apple-btn" onclick="startReading()">🎤 Start Reading</button>
-                <div id="browserWarning" class="browser-warning">⚠️ Your browser doesn't support speech recognition. Please use Google Chrome or Microsoft Edge.</div>
+                <div id="browserWarning" class="browser-warning">⚠️ Browser not supported. Please use Chrome or Edge.</div>
 
-                <button id="nextChunkBtn" class="apple-btn" style="display:none; background: var(--system-blue)" onclick="nextChunk()">
+                <button id="nextChunkBtn" class="apple-btn" style="display:none; color: var(--system-blue)" onclick="nextChunk()">
                     <div class="spinner" id="spinSubmit"></div> Next Sentence →
                 </button>
             </div>
@@ -163,7 +170,7 @@
                     <div id="leaderboardList"></div>
                 </div>
 
-                <button class="apple-btn secondary" onclick="location.reload()" style="margin-top: 20px;">Back to Home</button>
+                <button class="apple-btn" onclick="location.reload()" style="margin-top: 20px;">Back to Home</button>
             </div>
         </div>
     </div>
@@ -176,7 +183,7 @@
 
         <div id="setupMode" class="card">
             <input type="email" id="tEmail" placeholder="Teacher Email">
-            <textarea id="tPassage" placeholder="Paste full reading passage here..." rows="5"></textarea>
+            <textarea id="tPassage" placeholder="Paste reading passage..." rows="5"></textarea>
             <button class="apple-btn" id="btnCreate" onclick="createTask()">
                 <div class="spinner" id="spinCreate"></div> Generate Task ID
             </button>
@@ -189,7 +196,7 @@
                 <div class="spinner" id="spinScores"></div> Load Scores
             </button>
             <div id="scoreTableArea"></div>
-            <button id="btnDownload" class="apple-btn secondary" style="display:none; margin-top:20px;" onclick="downloadCSV()">Download CSV</button>
+            <button id="btnDownload" class="apple-btn" style="display:none; margin-top:20px;" onclick="downloadCSV()">Download CSV</button>
         </div>
     </div>
 
@@ -197,7 +204,6 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
         let chunks = [], currentChunkIdx = 0, totalMatches = 0, totalWords = 0, currentScores = [];
 
-        // Check compatibility on load
         window.onload = () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -209,17 +215,8 @@
         // --- SECRET TEACHER GATE ---
         let pressTimer;
         const teacherBtn = document.getElementById('btnTeacher');
-        
-        const startPress = (e) => {
-            e.preventDefault();
-            teacherBtn.style.opacity = "0.4";
-            pressTimer = setTimeout(() => {
-                teacherBtn.style.opacity = "1";
-                executeSwitch('teacher');
-            }, 5000);
-        };
+        const startPress = (e) => { e.preventDefault(); teacherBtn.style.opacity = "0.4"; pressTimer = setTimeout(() => { teacherBtn.style.opacity = "1"; executeSwitch('teacher'); }, 5000); };
         const endPress = () => { clearTimeout(pressTimer); teacherBtn.style.opacity = "1"; };
-        
         teacherBtn.addEventListener('mousedown', startPress);
         teacherBtn.addEventListener('mouseup', endPress);
         teacherBtn.addEventListener('mouseleave', endPress);
@@ -263,7 +260,8 @@
             currentScores.slice().reverse().forEach(row => {
                 let s = parseFloat(row[5]);
                 let d = s < 2 ? Math.round(s * 100) : Math.round(s);
-                let dateStr = row[0] ? new Date(row[0]).toLocaleDateString('en-GB', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'N/A';
+                // row[1] = Timestamp from Google Sheets Column B
+                let dateStr = row[1] ? new Date(row[1]).toLocaleDateString('en-GB', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'N/A';
                 html += `<tr><td style="color:var(--text-secondary); font-size:11px">${dateStr}</td><td>${row[2]}-${row[3]}</td><td><b>${row[4]}</b></td><td style="color:var(--system-green); font-weight:700">${d}%</td></tr>`;
             });
             document.getElementById('scoreTableArea').innerHTML = html + `</table>`;
@@ -275,7 +273,7 @@
             let csv = "Timestamp,Class,No,Name,Score\n";
             currentScores.forEach(row => {
                 let s = parseFloat(row[5]);
-                csv += `${row[0]},${row[2]},${row[3]},"${row[4]}",${s < 2 ? Math.round(s*100) : Math.round(s)}%\n`;
+                csv += `${row[1]},${row[2]},${row[3]},"${row[4]}",${s < 2 ? Math.round(s*100) : Math.round(s)}%\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
@@ -285,7 +283,6 @@
             a.click();
         }
 
-        // --- STUDENT LOGIC ---
         async function fetchTask() {
             const taskId = document.getElementById('sTaskId').value;
             if(!taskId) return;
@@ -306,7 +303,8 @@
             document.getElementById('passageDisplay').style.display = "block";
             document.getElementById('feedbackArea').innerHTML = "";
             const rb = document.getElementById('recordBtn');
-            if(window.SpeechRecognition || window.webkitSpeechRecognition) {
+            const hasAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if(hasAPI) {
                 rb.style.display = "block"; rb.innerText = "🎤 Start Reading"; rb.disabled = false;
             }
             document.getElementById('nextChunkBtn').style.display = "none";
@@ -324,7 +322,6 @@
             const recognition = new SpeechRecognition();
             recognition.lang = 'en-US';
             const rb = document.getElementById('recordBtn');
-            
             recognition.onstart = () => { rb.innerText = "🔴 Listening..."; rb.disabled = true; };
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
@@ -354,10 +351,9 @@
                 const taskId = document.getElementById('sTaskId').value;
                 setLoading('nextChunkBtn', null, true, 'Saving...');
                 await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitScore', taskId, className: document.getElementById('sClass').value, classNo: document.getElementById('sNo').value, name: document.getElementById('sName').value, score: s }) });
-                
                 const res = await fetch(`${API_URL}?action=getScores&taskId=${taskId}`);
                 const all = await res.json();
-                const top5 = all.sort((a,b) => b[5]-a[5]).slice(0,5);
+                const top5 = all.sort((a,b) => (b[5] < 2 ? b[5]*100 : b[5]) - (a[5] < 2 ? a[5]*100 : a[5])).slice(0,5);
                 let board = `<table>`;
                 top5.forEach((r, i) => {
                     const m = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
