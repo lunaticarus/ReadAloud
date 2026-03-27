@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Reading Coach</title>
+    <title>Read Aloud</title>
     <style>
         :root {
             --system-blue: #007aff;
@@ -49,6 +49,10 @@
             border: none; background: transparent; padding: 6px 14px;
             border-radius: 9px; font-size: 13px; font-weight: 500; cursor: pointer;
             transition: all 0.2s; color: var(--text-secondary);
+            /* Prevent text selection and callouts during long press */
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         .mode-btn.active { 
@@ -135,7 +139,7 @@
 
     <div class="mode-nav">
         <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
-        <button class="mode-btn" id="btnTeacher">Teacher Hub</button>
+        <button class="mode-btn" id="btnTeacher">Teacher</button>
     </div>
 
     <div id="studentView" class="container active">
@@ -248,9 +252,15 @@
 
         function setupTeacherAccess() {
             const btn = document.getElementById('btnTeacher');
-            const start = () => { pressTimer = setTimeout(() => executeSwitch('teacher'), 3000); };
+            const start = (e) => { 
+                // Prevent default behavior to avoid text selection on mobile
+                if (e.type === 'touchstart') e.preventDefault(); 
+                pressTimer = setTimeout(() => executeSwitch('teacher'), 3000); 
+            };
             const stop = () => clearTimeout(pressTimer);
-            btn.addEventListener('touchstart', start, {passive: true});
+
+            // Adding preventDefault on touchstart helps prevent text selection
+            btn.addEventListener('touchstart', start, {passive: false});
             btn.addEventListener('touchend', stop);
             btn.addEventListener('mousedown', start);
             btn.addEventListener('mouseup', stop);
