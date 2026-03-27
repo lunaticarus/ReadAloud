@@ -50,9 +50,9 @@
             user-select: none; -webkit-user-select: none;
         }
 
-        .mode-btn.active { background: white; color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        /* Aesthetics Update: Active state is now Black/White */
+        .mode-btn.active { background: var(--text-primary); color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
-        /* Container & Cards */
         .container { width: 100%; max-width: 600px; display: none; animation: fadeIn 0.4s ease; }
         .container.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -87,17 +87,17 @@
             width: 44px; height: 44px; background: #f2f2f7; border: none; border-radius: 50%;
             cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
         }
-        .speak-icon:hover { background: #e5e5ea; transform: scale(1.05); }
         .speak-icon svg { width: 20px; height: 20px; fill: var(--text-secondary); }
 
-        /* Tables */
-        table { width: 100%; max-width: 540px; margin: 15px auto; border-collapse: collapse; text-align: left; }
-        th { background: #f9f9fb; color: var(--text-secondary); font-size: 10px; padding: 10px 15px; border-bottom: 1px solid #eee; text-transform: uppercase; }
-        td { padding: 12px 15px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+        /* Tables & Results */
+        #scoreTableArea { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; margin: 15px 0; }
+        th { background: #f9f9fb; color: var(--text-secondary); font-size: 10px; padding: 12px 10px; border-bottom: 1px solid #eee; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 12px 10px; border-bottom: 1px solid #f9f9f9; font-size: 13px; white-space: nowrap; }
 
         .id-badge {
             background: #f2f2f7; padding: 20px; border-radius: 14px; text-align: center;
-            font-family: monospace; font-size: 24px; color: var(--system-blue);
+            font-family: monospace; font-size: 24px; color: var(--text-primary);
             margin: 20px 0; border: 2px dashed #d2d2d7;
         }
     </style>
@@ -190,7 +190,7 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
         let chunks = [], currentChunkIdx = 0, totalMatches = 0, totalWords = 0, currentScores = [];
 
-        // --- SECRET TEACHER GATE (5 Second Long Press) ---
+        // --- SECRET TEACHER GATE ---
         let pressTimer;
         const teacherBtn = document.getElementById('btnTeacher');
         
@@ -199,11 +199,9 @@
             teacherBtn.style.opacity = "0.4";
             pressTimer = setTimeout(() => {
                 teacherBtn.style.opacity = "1";
-                teacherBtn.style.color = "var(--system-blue)";
                 executeSwitch('teacher');
             }, 5000);
         };
-        
         const endPress = () => { clearTimeout(pressTimer); teacherBtn.style.opacity = "1"; };
         
         teacherBtn.addEventListener('mousedown', startPress);
@@ -222,7 +220,6 @@
             if(view === 'teacher') toggleTeacherMode('setup');
         }
 
-        // --- TEACHER HUB LOGIC ---
         function toggleTeacherMode(mode) {
             document.getElementById('setupMode').style.display = (mode === 'setup') ? 'block' : 'none';
             document.getElementById('scoreMode').style.display = (mode === 'scores') ? 'block' : 'none';
@@ -246,11 +243,13 @@
             setLoading('btnScores', 'spinScores', true);
             const res = await fetch(`${API_URL}?action=getScores&taskId=${taskId}`);
             currentScores = await res.json();
-            let html = `<table><tr><th>Student</th><th>Class</th><th>Score</th></tr>`;
+            let html = `<table><tr><th>Date</th><th>Class</th><th>Student</th><th>Score</th></tr>`;
             currentScores.slice().reverse().forEach(row => {
                 let s = parseFloat(row[5]);
                 let d = s < 2 ? Math.round(s * 100) : Math.round(s);
-                html += `<tr><td><b>${row[4]}</b></td><td>${row[2]}-${row[3]}</td><td style="color:var(--system-green); font-weight:700">${d}%</td></tr>`;
+                // Format Timestamp (Assumes row[0] is the date from Google Sheets)
+                let dateStr = row[0] ? new Date(row[0]).toLocaleDateString('en-GB', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'N/A';
+                html += `<tr><td style="color:var(--text-secondary); font-size:11px">${dateStr}</td><td>${row[2]}-${row[3]}</td><td><b>${row[4]}</b></td><td style="color:var(--system-green); font-weight:700">${d}%</td></tr>`;
             });
             document.getElementById('scoreTableArea').innerHTML = html + `</table>`;
             document.getElementById('btnDownload').style.display = 'flex';
@@ -258,10 +257,10 @@
         }
 
         function downloadCSV() {
-            let csv = "Class,No,Name,Score\n";
+            let csv = "Timestamp,Class,No,Name,Score\n";
             currentScores.forEach(row => {
                 let s = parseFloat(row[5]);
-                csv += `${row[2]},${row[3]},"${row[4]}",${s < 2 ? Math.round(s*100) : Math.round(s)}%\n`;
+                csv += `${row[0]},${row[2]},${row[3]},"${row[4]}",${s < 2 ? Math.round(s*100) : Math.round(s)}%\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
@@ -271,7 +270,7 @@
             a.click();
         }
 
-        // --- STUDENT READING LOGIC ---
+        // --- STUDENT LOGIC ---
         async function fetchTask() {
             const taskId = document.getElementById('sTaskId').value;
             if(!taskId) return;
@@ -292,9 +291,7 @@
             document.getElementById('passageDisplay').style.display = "block";
             document.getElementById('feedbackArea').innerHTML = "";
             const rb = document.getElementById('recordBtn');
-            rb.style.display = "block";
-            rb.innerText = "🎤 Start Reading";
-            rb.disabled = false;
+            rb.style.display = "block"; rb.innerText = "🎤 Start Reading"; rb.disabled = false;
             document.getElementById('nextChunkBtn').style.display = "none";
         }
 
@@ -309,12 +306,7 @@
             const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             recognition.lang = 'en-US';
             const rb = document.getElementById('recordBtn');
-
-            recognition.onstart = () => {
-                rb.innerText = "🔴 Listening...";
-                rb.disabled = true;
-            };
-
+            recognition.onstart = () => { rb.innerText = "🔴 Listening..."; rb.disabled = true; };
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 const clean = (s) => s.toLowerCase().replace(/[^\w\s]/g, "");
@@ -332,20 +324,8 @@
                 document.getElementById('nextChunkBtn').style.display = "block";
                 recognition.stop();
             };
-
-            recognition.onend = () => {
-                if(rb.style.display !== "none") {
-                    rb.innerText = "🎤 Start Reading";
-                    rb.disabled = false;
-                }
-            };
-
-            try {
-                recognition.start();
-            } catch (e) {
-                recognition.abort();
-                setTimeout(() => recognition.start(), 150);
-            }
+            recognition.onend = () => { if(rb.style.display !== "none") { rb.innerText = "🎤 Start Reading"; rb.disabled = false; } };
+            try { recognition.start(); } catch (e) { recognition.abort(); setTimeout(() => recognition.start(), 150); }
         }
 
         async function nextChunk() {
@@ -363,7 +343,7 @@
                 top5.forEach((r, i) => {
                     const m = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
                     let sv = parseFloat(r[5]);
-                    board += `<tr><td style="font-size:13px">${m} ${r[2]}-${r[3]} ${r[4]}</td><td style="text-align:right"><b>${sv<2?Math.round(sv*100):Math.round(sv)}%</b></td></tr>`;
+                    board += `<tr><td style="font-size:12px">${m} ${r[2]}-${r[3]} ${r[4]}</td><td style="text-align:right"><b>${sv<2?Math.round(sv*100):Math.round(sv)}%</b></td></tr>`;
                 });
                 document.getElementById('leaderboardList').innerHTML = board + `</table>`;
                 document.getElementById('studentInfo').style.display = 'none';
