@@ -251,6 +251,8 @@
                 recognition.onresult = (e) => processResult(e.results[e.results.length - 1][0].transcript);
             }
             setupTeacherAccess();
+            // Pre-warm the speech synthesis voices
+            window.speechSynthesis.getVoices();
         };
 
         async function startMicTest() {
@@ -345,7 +347,19 @@
         function playText() {
             window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
-            utter.lang = 'en-US'; utter.rate = 0.9;
+            
+            // Restore natural voice selection
+            const voices = window.speechSynthesis.getVoices();
+            // Preference order: Google English, Samantha (iOS), then any US English
+            const naturalVoice = voices.find(v => v.name.includes('Google US English')) || 
+                                 voices.find(v => v.name.includes('Samantha')) || 
+                                 voices.find(v => v.lang.startsWith('en-US'));
+            
+            if (naturalVoice) utter.voice = naturalVoice;
+            utter.lang = 'en-US'; 
+            utter.rate = 0.85; // Slightly slower for clarity
+            utter.pitch = 1.0;
+            
             window.speechSynthesis.speak(utter);
         }
 
