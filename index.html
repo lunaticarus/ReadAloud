@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI Reading Coach</title>
     <style>
         :root {
@@ -25,6 +25,8 @@
             margin: 0; padding: 80px 20px;
             display: flex; flex-direction: column; align-items: center;
             -webkit-font-smoothing: antialiased;
+            /* Prevent accidental pull-to-refresh during long-press */
+            overscroll-behavior-y: contain;
         }
 
         h1 { font-weight: 600; font-size: 24px; position: fixed; top: 20px; left: 30px; margin: 0; }
@@ -48,7 +50,14 @@
             border: none; background: transparent; padding: 6px 14px;
             border-radius: 9px; font-size: 13px; font-weight: 500; cursor: pointer;
             transition: all 0.2s; color: var(--text-secondary);
+            /* CRITICAL: Prevent text selection/highlight on mobile */
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
         }
+
+        /* Long-press visual feedback */
+        .mode-btn:active { opacity: 0.5; }
 
         .mode-btn.active { 
             background: white; 
@@ -56,23 +65,13 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
         }
 
-        /* Differentiated Teacher Sub-nav */
         .sub-nav {
             display: flex; gap: 8px; margin-bottom: 25px;
             background: #e3e3e8; padding: 5px; border-radius: 14px; width: fit-content;
         }
         
-        #subSet.active { 
-            background: white; 
-            color: var(--system-blue); 
-            box-shadow: 0 2px 6px rgba(0,122,255,0.15); 
-        }
-        
-        #subScore.active { 
-            background: white; 
-            color: var(--system-green); 
-            box-shadow: 0 2px 6px rgba(52,199,89,0.15); 
-        }
+        #subSet.active { background: white; color: var(--system-blue); box-shadow: 0 2px 6px rgba(0,122,255,0.15); }
+        #subScore.active { background: white; color: var(--system-green); box-shadow: 0 2px 6px rgba(52,199,89,0.15); }
 
         .container { width: 100%; max-width: 600px; display: none; animation: fadeIn 0.4s ease; }
         .container.active { display: block; }
@@ -146,7 +145,6 @@
     <div id="studentView" class="container active">
         <div class="card" id="studentEntry">
             <h2 style="margin-top:0">Practice Reading</h2>
-            
             <div id="studentInfo">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
                     <input type="text" id="sClass" placeholder="Class (e.g. 1A)">
@@ -154,9 +152,7 @@
                 </div>
                 <input type="text" id="sName" placeholder="Full Name">
             </div>
-
             <input type="text" id="sTaskId" placeholder="Enter Task ID">
-            
             <div id="micTestSection" class="mic-test-container">
                 <div style="display:flex; justify-content: space-between;">
                     <span>Microphone Sensitivity</span>
@@ -165,7 +161,6 @@
                 <div style="background:#eee; border-radius:2px;"><div id="micLevel" class="mic-test-bar"></div></div>
             </div>
             <button class="retry-link" id="btnMicCheck" onclick="testMic()" style="margin: 0 0 15px 0; padding:0; text-decoration:none;">Verify Microphone →</button>
-
             <button class="apple-btn" id="btnJoin" onclick="fetchTask()">
                 <div class="spinner" id="spinJoin"></div> Join Task
             </button>
@@ -183,9 +178,7 @@
                         <svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     </button>
                 </div>
-                
                 <button id="recordBtn" class="apple-btn" onclick="toggleRecording()">🎤 Start Recording</button>
-
                 <div id="postReadingActions" style="display:none; flex-direction: column; align-items: center; width: 100%;">
                     <button id="nextChunkBtn" class="apple-btn" style="color: var(--system-blue)" onclick="nextChunk()">
                         <div class="spinner" id="spinNext"></div> <span id="nextBtnText">Next Sentence →</span>
@@ -212,7 +205,6 @@
             <button class="mode-btn active" id="subSet" onclick="toggleTeacherMode('setup')">Setup Task</button>
             <button class="mode-btn" id="subScore" onclick="toggleTeacherMode('scores')">Check Scores</button>
         </div>
-
         <div id="setupMode" class="card">
             <input type="text" id="tName" placeholder="Teacher Name">
             <textarea id="tPassage" placeholder="Paste reading passage..." rows="5"></textarea>
@@ -221,7 +213,6 @@
             </button>
             <div id="generatedIdArea" style="display:none"><div class="id-badge" id="displayId"></div></div>
         </div>
-
         <div id="scoreMode" class="card" style="display:none">
             <input type="text" id="tSearchId" placeholder="Enter Task ID to View">
             <button class="apple-btn" id="btnLoadScores" onclick="getScores()">
@@ -250,13 +241,41 @@
             }
         };
 
+        // --- Multi-Platform Long Press Fix ---
+        let pressTimer;
+        const teacherBtn = document.getElementById('btnTeacher');
+
+        const startPress = (e) => {
+            // Only trigger if clicking 'Teacher Hub' specifically
+            if (e.type === 'touchstart') {
+                // Prevent ghost clicks/context menu
+                pressTimer = setTimeout(() => {
+                    executeSwitch('teacher');
+                }, 3000);
+            } else {
+                // Desktop Mouse
+                pressTimer = setTimeout(() => executeSwitch('teacher'), 3000);
+            }
+        };
+
+        const cancelPress = () => clearTimeout(pressTimer);
+
+        // Mobile Events
+        teacherBtn.addEventListener('touchstart', startPress, { passive: true });
+        teacherBtn.addEventListener('touchend', cancelPress);
+        teacherBtn.addEventListener('touchcancel', cancelPress);
+
+        // Desktop Events
+        teacherBtn.addEventListener('mousedown', startPress);
+        teacherBtn.addEventListener('mouseup', cancelPress);
+        teacherBtn.addEventListener('mouseleave', cancelPress);
+
         function setBtnLoading(btnId, spinId, isLoading, originalText) {
             const btn = document.getElementById(btnId);
             const spin = document.getElementById(spinId);
             if (!btn) return;
             btn.disabled = isLoading;
             if (spin) spin.style.display = isLoading ? "inline-block" : "none";
-            
             if (isLoading) {
                 const textSpan = btn.querySelector('span') || btn;
                 if (textSpan === btn) btn.innerHTML = `<div class="spinner" style="display:inline-block"></div> Wait...`;
@@ -269,22 +288,18 @@
         async function fetchTask() {
             const sClass = document.getElementById('sClass'), sNo = document.getElementById('sNo'), 
                   sName = document.getElementById('sName'), taskId = document.getElementById('sTaskId');
-
             let valid = true;
             [sClass, sNo, sName, taskId].forEach(el => {
                 if (!el.value.trim()) { el.classList.add('error'); valid = false; }
                 else el.classList.remove('error');
             });
-
             if (!valid) return;
             setBtnLoading('btnJoin', 'spinJoin', true, 'Join Task');
-            
             try {
                 const res = await fetch(`${API_URL}?action=getTask&taskId=${taskId.value}`);
                 const data = await res.json();
-                if(data.passage === "NOT_FOUND") {
-                    alert("Invalid Task ID");
-                } else {
+                if(data.passage === "NOT_FOUND") { alert("Invalid Task ID"); }
+                else {
                     localStorage.setItem('reader_class', sClass.value);
                     localStorage.setItem('reader_no', sNo.value);
                     localStorage.setItem('reader_name', sName.value);
@@ -427,10 +442,6 @@
                 update();
             } catch (e) { alert("Mic access denied."); }
         }
-
-        let pressTimer;
-        document.getElementById('btnTeacher').addEventListener('mousedown', () => { pressTimer = setTimeout(() => executeSwitch('teacher'), 3000); });
-        document.getElementById('btnTeacher').addEventListener('mouseup', () => clearTimeout(pressTimer));
 
         function switchView(view) { if(view === 'student') executeSwitch('student'); }
         function executeSwitch(view) {
