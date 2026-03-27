@@ -36,7 +36,6 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Navigation - Grey/Glass Style */
         .mode-nav {
             position: fixed; top: 20px; right: 30px;
             background: rgba(255, 255, 255, 0.7);
@@ -79,7 +78,6 @@
         .apple-btn:active { background: var(--system-btn-active); transform: scale(0.98); }
         .apple-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Reading Layout */
         .passage-wrapper {
             display: grid; grid-template-columns: 1fr 44px;
             align-items: center; gap: 16px; margin: 30px 0; min-height: 80px;
@@ -95,7 +93,6 @@
         }
         .speak-icon svg { width: 20px; height: 20px; fill: var(--text-secondary); }
 
-        /* Tables & Results */
         #scoreTableArea { width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; margin: 15px 0; }
         th { background: #f9f9fb; color: var(--text-secondary); font-size: 10px; padding: 12px 10px; border-bottom: 1px solid #eee; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -111,6 +108,12 @@
             background: #fff2f2; color: var(--system-red); padding: 15px; border-radius: 12px;
             font-size: 13px; font-weight: 500; border: 1px solid #ffdcdc; display: none; margin-top: 10px;
         }
+
+        /* Container for the Two-Button Choice */
+        .action-group {
+            display: flex; gap: 12px; margin-top: 10px;
+        }
+        .action-group .apple-btn { flex: 1; }
     </style>
 </head>
 <body>
@@ -155,9 +158,12 @@
                 <button id="recordBtn" class="apple-btn" onclick="startReading()">🎤 Start Reading</button>
                 <div id="browserWarning" class="browser-warning">⚠️ Browser not supported. Please use Chrome or Edge.</div>
 
-                <button id="nextChunkBtn" class="apple-btn" style="display:none; color: var(--system-blue)" onclick="nextChunk()">
-                    <div class="spinner" id="spinSubmit"></div> <span id="nextBtnText">Next Sentence →</span>
-                </button>
+                <div id="postReadingActions" class="action-group" style="display:none">
+                    <button class="apple-btn" onclick="retrySentence()">🔄 Retry</button>
+                    <button id="nextChunkBtn" class="apple-btn" style="color: var(--system-blue)" onclick="nextChunk()">
+                        <div class="spinner" id="spinSubmit"></div> <span id="nextBtnText">Next Sentence →</span>
+                    </button>
+                </div>
             </div>
 
             <div id="resultScreen" style="display:none; text-align:center; padding: 20px 0;">
@@ -203,6 +209,7 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
         let chunks = [], currentChunkIdx = 0, totalMatches = 0, totalWords = 0, currentScores = [];
+        let tempMatches = 0, tempTotal = 0; // Stores last attempt result
 
         window.onload = () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -301,20 +308,15 @@
             document.getElementById('passageDisplay').style.display = "block";
             document.getElementById('feedbackArea').innerHTML = "";
             
-            // Check if this is the final sentence to update button text
             const btnText = document.getElementById('nextBtnText');
-            if (currentChunkIdx === chunks.length - 1) {
-                btnText.innerText = "Finish & Submit 🎉";
-            } else {
-                btnText.innerText = "Next Sentence →";
-            }
+            btnText.innerText = (currentChunkIdx === chunks.length - 1) ? "Finish & Submit 🎉" : "Next Sentence →";
 
             const rb = document.getElementById('recordBtn');
             const hasAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
             if(hasAPI) {
                 rb.style.display = "block"; rb.innerText = "🎤 Start Reading"; rb.disabled = false;
             }
-            document.getElementById('nextChunkBtn').style.display = "none";
+            document.getElementById('postReadingActions').style.display = "none";
         }
 
         function playText() {
@@ -340,18 +342,31 @@
                     if(attemptWords.includes(clean(word))) { html += `<span class="word-correct">${word} </span>`; matches++; }
                     else { html += `<span class="word-wrong">${word} </span>`; }
                 });
-                totalMatches += matches; totalWords += targetWords.length;
+                
+                // Store results temporarily until student clicks "Next"
+                tempMatches = matches;
+                tempTotal = targetWords.length;
+
                 document.getElementById('passageDisplay').style.display = "none";
                 document.getElementById('feedbackArea').innerHTML = html;
                 rb.style.display = "none";
-                document.getElementById('nextChunkBtn').style.display = "block";
+                document.getElementById('postReadingActions').style.display = "flex";
                 recognition.stop();
             };
             recognition.onend = () => { if(rb.style.display !== "none") { rb.innerText = "🎤 Start Reading"; rb.disabled = false; } };
             try { recognition.start(); } catch (e) { recognition.abort(); setTimeout(() => recognition.start(), 150); }
         }
 
+        function retrySentence() {
+            // Simply reset the UI for this sentence - nothing is added to totalMatches yet
+            showChunk();
+        }
+
         async function nextChunk() {
+            // Finalize the score for the sentence just completed
+            totalMatches += tempMatches;
+            totalWords += tempTotal;
+
             if(currentChunkIdx < chunks.length - 1) { 
                 currentChunkIdx++; 
                 showChunk(); 
