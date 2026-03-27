@@ -49,7 +49,7 @@
         .container.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-        .card { background: var(--system-card-bg); padding: 30px; border-radius: var(--radius); box-shadow: 0 4px 24px rgba(0,0,0,0.04); margin-bottom: 20px; }
+        .card { background: var(--system-card-bg); padding: 30px; border-radius: var(--radius); box-shadow: 0 4px 24px rgba(0,0,0,0.04); margin-bottom: 20px; position: relative; }
         
         input, textarea {
             width: 100%; padding: 14px; border: 1px solid #d2d2d7; border-radius: 12px;
@@ -76,6 +76,11 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
         }
 
+        .error-msg {
+            color: var(--system-red); font-size: 13px; font-weight: 500;
+            text-align: center; margin-bottom: 10px; display: none;
+        }
+
         .mic-test-area { margin-top: 20px; padding: 15px; background: #fafafa; border-radius: 12px; border: 1px dashed #d2d2d7; text-align: center; }
         .meter-bg { width: 100%; height: 6px; background: #eee; border-radius: 3px; margin-top: 10px; overflow: hidden; }
         .meter-fill { height: 100%; width: 0%; background: var(--system-green); transition: width 0.1s; }
@@ -92,6 +97,8 @@
         .retry-link { background: none; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; padding: 10px; margin-top: 10px; opacity: 0.6; text-decoration: underline; }
         
         .id-badge { background: var(--system-btn-grey); padding: 20px; border-radius: 14px; text-align: center; font-family: monospace; font-size: 24px; margin: 20px 0; border: 1px solid #d2d2d7; }
+        
+        .student-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -106,6 +113,7 @@
     <div id="studentView" class="container active">
         <div class="card" id="studentEntry">
             <h2 style="margin-top:0">Practice Reading</h2>
+            <div id="joinError" class="error-msg">Invalid Task ID. Please try again.</div>
             <input type="text" id="sTaskId" placeholder="Enter Task ID">
             <button class="apple-btn" id="btnJoin" onclick="fetchTask()">Join Task</button>
 
@@ -117,6 +125,10 @@
         </div>
 
         <div id="readingSection" class="card" style="display:none">
+            <div class="student-header">
+                <span class="progress-text">Student Details</span>
+                <button class="retry-link" style="margin:0; padding:0;" onclick="clearSavedInfo()">Clear info</button>
+            </div>
             <div id="studentInfo">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
                     <input type="text" id="sClass" placeholder="Class" oninput="saveInfo()">
@@ -169,17 +181,10 @@
         let chunks = [], currentChunkIdx = 0, totalMatches = 0, totalWords = 0, tempMatches = 0, tempTotal = 0;
         let recognition, isRecording = false;
 
-        // --- LOCAL STORAGE LOGIC ---
-        window.onload = () => {
-            loadInfo();
-        };
+        window.onload = () => { loadInfo(); };
 
         function saveInfo() {
-            const info = {
-                class: document.getElementById('sClass').value,
-                no: document.getElementById('sNo').value,
-                name: document.getElementById('sName').value
-            };
+            const info = { class: document.getElementById('sClass').value, no: document.getElementById('sNo').value, name: document.getElementById('sName').value };
             localStorage.setItem('studentInfo', JSON.stringify(info));
         }
 
@@ -193,18 +198,48 @@
             }
         }
 
+        function clearSavedInfo() {
+            if(confirm("Clear student details?")) {
+                localStorage.removeItem('studentInfo');
+                document.getElementById('sClass').value = "";
+                document.getElementById('sNo').value = "";
+                document.getElementById('sName').value = "";
+            }
+        }
+
+        async function fetchTask() {
+            const id = document.getElementById('sTaskId').value;
+            const errBox = document.getElementById('joinError');
+            if(!id) return;
+
+            try {
+                const res = await fetch(`${API_URL}?action=getTask&taskId=${id}`);
+                const data = await res.json();
+                
+                if (data.passage === "NOT_FOUND") {
+                    errBox.style.display = "block";
+                    setTimeout(() => { errBox.style.display = "none"; }, 3000);
+                    return;
+                }
+
+                chunks = data.passage.match(/[^.!?]+[.!?]+/g) || [data.passage];
+                document.getElementById('studentEntry').style.display = 'none';
+                document.getElementById('readingSection').style.display = 'block';
+                showChunk();
+            } catch (e) {
+                alert("Connection error. Please try again.");
+            }
+        }
+
         function playText() {
             window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
             const voices = window.speechSynthesis.getVoices();
             const enVoice = voices.find(v => v.lang.includes('en-US') || v.lang.includes('en-GB')) || voices[0];
-            utter.voice = enVoice;
-            utter.lang = 'en-US'; 
-            utter.rate = 0.85;
+            utter.voice = enVoice; utter.lang = 'en-US'; utter.rate = 0.85;
             window.speechSynthesis.speak(utter);
         }
 
-        // Mic Test
         let audioContext, analyser, microphone, scriptProcessor, testingMic = false;
         async function toggleMicTest() {
             const btn = document.getElementById('testMicBtn');
@@ -308,23 +343,12 @@
             resetMicButton();
         }
 
-        async function fetchTask() {
-            const id = document.getElementById('sTaskId').value;
-            const res = await fetch(`${API_URL}?action=getTask&taskId=${id}`);
-            const data = await res.json();
-            chunks = data.passage.match(/[^.!?]+[.!?]+/g) || [data.passage];
-            document.getElementById('studentEntry').style.display = 'none';
-            document.getElementById('readingSection').style.display = 'block';
-            showChunk();
-        }
-
         async function submitFinal() {
             const s = Math.round((totalMatches/totalWords)*100);
             document.getElementById('practiceArea').style.display = 'none';
             document.getElementById('resultScreen').style.display = 'block';
             document.getElementById('finalScoreDisplay').innerText = s + "%";
             
-            // Your API submission code here...
             const taskId = document.getElementById('sTaskId').value;
             await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitScore', taskId, className: document.getElementById('sClass').value, classNo: document.getElementById('sNo').value, name: document.getElementById('sName').value, score: s }) });
         }
