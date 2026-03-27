@@ -22,13 +22,37 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
             background-color: var(--system-gray-bg);
             color: var(--text-primary);
-            margin: 0; padding: 80px 20px;
+            margin: 0; padding: 100px 20px 40px 20px;
             display: flex; flex-direction: column; align-items: center;
             -webkit-font-smoothing: antialiased;
             overscroll-behavior-y: contain;
         }
 
-        h1 { font-weight: 600; font-size: 24px; position: fixed; top: 20px; left: 30px; margin: 0; }
+        /* Fixed Header with Gradient Shade */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 74px;
+            background: rgba(245, 245, 247, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 900;
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        
+        header::after {
+            content: "";
+            position: absolute;
+            bottom: -20px; left: 0; right: 0;
+            height: 20px;
+            background: linear-gradient(to bottom, rgba(245, 245, 247, 0.8), transparent);
+            pointer-events: none;
+        }
+
+        h1 { font-weight: 600; font-size: 24px; margin: 0; }
 
         .spinner {
             display: none; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.1);
@@ -49,7 +73,6 @@
             border: none; background: transparent; padding: 6px 14px;
             border-radius: 9px; font-size: 13px; font-weight: 500; cursor: pointer;
             transition: all 0.2s; color: var(--text-secondary);
-            /* Prevent text selection and callouts during long press */
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
@@ -135,11 +158,13 @@
 </head>
 <body>
 
-    <h1>Reading</h1>
+    <header>
+        <h1>Reading</h1>
+    </header>
 
     <div class="mode-nav">
         <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
-        <button class="mode-btn" id="btnTeacher">Teacher</button>
+        <button class="mode-btn" id="btnTeacher">Teacher Hub</button>
     </div>
 
     <div id="studentView" class="container active">
@@ -209,7 +234,7 @@
             <div id="generatedIdArea" style="display:none"><div class="id-badge" id="displayId"></div></div>
         </div>
         <div id="scoreMode" class="card" style="display:none">
-            <input type="text" id="tSearchId" class="uppercase-input" placeholder="ENTER TASK ID" oninput="this.value = this.value.toUpperCase()">
+            <input type="text" id="tSearchId" class="uppercase-input" placeholder="ENTER TASK ID" value="ID-" oninput="handleTaskIdInput(this)">
             <button class="apple-btn" id="btnLoadScores" onclick="getScores()">
                 <div class="spinner" id="spinScores"></div> Load Scores
             </button>
@@ -239,19 +264,15 @@
             window.speechSynthesis.getVoices();
         };
 
-        // MyMemory API for free, key-less translation
         async function fetchTranslation(text) {
             try {
                 const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|zh-TW`);
                 const data = await response.json();
                 return data.responseData.translatedText;
-            } catch (e) {
-                return "";
-            }
+            } catch (e) { return ""; }
         }
 
         function handleTaskIdInput(input) {
-            // Ensure "ID-" prefix stays
             if (!input.value.startsWith("ID-")) {
                 input.value = "ID-";
             }
@@ -261,13 +282,10 @@
         function setupTeacherAccess() {
             const btn = document.getElementById('btnTeacher');
             const start = (e) => { 
-                // Prevent default behavior to avoid text selection on mobile
                 if (e.type === 'touchstart') e.preventDefault(); 
                 pressTimer = setTimeout(() => executeSwitch('teacher'), 3000); 
             };
             const stop = () => clearTimeout(pressTimer);
-
-            // Adding preventDefault on touchstart helps prevent text selection
             btn.addEventListener('touchstart', start, {passive: false});
             btn.addEventListener('touchend', stop);
             btn.addEventListener('mousedown', start);
@@ -321,8 +339,6 @@
             document.getElementById('nextBtnText').innerText = (currentChunkIdx === chunks.length - 1) ? "Finish & Submit 🎉" : "Next Sentence →";
             document.getElementById('recordBtn').style.display = "block";
             document.getElementById('postReadingActions').style.display = "none";
-            
-            // Subtle translation update
             const transArea = document.getElementById('translationText');
             transArea.innerText = "...";
             const translation = await fetchTranslation(currentSentence);
@@ -376,8 +392,6 @@
                 const s = Math.round((totalMatches / totalWords) * 100);
                 const taskId = document.getElementById('sTaskId').value.trim();
                 await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitScore', taskId, className: document.getElementById('sClass').value, classNo: document.getElementById('sNo').value, name: document.getElementById('sName').value, score: s }) });
-                
-                // Fetch simple leaderboard
                 const res = await fetch(`${API_URL}?action=getScores&taskId=${encodeURIComponent(taskId)}`);
                 const all = await res.json();
                 let top5 = all.sort((a,b) => (b[5]<2?b[5]*100:b[5]) - (a[5]<2?a[5]*100:a[5])).slice(0,5);
@@ -387,7 +401,6 @@
                     board += `<tr><td>${m} ${r[2]}-${r[3]} ${r[4]}</td><td style="text-align:right"><b>${Math.round(r[5]<2?r[5]*100:r[5])}%</b></td></tr>`;
                 });
                 document.getElementById('leaderboardList').innerHTML = board + `</table>`;
-                
                 document.getElementById('practiceArea').style.display = 'none';
                 document.getElementById('resultScreen').style.display = 'block';
                 document.getElementById('finalScoreDisplay').innerText = s + "%";
@@ -411,7 +424,7 @@
 
         async function getScores() {
             const taskId = document.getElementById('tSearchId').value.trim();
-            if(!taskId) return;
+            if(!taskId || taskId === "ID-") return;
             setBtnLoading('btnLoadScores', 'spinScores', true, 'Load Scores');
             try {
                 const res = await fetch(`${API_URL}?action=getScores&taskId=${encodeURIComponent(taskId)}`);
