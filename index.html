@@ -96,9 +96,14 @@
 
         .retry-link { background: none; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; padding: 10px; margin-top: 10px; opacity: 0.6; text-decoration: underline; }
         
-        .id-badge { background: var(--system-btn-grey); padding: 20px; border-radius: 14px; text-align: center; font-family: monospace; font-size: 24px; margin: 20px 0; border: 1px solid #d2d2d7; }
-        
-        .student-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        /* Leaderboard Styles */
+        #leaderboardList { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+        .lb-row { display: grid; grid-template-columns: 30px 1fr 60px; padding: 10px; border-radius: 10px; align-items: center; margin-bottom: 4px; }
+        .lb-row:nth-child(even) { background: #fafafa; }
+        .lb-rank { font-weight: 700; font-size: 14px; color: var(--text-secondary); }
+        .lb-name { text-align: left; font-size: 14px; padding-left: 10px; }
+        .lb-score { font-weight: 600; text-align: right; color: var(--system-blue); }
+        .lb-medal { font-size: 16px; }
     </style>
 </head>
 <body>
@@ -125,7 +130,7 @@
         </div>
 
         <div id="readingSection" class="card" style="display:none">
-            <div class="student-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span class="progress-text">Student Details</span>
                 <button class="retry-link" style="margin:0; padding:0;" onclick="clearSavedInfo()">Clear info</button>
             </div>
@@ -148,9 +153,7 @@
                         <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     </button>
                 </div>
-                
                 <button id="recordBtn" class="apple-btn" onclick="toggleRecording()">🎤 Start Reading</button>
-
                 <div id="postReadingActions" style="display:none; flex-direction: column; align-items: center; width: 100%;">
                     <button id="nextChunkBtn" class="apple-btn" style="color: var(--system-blue)" onclick="nextChunk()">
                         <span id="nextBtnText">Next Sentence →</span>
@@ -160,19 +163,16 @@
             </div>
 
             <div id="resultScreen" style="display:none; text-align:center;">
-                <h2 id="finalScoreDisplay" style="font-size: 42px; color: var(--system-green);">0%</h2>
-                <div id="leaderboardList"></div>
-                <button class="apple-btn" onclick="location.reload()" style="margin-top: 20px;">Back to Home</button>
-            </div>
-        </div>
-    </div>
+                <h2 style="margin-bottom: 0;">Practice Complete!</h2>
+                <h2 id="finalScoreDisplay" style="font-size: 52px; color: var(--system-green); margin: 10px 0;">0%</h2>
+                
+                <div id="leaderboardSection">
+                    <span class="progress-text">Class Leaderboard</span>
+                    <div id="leaderboardList"></div>
+                </div>
 
-    <div id="teacherView" class="container">
-        <div class="card">
-            <input type="email" id="tEmail" placeholder="Teacher Email">
-            <textarea id="tPassage" placeholder="Paste reading passage..." rows="5"></textarea>
-            <button class="apple-btn" onclick="createTask()">Generate Task ID</button>
-            <div id="displayId" class="id-badge" style="display:none"></div>
+                <button class="apple-btn" onclick="location.reload()" style="margin-top: 30px;">Finish & Back</button>
+            </div>
         </div>
     </div>
 
@@ -201,9 +201,7 @@
         function clearSavedInfo() {
             if(confirm("Clear student details?")) {
                 localStorage.removeItem('studentInfo');
-                document.getElementById('sClass').value = "";
-                document.getElementById('sNo').value = "";
-                document.getElementById('sName').value = "";
+                document.getElementById('sClass').value = ""; document.getElementById('sNo').value = ""; document.getElementById('sName').value = "";
             }
         }
 
@@ -211,24 +209,19 @@
             const id = document.getElementById('sTaskId').value;
             const errBox = document.getElementById('joinError');
             if(!id) return;
-
             try {
                 const res = await fetch(`${API_URL}?action=getTask&taskId=${id}`);
                 const data = await res.json();
-                
                 if (data.passage === "NOT_FOUND") {
                     errBox.style.display = "block";
                     setTimeout(() => { errBox.style.display = "none"; }, 3000);
                     return;
                 }
-
                 chunks = data.passage.match(/[^.!?]+[.!?]+/g) || [data.passage];
                 document.getElementById('studentEntry').style.display = 'none';
                 document.getElementById('readingSection').style.display = 'block';
                 showChunk();
-            } catch (e) {
-                alert("Connection error. Please try again.");
-            }
+            } catch (e) { alert("Connection error."); }
         }
 
         function playText() {
@@ -258,46 +251,26 @@
             } catch (err) { alert("Mic access denied."); }
         }
 
-        function toggleRecording() {
-            if (!isRecording) startRecording();
-            else stopRecording();
-        }
+        function toggleRecording() { if (!isRecording) startRecording(); else stopRecording(); }
 
         function startRecording() {
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRec();
-            recognition.lang = 'en-US';
-            recognition.continuous = true;
-            recognition.interimResults = false;
+            recognition.lang = 'en-US'; recognition.continuous = true; recognition.interimResults = false;
             const rb = document.getElementById('recordBtn');
-
-            recognition.onstart = () => {
-                isRecording = true;
-                rb.innerText = "⏹ Stop & Analyze";
-                rb.classList.add('btn-recording');
-            };
-
+            recognition.onstart = () => { isRecording = true; rb.innerText = "⏹ Stop & Analyze"; rb.classList.add('btn-recording'); };
             recognition.onresult = (event) => {
                 let finalTranscript = "";
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
-                }
+                for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; }
                 processResult(finalTranscript);
             };
-
-            recognition.onerror = () => { resetMicButton(); };
-            recognition.onend = () => { resetMicButton(); };
+            recognition.onerror = () => resetMicButton();
+            recognition.onend = () => resetMicButton();
             recognition.start();
         }
 
         function stopRecording() { if (recognition) recognition.stop(); }
-
-        function resetMicButton() {
-            isRecording = false;
-            const rb = document.getElementById('recordBtn');
-            rb.innerText = "🎤 Start Reading";
-            rb.classList.remove('btn-recording');
-        }
+        function resetMicButton() { isRecording = false; const rb = document.getElementById('recordBtn'); rb.innerText = "🎤 Start Reading"; rb.classList.remove('btn-recording'); }
 
         function processResult(transcript) {
             if (!transcript) return;
@@ -326,8 +299,7 @@
         }
 
         async function nextChunk() {
-            totalMatches += tempMatches;
-            totalWords += tempTotal;
+            totalMatches += tempMatches; totalWords += tempTotal;
             if(currentChunkIdx < chunks.length - 1) { currentChunkIdx++; showChunk(); }
             else { submitFinal(); }
         }
@@ -344,13 +316,47 @@
         }
 
         async function submitFinal() {
-            const s = Math.round((totalMatches/totalWords)*100);
+            const finalScore = Math.round((totalMatches/totalWords)*100);
             document.getElementById('practiceArea').style.display = 'none';
             document.getElementById('resultScreen').style.display = 'block';
-            document.getElementById('finalScoreDisplay').innerText = s + "%";
+            document.getElementById('finalScoreDisplay').innerText = finalScore + "%";
             
             const taskId = document.getElementById('sTaskId').value;
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitScore', taskId, className: document.getElementById('sClass').value, classNo: document.getElementById('sNo').value, name: document.getElementById('sName').value, score: s }) });
+            const payload = { 
+                action: 'submitScore', 
+                taskId: taskId, 
+                className: document.getElementById('sClass').value, 
+                classNo: document.getElementById('sNo').value, 
+                name: document.getElementById('sName').value, 
+                score: finalScore 
+            };
+
+            const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const result = await response.json();
+            
+            // Re-render the leaderboard with fresh data
+            displayLeaderboard(result.leaderboard);
+        }
+
+        function displayLeaderboard(data) {
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = "";
+            if (!data || data.length === 0) { list.innerHTML = "No entries yet."; return; }
+            
+            data.forEach((entry, idx) => {
+                let medal = "";
+                if (idx === 0) medal = "🥇";
+                else if (idx === 1) medal = "🥈";
+                else if (idx === 2) medal = "🥉";
+
+                list.innerHTML += `
+                    <div class="lb-row">
+                        <div class="lb-rank">${idx + 1}</div>
+                        <div class="lb-name">${medal} ${entry.name} (${entry.className})</div>
+                        <div class="lb-score">${entry.score}%</div>
+                    </div>
+                `;
+            });
         }
 
         function switchView(v) {
