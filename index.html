@@ -50,7 +50,6 @@
             user-select: none; -webkit-user-select: none;
         }
 
-        /* Aesthetics Update: Active state is now Black/White */
         .mode-btn.active { background: var(--text-primary); color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
         .container { width: 100%; max-width: 600px; display: none; animation: fadeIn 0.4s ease; }
@@ -100,6 +99,11 @@
             font-family: monospace; font-size: 24px; color: var(--text-primary);
             margin: 20px 0; border: 2px dashed #d2d2d7;
         }
+
+        .browser-warning {
+            background: #fff2f2; color: var(--system-red); padding: 15px; border-radius: 12px;
+            font-size: 13px; font-weight: 500; border: 1px solid #ffdcdc; display: none; margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -140,7 +144,10 @@
                         <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     </button>
                 </div>
+                
                 <button id="recordBtn" class="apple-btn" onclick="startReading()">🎤 Start Reading</button>
+                <div id="browserWarning" class="browser-warning">⚠️ Your browser doesn't support speech recognition. Please use Google Chrome or Microsoft Edge.</div>
+
                 <button id="nextChunkBtn" class="apple-btn" style="display:none; background: var(--system-blue)" onclick="nextChunk()">
                     <div class="spinner" id="spinSubmit"></div> Next Sentence →
                 </button>
@@ -189,6 +196,15 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
         let chunks = [], currentChunkIdx = 0, totalMatches = 0, totalWords = 0, currentScores = [];
+
+        // Check compatibility on load
+        window.onload = () => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                document.getElementById('recordBtn').style.display = 'none';
+                document.getElementById('browserWarning').style.display = 'block';
+            }
+        };
 
         // --- SECRET TEACHER GATE ---
         let pressTimer;
@@ -247,7 +263,6 @@
             currentScores.slice().reverse().forEach(row => {
                 let s = parseFloat(row[5]);
                 let d = s < 2 ? Math.round(s * 100) : Math.round(s);
-                // Format Timestamp (Assumes row[0] is the date from Google Sheets)
                 let dateStr = row[0] ? new Date(row[0]).toLocaleDateString('en-GB', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'N/A';
                 html += `<tr><td style="color:var(--text-secondary); font-size:11px">${dateStr}</td><td>${row[2]}-${row[3]}</td><td><b>${row[4]}</b></td><td style="color:var(--system-green); font-weight:700">${d}%</td></tr>`;
             });
@@ -291,7 +306,9 @@
             document.getElementById('passageDisplay').style.display = "block";
             document.getElementById('feedbackArea').innerHTML = "";
             const rb = document.getElementById('recordBtn');
-            rb.style.display = "block"; rb.innerText = "🎤 Start Reading"; rb.disabled = false;
+            if(window.SpeechRecognition || window.webkitSpeechRecognition) {
+                rb.style.display = "block"; rb.innerText = "🎤 Start Reading"; rb.disabled = false;
+            }
             document.getElementById('nextChunkBtn').style.display = "none";
         }
 
@@ -303,9 +320,11 @@
         }
 
         function startReading() {
-            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
             recognition.lang = 'en-US';
             const rb = document.getElementById('recordBtn');
+            
             recognition.onstart = () => { rb.innerText = "🔴 Listening..."; rb.disabled = true; };
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
