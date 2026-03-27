@@ -90,7 +90,6 @@
         .apple-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .apple-btn.recording { background: var(--system-red); color: white; }
 
-        /* Mic Test Styles */
         .mic-test-container {
             margin: 10px 0 20px 0; padding: 14px; background: #f9f9fb;
             border-radius: 12px; display: flex; align-items: center; gap: 12px; font-size: 13px;
@@ -138,14 +137,13 @@
 
     <div class="mode-nav">
         <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
-        <button class="mode-btn" id="btnTeacher">Teacher Hub</button>
+        <button class="mode-btn" id="btnTeacher">Teacher</button>
     </div>
 
     <div id="studentView" class="container active">
         <div class="card" id="studentEntry">
             <h2 style="margin-top:0">Practice Reading</h2>
             
-            <!-- Student Information Section -->
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
                 <input type="text" id="sClass" placeholder="Class (e.g. 1A)">
                 <input type="number" id="sNo" placeholder="No.">
@@ -153,7 +151,6 @@
             <input type="text" id="sName" placeholder="Full Name">
             <input type="text" id="sTaskId" class="uppercase-input" placeholder="ENTER TASK ID" value="ID-" oninput="handleTaskIdInput(this)">
             
-            <!-- Mic Test Utility (Now positioned below info) -->
             <div class="mic-test-container">
                 <div class="mic-status-dot" id="micDot"></div>
                 <div style="flex-shrink: 0; font-weight: 500;" id="micLabel">Mic Check:</div>
@@ -168,7 +165,6 @@
             </button>
         </div>
 
-        <!-- Reading Interface -->
         <div id="readingSection" class="card" style="display:none">
             <div id="practiceArea">
                 <div class="progress-text" id="chunkProgress"></div>
@@ -204,7 +200,6 @@
         </div>
     </div>
 
-    <!-- Teacher Hub -->
     <div id="teacherView" class="container">
         <div class="sub-nav" style="display:flex; gap:8px; margin-bottom:20px; background:#e3e3e8; padding:5px; border-radius:14px; width:fit-content;">
             <button class="mode-btn active" id="subSet" onclick="toggleTeacherMode('setup')">Setup Task</button>
@@ -238,7 +233,6 @@
         let audioContext, analyser, microphone, scriptProcessor;
 
         window.onload = () => {
-            // Load persistent student data
             document.getElementById('sClass').value = localStorage.getItem('reader_class') || '';
             document.getElementById('sNo').value = localStorage.getItem('reader_no') || '';
             document.getElementById('sName').value = localStorage.getItem('reader_name') || '';
@@ -251,7 +245,6 @@
                 recognition.onresult = (e) => processResult(e.results[e.results.length - 1][0].transcript);
             }
             setupTeacherAccess();
-            // Pre-warm the speech synthesis voices
             window.speechSynthesis.getVoices();
         };
 
@@ -301,7 +294,6 @@
             if(!sTaskId.value.trim() || sTaskId.value === "ID-") { sTaskId.classList.add('error'); err = true; }
             if(err) return;
 
-            // Persistence
             localStorage.setItem('reader_class', sClass.value.trim());
             localStorage.setItem('reader_no', sNo.value.trim());
             localStorage.setItem('reader_name', sName.value.trim());
@@ -347,19 +339,15 @@
         function playText() {
             window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
-            
-            // Restore natural voice selection
             const voices = window.speechSynthesis.getVoices();
-            // Preference order: Google English, Samantha (iOS), then any US English
             const naturalVoice = voices.find(v => v.name.includes('Google US English')) || 
                                  voices.find(v => v.name.includes('Samantha')) || 
                                  voices.find(v => v.lang.startsWith('en-US'));
             
             if (naturalVoice) utter.voice = naturalVoice;
             utter.lang = 'en-US'; 
-            utter.rate = 0.85; // Slightly slower for clarity
+            utter.rate = 0.85;
             utter.pitch = 1.0;
-            
             window.speechSynthesis.speak(utter);
         }
 
@@ -455,8 +443,14 @@
                 let h = `<table><tr><th>Time</th><th>Class</th><th>Student</th><th>Score</th></tr>`;
                 currentScores.slice().reverse().forEach(r => {
                     const s = Math.round(parseFloat(r[5])<2?parseFloat(r[5])*100:parseFloat(r[5]));
-                    const d = new Date(r[0]);
-                    h += `<tr><td style="font-size:10px;color:#888">${d.toLocaleDateString()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}</td><td>${r[2]}-${r[3]}</td><td><b>${r[4]}</b></td><td style="color:var(--system-green);font-weight:700">${s}%</td></tr>`;
+                    // Changed to use index 1 (Column B from Sheet) for Timestamp
+                    const rawDate = r[1]; 
+                    let dateDisplay = "N/A";
+                    if (rawDate) {
+                        const d = new Date(rawDate);
+                        dateDisplay = isNaN(d) ? rawDate : `${d.toLocaleDateString()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    }
+                    h += `<tr><td style="font-size:10px;color:#888">${dateDisplay}</td><td>${r[2]}-${r[3]}</td><td><b>${r[4]}</b></td><td style="color:var(--system-green);font-weight:700">${s}%</td></tr>`;
                 });
                 document.getElementById('scoreTableArea').innerHTML = h + `</table>`;
             } catch(e) { alert("Error."); }
@@ -467,7 +461,7 @@
             if (!currentScores.length) return;
             const content = ["Timestamp,TaskID,Class,No,Name,Score", ...currentScores.map(r => {
                 const s = Math.round(parseFloat(r[5])<2?parseFloat(r[5])*100:parseFloat(r[5]));
-                return `"${r[0]}","${r[1]}","${r[2]}","${r[3]}","${r[4]}","${s}%"`;
+                return `"${r[1]}","${r[0]}","${r[2]}","${r[3]}","${r[4]}","${s}%"`;
             })].join("\n");
             const blob = new Blob([content], { type: 'text/csv' });
             const link = document.createElement("a");
