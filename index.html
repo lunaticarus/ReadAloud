@@ -28,7 +28,6 @@
             overscroll-behavior-y: contain;
         }
 
-        /* Fixed Header with Gradient Shade */
         header {
             position: fixed;
             top: 0; left: 0; right: 0;
@@ -74,8 +73,6 @@
             border-radius: 9px; font-size: 13px; font-weight: 500; cursor: pointer;
             transition: all 0.2s; color: var(--text-secondary);
             user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
         }
 
         .mode-btn.active { 
@@ -119,39 +116,18 @@
 
         /* Mic Test Styles */
         .mic-test-container {
-            margin-bottom: 20px;
-            padding: 12px;
-            background: #f9f9fb;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 13px;
+            margin-bottom: 20px; padding: 12px; background: #f9f9fb;
+            border-radius: 12px; display: flex; align-items: center; gap: 12px; font-size: 13px;
         }
-        .mic-visualizer {
-            flex-grow: 1;
-            height: 6px;
-            background: #e3e3e8;
-            border-radius: 3px;
-            overflow: hidden;
-            position: relative;
-        }
-        .mic-bar {
-            height: 100%;
-            width: 0%;
-            background: var(--system-green);
-            transition: width 0.1s ease;
-        }
-        .mic-status-dot {
-            width: 8px; height: 8px; border-radius: 50%; background: #d1d1d6;
-        }
+        .mic-visualizer { flex-grow: 1; height: 6px; background: #e3e3e8; border-radius: 3px; overflow: hidden; position: relative; }
+        .mic-bar { height: 100%; width: 0%; background: var(--system-green); transition: width 0.1s ease; }
+        .mic-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #d1d1d6; }
         .mic-status-dot.active { background: var(--system-green); box-shadow: 0 0 8px var(--system-green); }
 
         .retry-link {
             background: none; border: none; color: var(--text-secondary);
             font-size: 13px; font-weight: 500; cursor: pointer;
-            padding: 10px; margin-top: 10px; opacity: 0.6; transition: opacity 0.2s;
-            text-decoration: underline;
+            padding: 10px; margin-top: 10px; opacity: 0.6; text-decoration: underline;
         }
 
         .passage-wrapper {
@@ -164,14 +140,14 @@
         
         .translation-text {
             font-size: 15px; color: var(--text-secondary); opacity: 0.7;
-            margin-bottom: 25px; min-height: 1.5em; font-weight: 400;
+            margin-bottom: 25px; min-height: 1.5em;
         }
 
         .progress-text { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; }
 
         .speak-icon {
             width: 44px; height: 44px; background: var(--system-btn-grey); border: none; border-radius: 50%;
-            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
 
         #scoreTableArea { width: 100%; overflow-x: auto; }
@@ -201,6 +177,7 @@
         <div class="card" id="studentEntry">
             <h2 style="margin-top:0">Practice Reading</h2>
             
+            <!-- Mic Test Utility -->
             <div class="mic-test-container">
                 <div class="mic-status-dot" id="micDot"></div>
                 <div style="flex-shrink: 0; font-weight: 500;" id="micLabel">Mic Check:</div>
@@ -234,11 +211,8 @@
                         <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     </button>
                 </div>
-                
                 <div id="translationText" class="translation-text"></div>
-
                 <button id="recordBtn" class="apple-btn" onclick="toggleRecording()">🎤 Start Recording</button>
-                
                 <div id="postReadingActions" style="display:none; flex-direction: column; align-items: center; width: 100%;">
                     <button id="nextChunkBtn" class="apple-btn" style="color: var(--system-blue)" onclick="nextChunk()">
                         <div class="spinner" id="spinNext"></div> <span id="nextBtnText">Next Sentence →</span>
@@ -296,6 +270,7 @@
         let audioContext, analyser, microphone, scriptProcessor;
 
         window.onload = () => {
+            // RELOAD FROM LOCALSTORAGE
             document.getElementById('sClass').value = localStorage.getItem('reader_class') || '';
             document.getElementById('sNo').value = localStorage.getItem('reader_no') || '';
             document.getElementById('sName').value = localStorage.getItem('reader_name') || '';
@@ -325,7 +300,6 @@
 
                 analyser.smoothingTimeConstant = 0.8;
                 analyser.fftSize = 1024;
-
                 microphone.connect(analyser);
                 analyser.connect(scriptProcessor);
                 scriptProcessor.connect(audioContext.destination);
@@ -338,53 +312,12 @@
                     const average = values / array.length;
                     document.getElementById('micBar').style.width = Math.min(100, average * 2) + "%";
                 };
-            } catch (err) {
-                alert("Microphone access denied or not found.");
-            }
-        }
-
-        async function fetchTranslation(text) {
-            try {
-                const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|zh-TW`);
-                const data = await response.json();
-                return data.responseData.translatedText;
-            } catch (e) { return ""; }
+            } catch (err) { alert("Microphone check failed."); }
         }
 
         function handleTaskIdInput(input) {
-            if (!input.value.startsWith("ID-")) {
-                input.value = "ID-";
-            }
+            if (!input.value.startsWith("ID-")) input.value = "ID-";
             input.value = input.value.toUpperCase();
-        }
-
-        function setupTeacherAccess() {
-            const btn = document.getElementById('btnTeacher');
-            const start = (e) => { 
-                if (e.type === 'touchstart') e.preventDefault(); 
-                pressTimer = setTimeout(() => executeSwitch('teacher'), 3000); 
-            };
-            const stop = () => clearTimeout(pressTimer);
-            btn.addEventListener('touchstart', start, {passive: false});
-            btn.addEventListener('touchend', stop);
-            btn.addEventListener('mousedown', start);
-            btn.addEventListener('mouseup', stop);
-            btn.addEventListener('mouseleave', stop);
-        }
-
-        function setBtnLoading(btnId, spinId, isLoading, originalText) {
-            const btn = document.getElementById(btnId);
-            const spin = document.getElementById(spinId);
-            if (!btn) return;
-            btn.disabled = isLoading;
-            if (spin) spin.style.display = isLoading ? "inline-block" : "none";
-            if (isLoading) {
-                const textSpan = btn.querySelector('span') || btn;
-                if (textSpan === btn) btn.innerHTML = `<div class="spinner" style="display:inline-block"></div> Wait...`;
-                else textSpan.innerText = "Processing...";
-            } else {
-                btn.innerHTML = (spinId) ? `<div class="spinner" id="${spinId}"></div> ${originalText}` : originalText;
-            }
         }
 
         async function fetchTask() {
@@ -393,8 +326,10 @@
             const sName = document.getElementById('sName');
             const sTaskId = document.getElementById('sTaskId');
 
+            // REMOVE ERRORS
             [sClass, sNo, sName, sTaskId].forEach(el => el.classList.remove('error'));
 
+            // MANDATORY VALIDATION
             let hasError = false;
             if(!sClass.value.trim()) { sClass.classList.add('error'); hasError = true; }
             if(!sNo.value.trim()) { sNo.classList.add('error'); hasError = true; }
@@ -403,11 +338,12 @@
 
             if(hasError) return;
 
-            // Stop mic test if running
-            if (audioContext) {
-                audioContext.close();
-                audioContext = null;
-            }
+            // SAVE TO LOCALSTORAGE
+            localStorage.setItem('reader_class', sClass.value.trim());
+            localStorage.setItem('reader_no', sNo.value.trim());
+            localStorage.setItem('reader_name', sName.value.trim());
+
+            if (audioContext) { audioContext.close(); audioContext = null; }
 
             setBtnLoading('btnJoin', 'spinJoin', true, 'Join Task');
             try {
@@ -417,16 +353,21 @@
                     sTaskId.classList.add('error');
                     alert("Invalid Task ID");
                 } else {
-                    localStorage.setItem('reader_class', sClass.value);
-                    localStorage.setItem('reader_no', sNo.value);
-                    localStorage.setItem('reader_name', sName.value);
                     chunks = data.passage.match(/[^.!?]+[.!?]*/g) || [data.passage];
                     document.getElementById('studentEntry').style.display = 'none';
                     document.getElementById('readingSection').style.display = 'block';
                     showChunk();
                 }
-            } catch (e) { alert("Network error."); }
+            } catch (e) { alert("Connection error."); }
             setBtnLoading('btnJoin', 'spinJoin', false, 'Join Task');
+        }
+
+        async function fetchTranslation(text) {
+            try {
+                const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|zh-TW`);
+                const data = await response.json();
+                return data.responseData.translatedText;
+            } catch (e) { return ""; }
         }
 
         async function showChunk() {
@@ -447,11 +388,6 @@
         function playText() {
             window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
-            const voices = window.speechSynthesis.getVoices();
-            const preferredVoice = voices.find(v => v.name.includes('Google US English')) || 
-                                  voices.find(v => v.name.includes('Samantha')) || 
-                                  voices.find(v => v.lang.startsWith('en-US'));
-            if (preferredVoice) utter.voice = preferredVoice;
             utter.lang = 'en-US'; utter.rate = 0.9;
             window.speechSynthesis.speak(utter);
         }
@@ -490,7 +426,14 @@
                 setBtnLoading('nextChunkBtn', 'spinNext', true, 'Saving...');
                 const s = Math.round((totalMatches / totalWords) * 100);
                 const taskId = document.getElementById('sTaskId').value.trim();
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitScore', taskId, className: document.getElementById('sClass').value, classNo: document.getElementById('sNo').value, name: document.getElementById('sName').value, score: s }) });
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ 
+                    action: 'submitScore', 
+                    taskId, 
+                    className: document.getElementById('sClass').value, 
+                    classNo: document.getElementById('sNo').value, 
+                    name: document.getElementById('sName').value, 
+                    score: s 
+                }) });
                 const res = await fetch(`${API_URL}?action=getScores&taskId=${encodeURIComponent(taskId)}`);
                 const all = await res.json();
                 let top5 = all.sort((a,b) => (b[5]<2?b[5]*100:b[5]) - (a[5]<2?a[5]*100:a[5])).slice(0,5);
@@ -507,13 +450,30 @@
         }
 
         function retrySentence() { showChunk(); }
+
+        function setupTeacherAccess() {
+            const btn = document.getElementById('btnTeacher');
+            const start = (e) => { 
+                if (e.type === 'touchstart') e.preventDefault(); 
+                pressTimer = setTimeout(() => executeSwitch('teacher'), 3000); 
+            };
+            const stop = () => clearTimeout(pressTimer);
+            btn.addEventListener('touchstart', start, {passive: false});
+            btn.addEventListener('touchend', stop);
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', stop);
+            btn.addEventListener('mouseleave', stop);
+        }
+
         function toggleTeacherMode(mode) {
             document.getElementById('setupMode').style.display = mode === 'setup' ? 'block' : 'none';
             document.getElementById('scoreMode').style.display = mode === 'scores' ? 'block' : 'none';
             document.getElementById('subSet').classList.toggle('active', mode === 'setup');
             document.getElementById('subScore').classList.toggle('active', mode === 'scores');
         }
+
         function switchView(view) { if(view === 'student') executeSwitch('student'); }
+
         function executeSwitch(view) {
             document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
             document.getElementById(view + 'View').classList.add('active');
@@ -542,18 +502,11 @@
                 const res = await fetch(`${API_URL}?action=getScores&taskId=${encodeURIComponent(taskId)}`);
                 currentScores = await res.json();
                 document.getElementById('scoreActionArea').style.display = currentScores.length ? 'block' : 'none';
-                
                 let html = `<table><tr><th>Timestamp</th><th>Class</th><th>Student</th><th>Score</th></tr>`;
                 currentScores.slice().reverse().forEach(row => {
                     let score = parseFloat(row[5]);
                     let displayScore = Math.round(score < 2 ? score * 100 : score);
-                    let ts = formatDate(row[0]);
-                    html += `<tr>
-                        <td style="color:#888; font-size:11px">${ts}</td>
-                        <td>${row[2]}-${row[3]}</td>
-                        <td><b>${row[4]}</b></td>
-                        <td style="color:var(--system-green); font-weight:700">${displayScore}%</td>
-                    </tr>`;
+                    html += `<tr><td style="color:#888; font-size:11px">${formatDate(row[0])}</td><td>${row[2]}-${row[3]}</td><td><b>${row[4]}</b></td><td style="color:var(--system-green); font-weight:700">${displayScore}%</td></tr>`;
                 });
                 document.getElementById('scoreTableArea').innerHTML = html + `</table>`;
             } catch (e) { alert("Error loading scores."); }
@@ -563,31 +516,15 @@
         function downloadCSV() {
             if (!currentScores.length) return;
             const headers = ["Timestamp", "TaskID", "Class", "No", "Name", "Score"];
-            const csvContent = [
-                headers.join(","),
-                ...currentScores.map(row => {
-                    const score = parseFloat(row[5]);
-                    const displayScore = Math.round(score < 2 ? score * 100 : score);
-                    return [
-                        `"${formatDate(row[0])}"`,
-                        `"${row[1]}"`,
-                        `"${row[2]}"`,
-                        `"${row[3]}"`,
-                        `"${row[4]}"`,
-                        `"${displayScore}%"`
-                    ].join(",");
-                })
-            ].join("\n");
-
+            const csvContent = [headers.join(","), ...currentScores.map(row => {
+                const score = parseFloat(row[5]);
+                return [`"${formatDate(row[0])}"`, `"${row[1]}"`, `"${row[2]}"`, `"${row[3]}"`, `"${row[4]}"`, `"${Math.round(score < 2 ? score * 100 : score)}%"`].join(",");
+            })].join("\n");
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
+            link.setAttribute("href", URL.createObjectURL(blob));
             link.setAttribute("download", `reading_scores_${document.getElementById('tSearchId').value}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
         }
 
         async function createTask() {
@@ -599,8 +536,23 @@
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'createTask', email: t, passage: p }) });
                 document.getElementById('displayId').innerText = await res.text();
                 document.getElementById('generatedIdArea').style.display = 'block';
-            } catch (e) { alert("Creation failed."); }
+            } catch (e) { alert("Failed."); }
             setBtnLoading('btnCreate', 'spinCreate', false, 'Generate Task ID');
+        }
+
+        function setBtnLoading(btnId, spinId, isLoading, originalText) {
+            const btn = document.getElementById(btnId);
+            const spin = document.getElementById(spinId);
+            if (!btn) return;
+            btn.disabled = isLoading;
+            if (spin) spin.style.display = isLoading ? "inline-block" : "none";
+            if (isLoading) {
+                const textSpan = btn.querySelector('span') || btn;
+                if (textSpan === btn) btn.innerHTML = `<div class="spinner" style="display:inline-block"></div> Wait...`;
+                else textSpan.innerText = "Processing...";
+            } else {
+                btn.innerHTML = (spinId) ? `<div class="spinner" id="${spinId}"></div> ${originalText}` : originalText;
+            }
         }
     </script>
 </body>
