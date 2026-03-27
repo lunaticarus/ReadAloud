@@ -76,7 +76,15 @@
             display: flex; align-items: center; justify-content: center;
         }
         .apple-btn:active { background: var(--system-btn-active); transform: scale(0.98); }
-        .apple-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Subtle Retry Button */
+        .retry-link {
+            background: none; border: none; color: var(--text-secondary);
+            font-size: 13px; font-weight: 500; cursor: pointer;
+            padding: 10px; margin-top: 10px; opacity: 0.6; transition: opacity 0.2s;
+            text-decoration: underline;
+        }
+        .retry-link:hover { opacity: 1; }
 
         .passage-wrapper {
             display: grid; grid-template-columns: 1fr 44px;
@@ -109,11 +117,9 @@
             font-size: 13px; font-weight: 500; border: 1px solid #ffdcdc; display: none; margin-top: 10px;
         }
 
-        /* Container for the Two-Button Choice */
-        .action-group {
-            display: flex; gap: 12px; margin-top: 10px;
+        .action-container {
+            display: flex; flex-direction: column; align-items: center; width: 100%;
         }
-        .action-group .apple-btn { flex: 1; }
     </style>
 </head>
 <body>
@@ -158,11 +164,11 @@
                 <button id="recordBtn" class="apple-btn" onclick="startReading()">🎤 Start Reading</button>
                 <div id="browserWarning" class="browser-warning">⚠️ Browser not supported. Please use Chrome or Edge.</div>
 
-                <div id="postReadingActions" class="action-group" style="display:none">
-                    <button class="apple-btn" onclick="retrySentence()">🔄 Retry</button>
+                <div id="postReadingActions" class="action-container" style="display:none">
                     <button id="nextChunkBtn" class="apple-btn" style="color: var(--system-blue)" onclick="nextChunk()">
                         <div class="spinner" id="spinSubmit"></div> <span id="nextBtnText">Next Sentence →</span>
                     </button>
+                    <button class="retry-link" onclick="retrySentence()">Retry this sentence</button>
                 </div>
             </div>
 
@@ -209,7 +215,7 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
         let chunks = [], currentChunkIdx = 0, totalMatches = 0, totalWords = 0, currentScores = [];
-        let tempMatches = 0, tempTotal = 0; // Stores last attempt result
+        let tempMatches = 0, tempTotal = 0;
 
         window.onload = () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -343,7 +349,6 @@
                     else { html += `<span class="word-wrong">${word} </span>`; }
                 });
                 
-                // Store results temporarily until student clicks "Next"
                 tempMatches = matches;
                 tempTotal = targetWords.length;
 
@@ -358,12 +363,10 @@
         }
 
         function retrySentence() {
-            // Simply reset the UI for this sentence - nothing is added to totalMatches yet
             showChunk();
         }
 
         async function nextChunk() {
-            // Finalize the score for the sentence just completed
             totalMatches += tempMatches;
             totalWords += tempTotal;
 
