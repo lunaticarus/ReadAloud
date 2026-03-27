@@ -359,30 +359,12 @@
         }
 
 function playText() {
-    window.speechSynthesis.cancel();
+    const text = chunks[currentChunkIdx];
+    // 使用 Google Translate 的 TTS 接口，強制指定 zh-CN
+    const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=zh-CN&client=tw-ob`;
     
-    const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
-    const voices = window.speechSynthesis.getVoices();
-    
-    // 優先順序：1. 包含 'Mainland' 的普通話 -> 2. zh-CN -> 3. zh-SG -> 4. 任何中文
-    let selectedVoice = voices.find(v => v.lang === 'zh-CN' && v.name.includes('Mainland')) || 
-                        voices.find(v => v.lang === 'zh-CN') ||
-                        voices.find(v => v.lang === 'zh-SG') ||
-                        voices.find(v => v.lang.startsWith('zh'));
-
-    // 關鍵修正：如果自動選到了廣東話 (zh-HK)，則強制重新尋找不含 Hong Kong 的語音
-    if (selectedVoice && (selectedVoice.lang === 'zh-HK' || selectedVoice.name.includes('Hong Kong'))) {
-        selectedVoice = voices.find(v => v.lang.includes('zh') && !v.lang.includes('HK') && !v.name.includes('Hong Kong'));
-    }
-    
-    if (selectedVoice) {
-        utter.voice = selectedVoice;
-        console.log("Selected voice:", selectedVoice.name); // 除錯用，可看到實際調用的語音名稱
-    }
-
-    utter.lang = 'zh-CN'; 
-    utter.rate = 0.9;
-    window.speechSynthesis.speak(utter);
+    const audio = new Audio(audioUrl);
+    audio.play();
 }
 
         function toggleRecording() {
