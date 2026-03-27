@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Read Aloud</title>
+    <title>AI Reading Coach</title>
     <style>
         :root {
             --system-blue: #007aff;
@@ -150,7 +150,7 @@
                 <input type="number" id="sNo" placeholder="No.">
             </div>
             <input type="text" id="sName" placeholder="Full Name">
-            <input type="text" id="sTaskId" class="uppercase-input" placeholder="ENTER TASK ID" oninput="this.value = this.value.toUpperCase()">
+            <input type="text" id="sTaskId" class="uppercase-input" placeholder="ENTER TASK ID" value="ID-" oninput="handleTaskIdInput(this)">
             
             <button class="apple-btn" id="btnJoin" onclick="fetchTask()">
                 <div class="spinner" id="spinJoin"></div> Join Task
@@ -250,6 +250,14 @@
             }
         }
 
+        function handleTaskIdInput(input) {
+            // Ensure "ID-" prefix stays
+            if (!input.value.startsWith("ID-")) {
+                input.value = "ID-";
+            }
+            input.value = input.value.toUpperCase();
+        }
+
         function setupTeacherAccess() {
             const btn = document.getElementById('btnTeacher');
             const start = (e) => { 
@@ -284,7 +292,7 @@
 
         async function fetchTask() {
             const taskId = document.getElementById('sTaskId').value.trim();
-            if(!taskId) return;
+            if(!taskId || taskId === "ID-") return;
             setBtnLoading('btnJoin', 'spinJoin', true, 'Join Task');
             try {
                 const res = await fetch(`${API_URL}?action=getTask&taskId=${encodeURIComponent(taskId)}`);
