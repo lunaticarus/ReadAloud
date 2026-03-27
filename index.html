@@ -156,7 +156,7 @@
                 <div id="browserWarning" class="browser-warning">⚠️ Browser not supported. Please use Chrome or Edge.</div>
 
                 <button id="nextChunkBtn" class="apple-btn" style="display:none; color: var(--system-blue)" onclick="nextChunk()">
-                    <div class="spinner" id="spinSubmit"></div> Next Sentence →
+                    <div class="spinner" id="spinSubmit"></div> <span id="nextBtnText">Next Sentence →</span>
                 </button>
             </div>
 
@@ -212,7 +212,6 @@
             }
         };
 
-        // --- SECRET TEACHER GATE ---
         let pressTimer;
         const teacherBtn = document.getElementById('btnTeacher');
         const startPress = (e) => { e.preventDefault(); teacherBtn.style.opacity = "0.4"; pressTimer = setTimeout(() => { teacherBtn.style.opacity = "1"; executeSwitch('teacher'); }, 5000); };
@@ -260,7 +259,6 @@
             currentScores.slice().reverse().forEach(row => {
                 let s = parseFloat(row[5]);
                 let d = s < 2 ? Math.round(s * 100) : Math.round(s);
-                // row[1] = Timestamp from Google Sheets Column B
                 let dateStr = row[1] ? new Date(row[1]).toLocaleDateString('en-GB', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'N/A';
                 html += `<tr><td style="color:var(--text-secondary); font-size:11px">${dateStr}</td><td>${row[2]}-${row[3]}</td><td><b>${row[4]}</b></td><td style="color:var(--system-green); font-weight:700">${d}%</td></tr>`;
             });
@@ -302,6 +300,15 @@
             document.getElementById('passageDisplay').innerText = chunks[currentChunkIdx];
             document.getElementById('passageDisplay').style.display = "block";
             document.getElementById('feedbackArea').innerHTML = "";
+            
+            // Check if this is the final sentence to update button text
+            const btnText = document.getElementById('nextBtnText');
+            if (currentChunkIdx === chunks.length - 1) {
+                btnText.innerText = "Finish & Submit 🎉";
+            } else {
+                btnText.innerText = "Next Sentence →";
+            }
+
             const rb = document.getElementById('recordBtn');
             const hasAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
             if(hasAPI) {
@@ -345,7 +352,10 @@
         }
 
         async function nextChunk() {
-            if(currentChunkIdx < chunks.length - 1) { currentChunkIdx++; showChunk(); }
+            if(currentChunkIdx < chunks.length - 1) { 
+                currentChunkIdx++; 
+                showChunk(); 
+            }
             else {
                 const s = Math.round((totalMatches / totalWords) * 100);
                 const taskId = document.getElementById('sTaskId').value;
@@ -373,7 +383,13 @@
             const spin = document.getElementById(spinId);
             if(btn) btn.disabled = isLoading;
             if(spin) spin.style.display = isLoading ? "inline-block" : "none";
-            if(btn && text) btn.innerHTML = isLoading ? `<div class="spinner" style="display:inline-block"></div> Wait...` : text;
+            if(btn && text) {
+                if (isLoading) {
+                    btn.innerHTML = `<div class="spinner" style="display:inline-block"></div> Wait...`;
+                } else {
+                    btn.innerHTML = btnId === 'nextChunkBtn' ? `<span id="nextBtnText">${text}</span>` : text;
+                }
+            }
         }
     </script>
 </body>
