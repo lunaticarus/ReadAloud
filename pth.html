@@ -358,21 +358,32 @@
             trans.innerText = "準備就緒...";
         }
 
-        function playText() {
-            window.speechSynthesis.cancel();
-            
-            const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
-            const voices = window.speechSynthesis.getVoices();
-            
-            // 尋找普通話聲音
-            const mandarinVoice = voices.find(v => v.lang.includes('zh-CN') || v.lang.includes('zh-SG')) || 
-                                  voices.find(v => v.lang.includes('zh-TW'));
-            
-            if (mandarinVoice) utter.voice = mandarinVoice;
-            utter.lang = 'zh-CN'; 
-            utter.rate = 0.9; // 稍微放慢一點點以便學習
-            window.speechSynthesis.speak(utter);
-        }
+function playText() {
+    window.speechSynthesis.cancel();
+    
+    const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
+    const voices = window.speechSynthesis.getVoices();
+    
+    // 優先順序：1. 包含 'Mainland' 的普通話 -> 2. zh-CN -> 3. zh-SG -> 4. 任何中文
+    let selectedVoice = voices.find(v => v.lang === 'zh-CN' && v.name.includes('Mainland')) || 
+                        voices.find(v => v.lang === 'zh-CN') ||
+                        voices.find(v => v.lang === 'zh-SG') ||
+                        voices.find(v => v.lang.startsWith('zh'));
+
+    // 關鍵修正：如果自動選到了廣東話 (zh-HK)，則強制重新尋找不含 Hong Kong 的語音
+    if (selectedVoice && (selectedVoice.lang === 'zh-HK' || selectedVoice.name.includes('Hong Kong'))) {
+        selectedVoice = voices.find(v => v.lang.includes('zh') && !v.lang.includes('HK') && !v.name.includes('Hong Kong'));
+    }
+    
+    if (selectedVoice) {
+        utter.voice = selectedVoice;
+        console.log("Selected voice:", selectedVoice.name); // 除錯用，可看到實際調用的語音名稱
+    }
+
+    utter.lang = 'zh-CN'; 
+    utter.rate = 0.9;
+    window.speechSynthesis.speak(utter);
+}
 
         function toggleRecording() {
             const rb = document.getElementById('recordBtn');
