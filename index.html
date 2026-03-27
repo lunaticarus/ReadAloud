@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Reading Coach</title>
+    <title>Reading Aloud</title>
     <style>
         :root {
             --system-blue: #007aff;
@@ -88,7 +88,8 @@
             display: flex; align-items: center; justify-content: center;
         }
         .apple-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .apple-btn.recording { background: var(--system-red); color: white; }
+        .apple-btn.recording { background: var(--system-red); color: white; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
 
         .mic-test-container {
             margin: 10px 0 20px 0; padding: 14px; background: #f9f9fb;
@@ -229,7 +230,7 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
         let chunks = [], currentChunkIdx = 0, totalMatches = 0, totalWords = 0;
         let recognition, isRecording = false, tempMatches = 0, tempTotal = 0;
-        let pressTimer, currentScores = [];
+        let pressTimer, currentScores = [], isSubmitting = false;
         let audioContext, analyser, microphone, scriptProcessor;
 
         window.onload = () => {
@@ -242,11 +243,26 @@
                 recognition = new SpeechRecognition();
                 recognition.lang = 'en-US';
                 recognition.continuous = true;
-                recognition.onresult = (e) => processResult(e.results[e.results.length - 1][0].transcript);
+                recognition.interimResults = false;
+                
+                recognition.onresult = (e) => {
+                    const transcript = e.results[e.results.length - 1][0].transcript;
+                    processResult(transcript);
+                };
+
+                recognition.onend = () => {
+                    // BUG FIX: Ensure recognition doesn't stop randomly due to silence if user is still in recording state
+                    if (isRecording) {
+                        try { recognition.start(); } catch(e) {}
+                    }
+                };
+                
+                recognition.onerror = (e) => {
+                    if (e.error === 'not-allowed') alert("Microphone blocked. Please check permissions.");
+                };
             }
             setupTeacherAccess();
             
-            // Fix: Chrome requires voices to be fetched after voiceschanged event
             if (window.speechSynthesis.onvoiceschanged !== undefined) {
                 window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
             }
@@ -280,7 +296,7 @@
                     for (let i = 0; i < array.length; i++) val += array[i];
                     document.getElementById('micBar').style.width = Math.min(100, (val/array.length) * 2.5) + "%";
                 };
-            } catch (err) { alert("Mic access denied."); }
+            } catch (err) { alert("Mic access denied or browser incompatible."); }
         }
 
         function handleTaskIdInput(input) {
@@ -297,7 +313,9 @@
             if(!sClass.value.trim()) { sClass.classList.add('error'); err = true; }
             if(!sNo.value.trim()) { sNo.classList.add('error'); err = true; }
             if(!sName.value.trim()) { sName.classList.add('error'); err = true; }
-            if(!sTaskId.value.trim() || sTaskId.value === "ID-") { sTaskId.classList.add('error'); err = true; }
+            // BUG FIX: Clean Task ID input
+            const cleanedId = sTaskId.value.trim().toUpperCase();
+            if(!cleanedId || cleanedId === "ID-") { sTaskId.classList.add('error'); err = true; }
             if(err) return;
 
             localStorage.setItem('reader_class', sClass.value.trim());
@@ -308,18 +326,23 @@
 
             setBtnLoading('btnJoin', 'spinJoin', true, 'Join Task');
             try {
-                const res = await fetch(`${API_URL}?action=getTask&taskId=${encodeURIComponent(sTaskId.value.trim())}`);
+                const res = await fetch(`${API_URL}?action=getTask&taskId=${encodeURIComponent(cleanedId)}`);
                 const data = await res.json();
                 if(data.passage === "NOT_FOUND") {
                     sTaskId.classList.add('error');
-                    alert("Invalid Task ID");
+                    alert("Invalid Task ID. Please check and try again.");
                 } else {
+                    // Split sentences more reliably
                     chunks = data.passage.match(/[^.!?]+[.!?]*/g) || [data.passage];
+                    chunks = chunks.map(c => c.trim()).filter(c => c.length > 0);
                     document.getElementById('studentEntry').style.display = 'none';
                     document.getElementById('readingSection').style.display = 'block';
+                    currentChunkIdx = 0;
+                    totalMatches = 0;
+                    totalWords = 0;
                     showChunk();
                 }
-            } catch (e) { alert("Network error."); }
+            } catch (e) { alert("Network error. Please check your connection."); }
             setBtnLoading('btnJoin', 'spinJoin', false, 'Join Task');
         }
 
@@ -338,12 +361,14 @@
             try {
                 const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|zh-TW`);
                 const d = await res.json();
-                trans.innerText = d.responseData.translatedText;
+                trans.innerText = d.responseData.translatedText || "";
             } catch(e) { trans.innerText = ""; }
         }
 
         function playText() {
+            // BUG FIX: Cancel previous speech to prevent overlap
             window.speechSynthesis.cancel();
+            
             const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
             const voices = window.speechSynthesis.getVoices();
             const naturalVoice = voices.find(v => v.name.includes('Google US English')) || 
@@ -359,32 +384,63 @@
 
         function toggleRecording() {
             const rb = document.getElementById('recordBtn');
+            if (!recognition) {
+                alert("Speech recognition not supported in this browser. Please use Chrome/Safari.");
+                return;
+            }
+
             if (!isRecording) {
-                try { recognition.start(); isRecording = true; rb.innerText = "⏹ Stop & Analyze"; rb.classList.add('recording'); } 
-                catch(e) { recognition.stop(); }
+                try { 
+                    recognition.start(); 
+                    isRecording = true; 
+                    rb.innerText = "⏹ Stop & Analyze"; 
+                    rb.classList.add('recording'); 
+                } 
+                catch(e) { console.error("Recognition start error:", e); }
             } else {
-                recognition.stop(); isRecording = false; rb.innerText = "🎤 Start Recording"; rb.classList.remove('recording');
+                isRecording = false;
+                recognition.stop(); 
+                rb.innerText = "🎤 Start Recording"; 
+                rb.classList.remove('recording');
             }
         }
 
         function processResult(transcript) {
+            if (!transcript) return;
+            
             const clean = (s) => s.toLowerCase().replace(/[^\w\s]/g, "").trim();
-            const target = chunks[currentChunkIdx].trim().split(/\s+/);
-            const user = clean(transcript).split(/\s+/);
+            const targetWords = chunks[currentChunkIdx].trim().split(/\s+/);
+            const userWords = clean(transcript).split(/\s+/);
+            
             let html = "", matches = 0;
-            target.forEach(word => {
-                if(user.includes(clean(word))) { html += `<span class="word-correct">${word} </span>`; matches++; }
-                else html += `<span class="word-wrong">${word} </span>`;
+            targetWords.forEach(word => {
+                const cleanedWord = clean(word);
+                if(userWords.includes(cleanedWord)) { 
+                    html += `<span class="word-correct">${word} </span>`; 
+                    matches++; 
+                } else {
+                    html += `<span class="word-wrong">${word} </span>`;
+                }
             });
-            tempMatches = matches; tempTotal = target.length;
+            
+            tempMatches = matches; 
+            tempTotal = targetWords.length;
+            
             document.getElementById('passageDisplay').style.display = "none";
             document.getElementById('feedbackArea').innerHTML = html;
             document.getElementById('recordBtn').style.display = "none";
             document.getElementById('postReadingActions').style.display = "flex";
-            if (isRecording) toggleRecording();
+            
+            // Ensure recording UI state is reset
+            if (isRecording) {
+                isRecording = false;
+                recognition.stop();
+                const rb = document.getElementById('recordBtn');
+                rb.innerText = "🎤 Start Recording";
+                rb.classList.remove('recording');
+            }
         }
 
-        // Helper to consistently parse scores regardless of spreadsheet formatting (0.85 vs 85)
         function parseScore(val) {
             let num = parseFloat(val);
             if (isNaN(num)) return 0;
@@ -392,41 +448,70 @@
         }
 
         async function nextChunk() {
-            totalMatches += tempMatches; totalWords += tempTotal;
-            if(currentChunkIdx < chunks.length - 1) { currentChunkIdx++; showChunk(); }
-            else {
+            // BUG FIX: Prevent double submission
+            if (isSubmitting) return;
+
+            totalMatches += tempMatches; 
+            totalWords += tempTotal;
+            
+            if(currentChunkIdx < chunks.length - 1) { 
+                currentChunkIdx++; 
+                showChunk(); 
+            } else {
+                isSubmitting = true;
                 setBtnLoading('nextChunkBtn', 'spinNext', true, 'Saving...');
-                const score = Math.round((totalMatches / totalWords) * 100);
-                const tId = document.getElementById('sTaskId').value.trim();
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ 
-                    action: 'submitScore', taskId: tId, 
-                    className: document.getElementById('sClass').value, 
-                    classNo: document.getElementById('sNo').value, 
-                    name: document.getElementById('sName').value, score 
-                })});
-                const res = await fetch(`${API_URL}?action=getScores&taskId=${encodeURIComponent(tId)}`);
-                const all = await res.json();
                 
-                // Fix: Standardized leaderboard sorting
-                let top = all.sort((a, b) => parseScore(b[5]) - parseScore(a[5])).slice(0, 5);
-                let board = `<table>`;
-                top.forEach((r, i) => {
-                    const icon = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
-                    const sVal = parseScore(r[5]);
-                    board += `<tr><td>${icon} ${r[2]}-${r[3]} ${r[4]}</td><td style="text-align:right"><b>${sVal}%</b></td></tr>`;
-                });
-                document.getElementById('leaderboardList').innerHTML = board + `</table>`;
-                document.getElementById('practiceArea').style.display = 'none';
-                document.getElementById('resultScreen').style.display = 'block';
-                document.getElementById('finalScoreDisplay').innerText = score + "%";
+                const score = Math.max(0, Math.min(100, Math.round((totalMatches / totalWords) * 100)));
+                const tId = document.getElementById('sTaskId').value.trim().toUpperCase();
+                
+                try {
+                    await fetch(API_URL, { 
+                        method: 'POST', 
+                        mode: 'no-cors', // Common for Google Apps Script
+                        body: JSON.stringify({ 
+                            action: 'submitScore', taskId: tId, 
+                            className: document.getElementById('sClass').value, 
+                            classNo: document.getElementById('sNo').value, 
+                            name: document.getElementById('sName').value, score 
+                        })
+                    });
+
+                    // Fetch leaderboard
+                    const res = await fetch(`${API_URL}?action=getScores&taskId=${encodeURIComponent(tId)}`);
+                    const all = await res.json();
+                    
+                    let top = all.sort((a, b) => parseScore(b[5]) - parseScore(a[5])).slice(0, 5);
+                    let board = `<table>`;
+                    top.forEach((r, i) => {
+                        const icon = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+                        const sVal = parseScore(r[5]);
+                        board += `<tr><td>${icon} ${r[2]}-${r[3]} ${r[4]}</td><td style="text-align:right"><b>${sVal}%</b></td></tr>`;
+                    });
+                    
+                    document.getElementById('leaderboardList').innerHTML = board + `</table>`;
+                    document.getElementById('practiceArea').style.display = 'none';
+                    document.getElementById('resultScreen').style.display = 'block';
+                    document.getElementById('finalScoreDisplay').innerText = score + "%";
+                } catch(err) {
+                    alert("Submission error. Your results might not have saved.");
+                    isSubmitting = false;
+                }
+                setBtnLoading('nextChunkBtn', 'spinNext', false, 'Next Sentence →');
             }
         }
 
-        function retrySentence() { showChunk(); }
+        function retrySentence() { 
+            tempMatches = 0;
+            tempTotal = 0;
+            showChunk(); 
+        }
 
         function setupTeacherAccess() {
             const btn = document.getElementById('btnTeacher');
-            const start = (e) => { if (e.type === 'touchstart') e.preventDefault(); pressTimer = setTimeout(() => executeSwitch('teacher'), 3000); };
+            const start = (e) => { 
+                if (e.type === 'touchstart') e.preventDefault(); 
+                pressTimer = setTimeout(() => executeSwitch('teacher'), 2500); // reduced to 2.5s
+            };
             const stop = () => clearTimeout(pressTimer);
             btn.addEventListener('touchstart', start); btn.addEventListener('touchend', stop);
             btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', stop);
@@ -448,7 +533,7 @@
         }
 
         async function getScores() {
-            const tId = document.getElementById('tSearchId').value.trim();
+            const tId = document.getElementById('tSearchId').value.trim().toUpperCase();
             if(!tId || tId === "ID-") return;
             setBtnLoading('btnLoadScores', 'spinScores', true, 'Loading...');
             try {
@@ -467,7 +552,7 @@
                     h += `<tr><td style="font-size:10px;color:#888">${dateDisplay}</td><td>${r[2]}-${r[3]}</td><td><b>${r[4]}</b></td><td style="color:var(--system-green);font-weight:700">${s}%</td></tr>`;
                 });
                 document.getElementById('scoreTableArea').innerHTML = h + `</table>`;
-            } catch(e) { alert("Error."); }
+            } catch(e) { alert("Failed to load scores."); }
             setBtnLoading('btnLoadScores', 'spinScores', false, 'Load Scores');
         }
 
@@ -480,19 +565,20 @@
             const blob = new Blob([content], { type: 'text/csv' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `scores_${document.getElementById('tSearchId').value}.csv`;
+            link.download = `reading_scores_${document.getElementById('tSearchId').value}.csv`;
             link.click();
         }
 
         async function createTask() {
-            const p = document.getElementById('tPassage').value, t = document.getElementById('tName').value;
+            const p = document.getElementById('tPassage').value.trim(), t = document.getElementById('tName').value.trim();
             if(!p || !t) return;
             setBtnLoading('btnCreate', 'spinCreate', true, 'Generating...');
             try {
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'createTask', email: t, passage: p }) });
-                document.getElementById('displayId').innerText = await res.text();
+                const newId = await res.text();
+                document.getElementById('displayId').innerText = newId;
                 document.getElementById('generatedIdArea').style.display = 'block';
-            } catch (e) { alert("Failed."); }
+            } catch (e) { alert("Failed to generate task ID."); }
             setBtnLoading('btnCreate', 'spinCreate', false, 'Generate Task ID');
         }
 
@@ -500,7 +586,7 @@
             const b = document.getElementById(id), s = document.getElementById(spin);
             b.disabled = load;
             if(s) s.style.display = load ? "inline-block" : "none";
-            if(load) b.innerText = "Processing..."; else b.innerHTML = (spin) ? `<div class="spinner" id="${spin}"></div> ${text}` : text;
+            if(load) b.innerText = "Wait..."; else b.innerHTML = (spin) ? `<div class="spinner" id="${spin}"></div> ${text}` : text;
         }
     </script>
 </body>
