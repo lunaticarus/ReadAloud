@@ -164,7 +164,7 @@
 
     <div class="mode-nav">
         <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
-        <button class="mode-btn" id="btnTeacher">Teacher</button>
+        <button class="mode-btn" id="btnTeacher">Teacher Hub</button>
     </div>
 
     <div id="studentView" class="container active">
@@ -315,18 +315,32 @@
         }
 
         async function fetchTask() {
-            const taskId = document.getElementById('sTaskId').value.trim();
-            if(!taskId || taskId === "ID-") return;
+            const sClass = document.getElementById('sClass');
+            const sNo = document.getElementById('sNo');
+            const sName = document.getElementById('sName');
+            const sTaskId = document.getElementById('sTaskId');
+
+            [sClass, sNo, sName, sTaskId].forEach(el => el.classList.remove('error'));
+
+            let hasError = false;
+            if(!sClass.value.trim()) { sClass.classList.add('error'); hasError = true; }
+            if(!sNo.value.trim()) { sNo.classList.add('error'); hasError = true; }
+            if(!sName.value.trim()) { sName.classList.add('error'); hasError = true; }
+            if(!sTaskId.value.trim() || sTaskId.value === "ID-") { sTaskId.classList.add('error'); hasError = true; }
+
+            if(hasError) return;
+
             setBtnLoading('btnJoin', 'spinJoin', true, 'Join Task');
             try {
-                const res = await fetch(`${API_URL}?action=getTask&taskId=${encodeURIComponent(taskId)}`);
+                const res = await fetch(`${API_URL}?action=getTask&taskId=${encodeURIComponent(sTaskId.value.trim())}`);
                 const data = await res.json();
                 if(data.passage === "NOT_FOUND") {
+                    sTaskId.classList.add('error');
                     alert("Invalid Task ID");
                 } else {
-                    localStorage.setItem('reader_class', document.getElementById('sClass').value);
-                    localStorage.setItem('reader_no', document.getElementById('sNo').value);
-                    localStorage.setItem('reader_name', document.getElementById('sName').value);
+                    localStorage.setItem('reader_class', sClass.value);
+                    localStorage.setItem('reader_no', sNo.value);
+                    localStorage.setItem('reader_name', sName.value);
                     chunks = data.passage.match(/[^.!?]+[.!?]*/g) || [data.passage];
                     document.getElementById('studentEntry').style.display = 'none';
                     document.getElementById('readingSection').style.display = 'block';
