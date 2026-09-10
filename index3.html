@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Speech Test</title>
+</head>
+
+<body style="font-family:Arial;padding:30px">
+
+<h2>Speech Recognition Test</h2>
+
+<button id="start" style="font-size:20px;padding:15px;">
+    Start
+</button>
+
+<button id="stop" style="font-size:20px;padding:15px;">
+    Stop
+</button>
+
+<p id="status">Ready</p>
+
+<p>
+    Transcript:
+</p>
+
+<div id="result"
+     style="font-size:22px;padding:20px;background:#eee;">
+</div>
+
+<script>
+
+const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+const status =
+    document.getElementById("status");
+
+const result =
+    document.getElementById("result");
+
+let recognition;
+
+if (!SpeechRecognition) {
+
+    status.innerText =
+        "SpeechRecognition NOT supported";
+
+} else {
+
+    recognition =
+        new SpeechRecognition();
+
+    recognition.lang =
+        "en-US";
+
+    recognition.continuous =
+        false;
+
+    recognition.interimResults =
+        true;
+
+    recognition.maxAlternatives =
+        1;
+
+
+    recognition.onstart = () => {
+
+        status.innerText =
+            "Listening...";
+
+    };
+
+
+    recognition.onspeechstart = () => {
+
+        status.innerText =
+            "Speech detected...";
+
+    };
+
+
+    recognition.onresult = (event) => {
+
+        let text = "";
+
+        for (
+            let i = 0;
+            i < event.results.length;
+            i++
+        ) {
+
+            text +=
+                event.results[i][0].transcript + " ";
+
+        }
+
+        result.innerText =
+            text.trim();
+
+    };
+
+
+    recognition.onerror = (event) => {
+
+        status.innerText =
+            "ERROR: " + event.error;
+
+        console.log(
+            "Speech error:",
+            event.error
+        );
+
+    };
+
+
+    recognition.onend = () => {
+
+        status.innerText =
+            "Recognition ended";
+
+    };
+
+
+    document
+        .getElementById("start")
+        .onclick = () => {
+
+            result.innerText = "";
+
+            status.innerText =
+                "Starting...";
+
+            try {
+
+                recognition.start();
+
+            } catch (e) {
+
+                status.innerText =
+                    "START ERROR: " + e.message;
+
+            }
+
+        };
+
+
+    document
+        .getElementById("stop")
+        .onclick = () => {
+
+            try {
+
+                recognition.stop();
+
+                status.innerText =
+                    "Stopping...";
+
+            } catch (e) {
+
+                status.innerText =
+                    "STOP ERROR: " + e.message;
+
+            }
+
+        };
+
+}
+
+</script>
+
+</body>
+</html>
