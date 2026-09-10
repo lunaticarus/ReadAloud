@@ -1,0 +1,4978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>AI Read Aloud</title>
+
+    <style>
+
+        :root {
+            --system-blue: #007aff;
+            --system-green: #34c759;
+            --system-red: #ff3b30;
+            --system-gray-bg: #f5f5f7;
+            --system-card-bg: #ffffff;
+            --system-btn-grey: #efeff4;
+            --system-btn-active: #d1d1d6;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --radius: 20px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            background-color: var(--system-gray-bg);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 100px 20px 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-font-smoothing: antialiased;
+            overscroll-behavior-y: contain;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 74px;
+
+            background: rgba(245, 245, 247, 0.8);
+
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+
+            z-index: 900;
+
+            display: flex;
+            align-items: center;
+
+            padding: 0 30px;
+
+            box-shadow:
+                0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        header::after {
+            content: "";
+
+            position: absolute;
+
+            bottom: -20px;
+            left: 0;
+            right: 0;
+
+            height: 20px;
+
+            background:
+                linear-gradient(
+                    to bottom,
+                    rgba(245,245,247,0.8),
+                    transparent
+                );
+
+            pointer-events: none;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .spinner {
+            display: none;
+
+            width: 14px;
+            height: 14px;
+
+            border: 2px solid rgba(0,0,0,0.1);
+
+            border-top-color: currentColor;
+
+            border-radius: 50%;
+
+            animation: spin 0.8s linear infinite;
+
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .mode-nav {
+            position: fixed;
+
+            top: 20px;
+            right: 30px;
+
+            background: rgba(255,255,255,0.7);
+
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+
+            padding: 4px;
+
+            border-radius: 12px;
+
+            border:
+                1px solid rgba(0,0,0,0.05);
+
+            display: flex;
+
+            gap: 4px;
+
+            z-index: 1000;
+        }
+
+        .mode-btn {
+            border: none;
+            background: transparent;
+
+            padding: 6px 14px;
+
+            border-radius: 9px;
+
+            font-size: 13px;
+            font-weight: 500;
+
+            cursor: pointer;
+
+            transition: all 0.2s;
+
+            color: var(--text-secondary);
+        }
+
+        .mode-btn.active {
+            background: white;
+
+            color: var(--text-primary);
+
+            box-shadow:
+                0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+
+            display: none;
+
+            animation:
+                fadeIn 0.4s ease;
+        }
+
+        .container.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            background: var(--system-card-bg);
+
+            padding: 30px;
+
+            border-radius: var(--radius);
+
+            box-shadow:
+                0 4px 24px rgba(0,0,0,0.04);
+
+            margin-bottom: 20px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+
+            padding: 14px;
+
+            border:
+                1px solid #d2d2d7;
+
+            border-radius: 12px;
+
+            font-size: 16px;
+
+            margin-bottom: 12px;
+
+            box-sizing: border-box;
+
+            outline: none;
+
+            font-family: inherit;
+
+            background: #fafafa;
+
+            transition: all 0.2s;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color:
+                var(--system-blue);
+
+            background: white;
+        }
+
+        input.error {
+            border-color:
+                var(--system-red) !important;
+
+            background: #fffcfc;
+        }
+
+        .uppercase-input {
+            text-transform: uppercase;
+        }
+
+        .apple-btn {
+            background:
+                var(--system-btn-grey);
+
+            color:
+                var(--text-primary);
+
+            border: none;
+
+            padding: 14px 24px;
+
+            border-radius: 24px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+            width: 100%;
+
+            font-size: 15px;
+
+            transition: all 0.2s;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+        }
+
+        .apple-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .apple-btn.recording {
+            background:
+                var(--system-red);
+
+            color: white;
+
+            animation:
+                pulse 1.5s infinite;
+        }
+
+        .apple-btn.processing {
+            background:
+                var(--system-blue);
+
+            color: white;
+        }
+
+        @keyframes pulse {
+
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+
+            100% {
+                opacity: 1;
+            }
+
+        }
+
+        .mic-test-container {
+            margin: 10px 0 20px 0;
+
+            padding: 14px;
+
+            background: #f9f9fb;
+
+            border-radius: 12px;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+            font-size: 13px;
+
+            border:
+                1px solid #efeff4;
+        }
+
+        .mic-visualizer {
+            flex-grow: 1;
+
+            height: 6px;
+
+            background: #e3e3e8;
+
+            border-radius: 3px;
+
+            overflow: hidden;
+
+            position: relative;
+        }
+
+        .mic-bar {
+            height: 100%;
+
+            width: 0%;
+
+            background:
+                var(--system-green);
+
+            transition:
+                width 0.1s ease;
+        }
+
+        .mic-status-dot {
+            width: 8px;
+            height: 8px;
+
+            border-radius: 50%;
+
+            background: #d1d1d6;
+
+            flex-shrink: 0;
+        }
+
+        .mic-status-dot.active {
+            background:
+                var(--system-green);
+
+            box-shadow:
+                0 0 8px var(--system-green);
+        }
+
+        .passage-wrapper {
+            display: grid;
+
+            grid-template-columns:
+                1fr 44px;
+
+            align-items: center;
+
+            gap: 16px;
+
+            margin: 30px 0 10px 0;
+
+            min-height: 80px;
+        }
+
+        #passageDisplay,
+        #feedbackArea {
+
+            font-size: 22px;
+
+            font-weight: 500;
+
+            line-height: 1.5;
+
+            margin: 0;
+        }
+
+        .word-correct {
+            color:
+                var(--system-green);
+        }
+
+        .word-wrong {
+            color:
+                var(--system-red);
+
+            text-decoration:
+                underline;
+        }
+
+        .translation-text {
+            font-size: 15px;
+
+            color:
+                var(--text-secondary);
+
+            opacity: 0.7;
+
+            margin-bottom: 15px;
+        }
+
+        .progress-text {
+            font-size: 11px;
+
+            font-weight: 700;
+
+            color:
+                var(--text-secondary);
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.8px;
+        }
+
+        .speak-icon {
+            width: 44px;
+            height: 44px;
+
+            background:
+                var(--system-btn-grey);
+
+            border: none;
+
+            border-radius: 50%;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+        }
+
+        .speech-status {
+            text-align: center;
+
+            min-height: 20px;
+
+            font-size: 12px;
+
+            color:
+                var(--text-secondary);
+
+            margin:
+                4px 0 10px 0;
+        }
+
+        .speech-status.active {
+            color:
+                var(--system-red);
+
+            font-weight: 600;
+        }
+
+        .speech-status.success {
+            color:
+                var(--system-green);
+
+            font-weight: 600;
+        }
+
+        .speech-status.error {
+            color:
+                var(--system-red);
+
+            font-weight: 600;
+        }
+
+        .ai-status {
+            background:
+                #f9f9fb;
+
+            border:
+                1px solid #efeff4;
+
+            border-radius: 12px;
+
+            padding: 12px;
+
+            margin-top: 12px;
+
+            font-size: 12px;
+
+            color:
+                var(--text-secondary);
+
+            display: none;
+        }
+
+        .ai-progress {
+            margin-top: 8px;
+
+            height: 5px;
+
+            background: #e3e3e8;
+
+            border-radius: 3px;
+
+            overflow: hidden;
+        }
+
+        .ai-progress-bar {
+            height: 100%;
+
+            width: 0%;
+
+            background:
+                var(--system-blue);
+
+            transition:
+                width 0.2s ease;
+        }
+
+        #scoreTableArea {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            text-align: left;
+
+            margin: 15px 0;
+        }
+
+        th {
+            background:
+                #f9f9fb;
+
+            color:
+                var(--text-secondary);
+
+            font-size: 10px;
+
+            padding: 12px 10px;
+
+            border-bottom:
+                1px solid #eee;
+
+            text-transform:
+                uppercase;
+        }
+
+        td {
+            padding: 12px 10px;
+
+            border-bottom:
+                1px solid #f9f9f9;
+
+            font-size: 13px;
+        }
+
+        .id-badge {
+            background:
+                var(--system-btn-grey);
+
+            padding: 20px;
+
+            border-radius: 14px;
+
+            text-align: center;
+
+            font-family: monospace;
+
+            font-size: 24px;
+
+            color:
+                var(--text-primary);
+
+            margin: 20px 0;
+
+            border:
+                1px solid #d2d2d7;
+        }
+
+        @media (max-width: 600px) {
+
+            body {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+
+            header {
+                padding: 0 18px;
+            }
+
+            header h1 {
+                font-size: 20px;
+            }
+
+            .mode-nav {
+                right: 12px;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            #passageDisplay,
+            #feedbackArea {
+                font-size: 20px;
+            }
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+
+<header>
+    <h1>Read Aloud</h1>
+</header>
+
+
+<div class="mode-nav">
+
+    <button
+        class="mode-btn active"
+        id="btnStudent"
+        onclick="switchView('student')"
+        type="button">
+
+        Student
+
+    </button>
+
+
+    <button
+        class="mode-btn"
+        id="btnTeacher"
+        type="button">
+
+        Teacher
+
+    </button>
+
+</div>
+
+
+<!-- =========================================================
+     STUDENT VIEW
+========================================================= -->
+
+<div
+    id="studentView"
+    class="container active">
+
+
+    <div
+        class="card"
+        id="studentEntry">
+
+
+        <div
+            style="
+                display:grid;
+                grid-template-columns:1fr 1fr;
+                gap:10px;
+            ">
+
+            <input
+                type="text"
+                id="sClass"
+                placeholder="Class (e.g. 1A)">
+
+
+            <input
+                type="number"
+                id="sNo"
+                placeholder="No.">
+
+        </div>
+
+
+        <input
+            type="text"
+            id="sName"
+            placeholder="Full Name">
+
+
+        <input
+            type="text"
+            id="sTaskId"
+            class="uppercase-input"
+            placeholder="ENTER TASK ID"
+            value="ID-"
+            oninput="handleTaskIdInput(this)">
+
+
+        <!-- MIC TEST -->
+
+        <div class="mic-test-container">
+
+            <div
+                class="mic-status-dot"
+                id="micDot">
+            </div>
+
+
+            <div
+                style="
+                    flex-shrink:0;
+                    font-weight:500;
+                "
+                id="micLabel">
+
+                Mic Check:
+
+            </div>
+
+
+            <div class="mic-visualizer">
+
+                <div
+                    class="mic-bar"
+                    id="micBar">
+                </div>
+
+            </div>
+
+
+            <button
+                onclick="startMicTest(event)"
+                type="button"
+                style="
+                    font-size:11px;
+                    padding:6px 10px;
+                    border-radius:8px;
+                    border:none;
+                    background:#007aff;
+                    color:white;
+                    cursor:pointer;
+                    font-weight:600;
+                "
+                id="micTestBtn">
+
+                Test Mic
+
+            </button>
+
+        </div>
+
+
+        <button
+            class="apple-btn"
+            id="btnJoin"
+            onclick="fetchTask()"
+            type="button">
+
+            <div
+                class="spinner"
+                id="spinJoin">
+            </div>
+
+            Join Task
+
+        </button>
+
+    </div>
+
+
+    <!-- =====================================================
+         READING SECTION
+    ====================================================== -->
+
+    <div
+        id="readingSection"
+        class="card"
+        style="display:none">
+
+
+        <div id="practiceArea">
+
+
+            <div
+                class="progress-text"
+                id="chunkProgress">
+            </div>
+
+
+            <div class="passage-wrapper">
+
+
+                <div id="textContainer">
+
+                    <div
+                        id="passageDisplay">
+                    </div>
+
+
+                    <div
+                        id="feedbackArea">
+                    </div>
+
+                </div>
+
+
+                <button
+                    class="speak-icon"
+                    onclick="playText()"
+                    type="button">
+
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        width="20"
+                        height="20">
+
+
+                        <path
+                            fill="currentColor"
+                            d="
+                                M3 9v6h4l5 5V4L7 9H3zm13.5
+                                3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73
+                                2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5
+                                3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91
+                                7-4.49 7-8.77s-2.99-7.86-7-8.77z
+                            ">
+                        </path>
+
+
+                    </svg>
+
+
+                </button>
+
+
+            </div>
+
+
+            <div
+                id="translationText"
+                class="translation-text">
+            </div>
+
+
+            <!-- AI STATUS -->
+
+            <div
+                id="aiStatus"
+                class="ai-status">
+
+                <div id="aiStatusText">
+                    Preparing speech recognition…
+                </div>
+
+
+                <div class="ai-progress">
+
+                    <div
+                        id="aiProgressBar"
+                        class="ai-progress-bar">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- SPEECH STATUS -->
+
+            <div
+                id="speechStatus"
+                class="speech-status">
+            </div>
+
+
+            <!-- RECORD -->
+
+            <button
+                id="recordBtn"
+                class="apple-btn"
+                onclick="toggleRecording()"
+                type="button">
+
+                🎤 Start Recording
+
+            </button>
+
+
+            <!-- POST READING -->
+
+            <div
+                id="postReadingActions"
+                style="
+                    display:none;
+                    flex-direction:column;
+                    align-items:center;
+                    width:100%;
+                ">
+
+
+                <button
+                    id="nextChunkBtn"
+                    class="apple-btn"
+                    style="
+                        color:var(--system-blue);
+                    "
+                    onclick="nextChunk()"
+                    type="button">
+
+
+                    <div
+                        class="spinner"
+                        id="spinNext">
+                    </div>
+
+
+                    <span id="nextBtnText">
+                        Next Sentence →
+                    </span>
+
+
+                </button>
+
+
+                <button
+                    style="
+                        background:none;
+                        border:none;
+                        color:var(--text-secondary);
+                        margin-top:15px;
+                        text-decoration:underline;
+                        cursor:pointer;
+                    "
+                    onclick="retrySentence()"
+                    type="button">
+
+                    Retry this sentence
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             RESULT SCREEN
+        ================================================== -->
+
+        <div
+            id="resultScreen"
+            style="
+                display:none;
+                text-align:center;
+                padding:20px 0;
+            ">
+
+
+            <div
+                style="
+                    font-size:48px;
+                    margin-bottom:10px;
+                ">
+                🎉
+            </div>
+
+
+            <h2 style="margin-bottom:5px">
+                Mission Complete!
+            </h2>
+
+
+            <div
+                style="
+                    font-size:42px;
+                    font-weight:700;
+                    color:var(--system-green);
+                    margin-bottom:20px;
+                "
+                id="finalScoreDisplay">
+
+                0%
+
+            </div>
+
+
+            <div
+                id="studentLeaderboard"
+                style="
+                    margin-top:20px;
+                    border-top:1px solid #eee;
+                    padding-top:20px;
+                ">
+
+
+                <h3
+                    style="
+                        font-size:11px;
+                        color:var(--text-secondary);
+                        text-transform:uppercase;
+                    ">
+
+                    Top Performers
+
+                </h3>
+
+
+                <div id="leaderboardList"></div>
+
+
+            </div>
+
+
+            <button
+                class="apple-btn"
+                onclick="location.reload()"
+                style="margin-top:20px;"
+                type="button">
+
+                Back to Home
+
+            </button>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     TEACHER VIEW
+========================================================= -->
+
+<div
+    id="teacherView"
+    class="container">
+
+
+    <div
+        class="sub-nav"
+        style="
+            display:flex;
+            gap:8px;
+            margin-bottom:20px;
+            background:#e3e3e8;
+            padding:5px;
+            border-radius:14px;
+            width:fit-content;
+        ">
+
+
+        <button
+            class="mode-btn active"
+            id="subSet"
+            onclick="toggleTeacherMode('setup')"
+            type="button">
+
+            Setup Task
+
+        </button>
+
+
+        <button
+            class="mode-btn"
+            id="subScore"
+            onclick="toggleTeacherMode('scores')"
+            type="button">
+
+            Check Scores
+
+        </button>
+
+
+    </div>
+
+
+    <div
+        id="setupMode"
+        class="card">
+
+
+        <input
+            type="text"
+            id="tName"
+            placeholder="Teacher Name">
+
+
+        <textarea
+            id="tPassage"
+            placeholder="Paste reading passage..."
+            rows="5">
+        </textarea>
+
+
+        <button
+            class="apple-btn"
+            id="btnCreate"
+            onclick="createTask()"
+            type="button">
+
+
+            <div
+                class="spinner"
+                id="spinCreate">
+            </div>
+
+
+            Generate Task ID
+
+        </button>
+
+
+        <div
+            id="generatedIdArea"
+            style="display:none">
+
+
+            <div
+                class="id-badge"
+                id="displayId">
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+    <div
+        id="scoreMode"
+        class="card"
+        style="display:none">
+
+
+        <input
+            type="text"
+            id="tSearchId"
+            class="uppercase-input"
+            placeholder="ENTER TASK ID"
+            value="ID-"
+            oninput="handleTaskIdInput(this)">
+
+
+        <button
+            class="apple-btn"
+            id="btnLoadScores"
+            onclick="getScores()"
+            type="button">
+
+
+            <div
+                class="spinner"
+                id="spinScores">
+            </div>
+
+
+            Load Scores
+
+        </button>
+
+
+        <div
+            id="scoreActionArea"
+            style="
+                display:none;
+                margin-top:15px;
+            ">
+
+
+            <button
+                class="apple-btn"
+                onclick="downloadCSV()"
+                style="
+                    font-size:13px;
+                    padding:10px;
+                    background:white;
+                    border:1px solid #d2d2d7;
+                "
+                type="button">
+
+                📥 Download CSV
+
+            </button>
+
+
+        </div>
+
+
+        <div id="scoreTableArea"></div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     MAIN JAVASCRIPT
+========================================================= -->
+
+<script>
+
+/* ============================================================
+   CONFIGURATION
+============================================================ */
+
+const API_URL =
+    "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
+
+
+/*
+ * Whisper model.
+ *
+ * This is a public English Whisper model prepared for
+ * Transformers.js.
+ */
+const WHISPER_MODEL =
+    "onnx-community/whisper-tiny.en";
+
+
+/*
+ * Transformers.js is loaded dynamically.
+ *
+ * This keeps all your existing onclick="..." handlers
+ * working because the rest of this script is NOT a module.
+ */
+
+let pipeline = null;
+
+
+/* ============================================================
+   GLOBAL VARIABLES
+============================================================ */
+
+let chunks = [];
+
+let currentChunkIdx = 0;
+
+let totalMatches = 0;
+
+let totalWords = 0;
+
+
+/* ============================================================
+   RECORDING VARIABLES
+============================================================ */
+
+let mediaRecorder = null;
+
+let recordedChunks = [];
+
+let recordingStream = null;
+
+let isRecording = false;
+
+let isProcessingSpeech = false;
+
+
+/* ============================================================
+   WHISPER VARIABLES
+============================================================ */
+
+let whisper = null;
+
+let whisperLoading = false;
+
+let whisperReady = false;
+
+let whisperDevice = "wasm";
+
+
+/* ============================================================
+   AUDIO VARIABLES
+============================================================ */
+
+let audioContext = null;
+
+let analyser = null;
+
+let microphone = null;
+
+let micStream = null;
+
+let micAnimationFrame = null;
+
+
+/* ============================================================
+   OTHER VARIABLES
+============================================================ */
+
+let tempMatches = 0;
+
+let tempTotal = 0;
+
+let pressTimer = null;
+
+let currentScores = [];
+
+let isSubmitting = false;
+
+
+/* ============================================================
+   PAGE LOAD
+============================================================ */
+
+window.onload = async function() {
+
+    /*
+     * Restore student information.
+     */
+
+    document.getElementById("sClass").value =
+        localStorage.getItem("reader_class") || "";
+
+    document.getElementById("sNo").value =
+        localStorage.getItem("reader_no") || "";
+
+    document.getElementById("sName").value =
+        localStorage.getItem("reader_name") || "";
+
+
+    /*
+     * Teacher controls.
+     */
+
+    setupTeacherAccess();
+
+
+    /*
+     * Speech synthesis.
+     */
+
+    if (
+        window.speechSynthesis &&
+        window.speechSynthesis.onvoiceschanged !== undefined
+    ) {
+
+        window.speechSynthesis.onvoiceschanged =
+            function() {
+
+                window.speechSynthesis.getVoices();
+
+            };
+
+    }
+
+
+    if (window.speechSynthesis) {
+
+        window.speechSynthesis.getVoices();
+
+    }
+
+
+    /*
+     * Load Transformers.js library.
+     *
+     * This does NOT download the Whisper model yet.
+     *
+     * The model is loaded only when the student first
+     * presses Start Recording.
+     */
+
+    try {
+
+        const transformers =
+            await import(
+                "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0"
+            );
+
+
+        pipeline =
+            transformers.pipeline;
+
+
+        console.log(
+            "[AI] Transformers.js loaded."
+        );
+
+
+        /*
+         * Select WebGPU when available.
+         *
+         * Otherwise Transformers.js uses WASM/CPU.
+         */
+
+        if (
+            navigator.gpu &&
+            typeof navigator.gpu.requestAdapter === "function"
+        ) {
+
+            try {
+
+                const adapter =
+                    await navigator.gpu.requestAdapter();
+
+
+                if (adapter) {
+
+                    whisperDevice =
+                        "webgpu";
+
+                }
+
+            } catch (e) {
+
+                whisperDevice =
+                    "wasm";
+
+            }
+
+        }
+
+
+        console.log(
+            "[AI] Selected device:",
+            whisperDevice
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "[AI] Transformers.js failed to load:",
+            error
+        );
+
+
+        pipeline = null;
+
+    }
+
+};
+
+
+/* ============================================================
+   AI STATUS
+============================================================ */
+
+function showAIStatus(
+    text,
+    progress
+) {
+
+    const box =
+        document.getElementById(
+            "aiStatus"
+        );
+
+
+    const label =
+        document.getElementById(
+            "aiStatusText"
+        );
+
+
+    const bar =
+        document.getElementById(
+            "aiProgressBar"
+        );
+
+
+    if (!box) {
+        return;
+    }
+
+
+    box.style.display =
+        "block";
+
+
+    label.innerText =
+        text || "";
+
+
+    if (
+        typeof progress ===
+        "number"
+    ) {
+
+        bar.style.width =
+            Math.max(
+                0,
+                Math.min(
+                    100,
+                    progress
+                )
+            ) + "%";
+
+    }
+
+}
+
+
+/* ============================================================
+   HIDE AI STATUS
+============================================================ */
+
+function hideAIStatus() {
+
+    const box =
+        document.getElementById(
+            "aiStatus"
+        );
+
+
+    if (box) {
+
+        box.style.display =
+            "none";
+
+    }
+
+}
+
+
+/* ============================================================
+   SPEECH STATUS
+============================================================ */
+
+function setSpeechStatus(
+    text,
+    type
+) {
+
+    const el =
+        document.getElementById(
+            "speechStatus"
+        );
+
+
+    if (!el) {
+        return;
+    }
+
+
+    el.innerText =
+        text || "";
+
+
+    el.className =
+        "speech-status";
+
+
+    if (type) {
+
+        el.classList.add(
+            type
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   LOAD WHISPER
+============================================================ */
+
+async function loadWhisper() {
+
+    /*
+     * Already loaded.
+     */
+
+    if (whisperReady) {
+
+        return whisper;
+
+    }
+
+
+    /*
+     * Already loading.
+     */
+
+    if (whisperLoading) {
+
+        /*
+         * Wait until the loading promise resolves.
+         */
+
+        while (whisperLoading) {
+
+            await new Promise(
+                resolve =>
+                    setTimeout(
+                        resolve,
+                        100
+                    )
+            );
+
+        }
+
+
+        if (whisperReady) {
+
+            return whisper;
+
+        }
+
+        throw new Error(
+            "Whisper failed to load."
+        );
+
+    }
+
+
+    if (!pipeline) {
+
+        /*
+         * Try one more time to load Transformers.js.
+         */
+
+        try {
+
+            const transformers =
+                await import(
+                    "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0"
+                );
+
+
+            pipeline =
+                transformers.pipeline;
+
+        }
+
+        catch (error) {
+
+            throw new Error(
+                "AI library could not be loaded."
+            );
+
+        }
+
+    }
+
+
+    whisperLoading =
+        true;
+
+
+    showAIStatus(
+        "Loading speech recognition model…",
+        0
+    );
+
+
+    try {
+
+        console.log(
+            "[AI] Loading Whisper..."
+        );
+
+
+        whisper =
+            await pipeline(
+                "automatic-speech-recognition",
+                WHISPER_MODEL,
+                {
+
+                    /*
+                     * WebGPU can be substantially faster
+                     * when supported.
+                     */
+
+                    device:
+                        whisperDevice,
+
+                    /*
+                     * Quantized model keeps the browser-side
+                     * memory/download requirements lower.
+                     */
+
+                    dtype:
+                        "q4",
+
+                    /*
+                     * Model download progress.
+                     */
+
+                    progress_callback:
+                        function(info) {
+
+                            console.log(
+                                "[AI]",
+                                info
+                            );
+
+
+                            if (
+                                info.status ===
+                                "progress_total"
+                            ) {
+
+                                showAIStatus(
+                                    "Loading speech recognition model…",
+                                    info.progress || 0
+                                );
+
+                            }
+
+                            else if (
+                                info.status ===
+                                "ready"
+                            ) {
+
+                                showAIStatus(
+                                    "Speech recognition ready.",
+                                    100
+                                );
+
+                            }
+
+                        }
+
+                }
+            );
+
+
+        whisperReady =
+            true;
+
+
+        whisperLoading =
+            false;
+
+
+        showAIStatus(
+            "Speech recognition ready.",
+            100
+        );
+
+
+        console.log(
+            "[AI] Whisper ready."
+        );
+
+
+        /*
+         * Leave the message visible briefly.
+         */
+
+        setTimeout(
+            hideAIStatus,
+            1200
+        );
+
+
+        return whisper;
+
+    }
+
+    catch (error) {
+
+        whisperLoading =
+            false;
+
+        whisperReady =
+            false;
+
+        whisper =
+            null;
+
+
+        console.error(
+            "[AI] Whisper loading failed:",
+            error
+        );
+
+
+        showAIStatus(
+            "Speech recognition could not be loaded.",
+            0
+        );
+
+
+        throw error;
+
+    }
+
+}
+
+
+/* ============================================================
+   FIND SUPPORTED RECORDING FORMAT
+============================================================ */
+
+function getSupportedMimeType() {
+
+    const types = [
+
+        "audio/webm;codecs=opus",
+
+        "audio/webm",
+
+        "audio/mp4",
+
+        "audio/ogg;codecs=opus"
+
+    ];
+
+
+    if (
+        typeof MediaRecorder ===
+        "undefined"
+    ) {
+
+        return "";
+
+    }
+
+
+    for (
+        const type of types
+    ) {
+
+        try {
+
+            if (
+                MediaRecorder.isTypeSupported(
+                    type
+                )
+            ) {
+
+                return type;
+
+            }
+
+        }
+
+        catch (e) {}
+
+    }
+
+
+    return "";
+
+}
+
+
+/* ============================================================
+   START RECORDING
+============================================================ */
+
+async function startRecording() {
+
+    /*
+     * Browser does not support MediaRecorder.
+     */
+
+    if (
+        typeof MediaRecorder ===
+        "undefined"
+    ) {
+
+        alert(
+            "This browser cannot record audio. " +
+            "Please try Chrome."
+        );
+
+        return false;
+
+    }
+
+
+    /*
+     * Request microphone.
+     */
+
+    try {
+
+        recordingStream =
+            await navigator.mediaDevices.getUserMedia({
+                audio: {
+
+                    echoCancellation: true,
+
+                    noiseSuppression: true,
+
+                    autoGainControl: true
+
+                }
+            });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "[Recorder] Microphone error:",
+            error
+        );
+
+
+        if (
+            error.name ===
+            "NotAllowedError"
+        ) {
+
+            alert(
+                "Microphone access was blocked. " +
+                "Please allow microphone access for this website."
+            );
+
+        }
+
+        else {
+
+            alert(
+                "The microphone could not be accessed."
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+
+    const mimeType =
+        getSupportedMimeType();
+
+
+    try {
+
+        mediaRecorder =
+            mimeType
+                ? new MediaRecorder(
+                    recordingStream,
+                    {
+                        mimeType:
+                            mimeType
+                    }
+                )
+                : new MediaRecorder(
+                    recordingStream
+                );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "[Recorder] MediaRecorder error:",
+            error
+        );
+
+
+        recordingStream
+            .getTracks()
+            .forEach(
+                track =>
+                    track.stop()
+            );
+
+
+        recordingStream =
+            null;
+
+
+        alert(
+            "This browser cannot create an audio recording."
+        );
+
+
+        return false;
+
+    }
+
+
+    recordedChunks =
+        [];
+
+
+    mediaRecorder.ondataavailable =
+        function(event) {
+
+            if (
+                event.data &&
+                event.data.size > 0
+            ) {
+
+                recordedChunks.push(
+                    event.data
+                );
+
+            }
+
+        };
+
+
+    mediaRecorder.onerror =
+        function(event) {
+
+            console.error(
+                "[Recorder] ERROR:",
+                event
+            );
+
+        };
+
+
+    mediaRecorder.onstop =
+        async function() {
+
+            console.log(
+                "[Recorder] stopped"
+            );
+
+
+            /*
+             * Release microphone.
+             */
+
+            if (recordingStream) {
+
+                recordingStream
+                    .getTracks()
+                    .forEach(
+                        track =>
+                            track.stop()
+                    );
+
+                recordingStream =
+                    null;
+
+            }
+
+
+            /*
+             * Convert recording into a Blob.
+             */
+
+            if (
+                !recordedChunks.length
+            ) {
+
+                finishSpeechWithError(
+                    "The recording was empty. Please try again."
+                );
+
+                return;
+
+            }
+
+
+            const type =
+                mediaRecorder.mimeType ||
+                mimeType ||
+                "audio/webm";
+
+
+            const blob =
+                new Blob(
+                    recordedChunks,
+                    {
+                        type:
+                            type
+                    }
+                );
+
+
+            console.log(
+                "[Recorder] Blob size:",
+                blob.size,
+                "type:",
+                blob.type
+            );
+
+
+            /*
+             * Process locally using Whisper.
+             */
+
+            await transcribeRecording(
+                blob
+            );
+
+        };
+
+
+    mediaRecorder.start(
+        250
+    );
+
+
+    isRecording =
+        true;
+
+
+    console.log(
+        "[Recorder] started:",
+        mimeType
+    );
+
+
+    return true;
+
+}
+
+
+/* ============================================================
+   STOP RECORDING
+============================================================ */
+
+function stopRecording() {
+
+    if (
+        !mediaRecorder
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        mediaRecorder.state ===
+        "recording"
+    ) {
+
+        try {
+
+            mediaRecorder.stop();
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "[Recorder] stop error:",
+                error
+            );
+
+            if (recordingStream) {
+
+                recordingStream
+                    .getTracks()
+                    .forEach(
+                        track =>
+                            track.stop()
+                    );
+
+                recordingStream =
+                    null;
+
+            }
+
+        }
+
+    }
+
+
+    isRecording =
+        false;
+
+}
+
+
+/* ============================================================
+   TOGGLE RECORDING
+============================================================ */
+
+async function toggleRecording() {
+
+    const rb =
+        document.getElementById(
+            "recordBtn"
+        );
+
+
+    /*
+     * Currently recording.
+     *
+     * Stop.
+     */
+
+    if (isRecording) {
+
+        isProcessingSpeech =
+            true;
+
+
+        rb.disabled =
+            true;
+
+
+        rb.innerText =
+            "⏳ Analysing…";
+
+
+        rb.classList.remove(
+            "recording"
+        );
+
+
+        rb.classList.add(
+            "processing"
+        );
+
+
+        setSpeechStatus(
+            "Analysing your speech…",
+            "active"
+        );
+
+
+        stopRecording();
+
+
+        return;
+
+    }
+
+
+    /*
+     * Don't allow a second recording while
+     * Whisper is processing.
+     */
+
+    if (
+        isProcessingSpeech
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+     * First load Whisper.
+     */
+
+    try {
+
+        await loadWhisper();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        isProcessingSpeech =
+            false;
+
+
+        resetRecordButton();
+
+
+        setSpeechStatus(
+            "Speech recognition could not be loaded.",
+            "error"
+        );
+
+
+        alert(
+            "The free speech-recognition model could not be loaded. " +
+            "Please check your Internet connection and try again."
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+     * Start MediaRecorder.
+     */
+
+    const started =
+        await startRecording();
+
+
+    if (!started) {
+
+        return;
+
+    }
+
+
+    rb.disabled =
+        false;
+
+
+    rb.innerText =
+        "⏹ Stop & Analyze";
+
+
+    rb.classList.add(
+        "recording"
+    );
+
+
+    rb.classList.remove(
+        "processing"
+    );
+
+
+    setSpeechStatus(
+        "Listening…",
+        "active"
+    );
+
+}
+
+
+/* ============================================================
+   TRANSCRIBE RECORDING
+============================================================ */
+
+async function transcribeRecording(
+    blob
+) {
+
+    try {
+
+        setSpeechStatus(
+            "Preparing recording…",
+            "active"
+        );
+
+
+        /*
+         * Convert the browser's recording format
+         * into mono 16 kHz Float32 audio.
+         */
+
+        const audio =
+            await blobTo16kMono(
+                blob
+            );
+
+
+        if (
+            !audio ||
+            audio.length < 1000
+        ) {
+
+            throw new Error(
+                "Audio recording is too short."
+            );
+
+        }
+
+
+        console.log(
+            "[AI] Audio samples:",
+            audio.length
+        );
+
+
+        setSpeechStatus(
+            "Transcribing locally…",
+            "active"
+        );
+
+
+        /*
+         * Whisper expects raw audio sampled at
+         * approximately 16 kHz.
+         *
+         * This raw Float32Array input is supported
+         * by Transformers.js ASR pipelines.
+         */
+
+        const result =
+            await whisper(
+                audio,
+                {
+
+                    /*
+                     * English-only model.
+                     */
+
+                    language:
+                        "en",
+
+                    /*
+                     * Don't translate.
+                     */
+
+                    task:
+                        "transcribe",
+
+                    /*
+                     * Don't return timestamps.
+                     *
+                     * We only need the transcript
+                     * for word matching.
+                     */
+
+                    return_timestamps:
+                        false
+
+                }
+            );
+
+
+        console.log(
+            "[AI] Whisper result:",
+            result
+        );
+
+
+        let transcript =
+            result &&
+            result.text
+                ? result.text
+                : "";
+
+
+        transcript =
+            transcript
+                .replace(
+                    /\s+/g,
+                    " "
+                )
+                .trim();
+
+
+        if (!transcript) {
+
+            throw new Error(
+                "Whisper returned an empty transcript."
+            );
+
+        }
+
+
+        console.log(
+            "[AI] FINAL TRANSCRIPT:",
+            transcript
+        );
+
+
+        isProcessingSpeech =
+            false;
+
+
+        resetRecordButton();
+
+
+        setSpeechStatus(
+            "Speech detected ✓",
+            "success"
+        );
+
+
+        /*
+         * Use your existing feedback engine.
+         */
+
+        processResult(
+            transcript
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "[AI] Transcription error:",
+            error
+        );
+
+
+        finishSpeechWithError(
+            "Your speech could not be transcribed. Please try again."
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   RECORDING BLOB → MONO 16 kHz FLOAT32
+============================================================ */
+
+async function blobTo16kMono(
+    blob
+) {
+
+    /*
+     * Read recorded audio.
+     */
+
+    const buffer =
+        await blob.arrayBuffer();
+
+
+    /*
+     * Decode browser audio.
+     */
+
+    const OfflineContext =
+        window.OfflineAudioContext ||
+        window.webkitOfflineAudioContext;
+
+
+    /*
+     * We can first try standard AudioContext.
+     */
+
+    const DecodeContext =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+
+    if (!DecodeContext) {
+
+        throw new Error(
+            "Web Audio API is unavailable."
+        );
+
+    }
+
+
+    let ctx =
+        new DecodeContext();
+
+
+    let decoded;
+
+
+    try {
+
+        decoded =
+            await ctx.decodeAudioData(
+                buffer.slice(0)
+            );
+
+    }
+
+    finally {
+
+        try {
+            await ctx.close();
+        }
+
+        catch (e) {}
+
+    }
+
+
+    /*
+     * Decode channels to mono.
+     */
+
+    const numberOfChannels =
+        decoded.numberOfChannels;
+
+
+    const length =
+        decoded.length;
+
+
+    const sourceRate =
+        decoded.sampleRate;
+
+
+    let mono;
+
+
+    if (
+        numberOfChannels ===
+        1
+    ) {
+
+        mono =
+            new Float32Array(
+                decoded.getChannelData(0)
+            );
+
+    }
+
+    else {
+
+        mono =
+            new Float32Array(
+                length
+            );
+
+
+        for (
+            let channel = 0;
+            channel < numberOfChannels;
+            channel++
+        ) {
+
+            const data =
+                decoded.getChannelData(
+                    channel
+                );
+
+
+            for (
+                let i = 0;
+                i < length;
+                i++
+            ) {
+
+                mono[i] +=
+                    data[i] /
+                    numberOfChannels;
+
+            }
+
+        }
+
+    }
+
+
+    /*
+     * Already 16 kHz.
+     */
+
+    if (
+        sourceRate ===
+        16000
+    ) {
+
+        return mono;
+
+    }
+
+
+    /*
+     * Resample to 16 kHz.
+     */
+
+    if (!OfflineContext) {
+
+        /*
+         * Manual linear resampling fallback.
+         */
+
+        const targetLength =
+            Math.round(
+                mono.length *
+                16000 /
+                sourceRate
+            );
+
+
+        const output =
+            new Float32Array(
+                targetLength
+            );
+
+
+        const ratio =
+            sourceRate /
+            16000;
+
+
+        for (
+            let i = 0;
+            i < targetLength;
+            i++
+        ) {
+
+            const position =
+                i * ratio;
+
+
+            const left =
+                Math.floor(
+                    position
+                );
+
+
+            const right =
+                Math.min(
+                    left + 1,
+                    mono.length - 1
+                );
+
+
+            const fraction =
+                position - left;
+
+
+            output[i] =
+                mono[left] *
+                (1 - fraction) +
+                mono[right] *
+                fraction;
+
+        }
+
+
+        return output;
+
+    }
+
+
+    /*
+     * Use OfflineAudioContext for high-quality
+     * browser-native resampling.
+     */
+
+    const targetLength =
+        Math.ceil(
+            mono.length *
+            16000 /
+            sourceRate
+        );
+
+
+    const offline =
+        new OfflineContext(
+            1,
+            targetLength,
+            16000
+        );
+
+
+    const buffer16 =
+        offline.createBuffer(
+            1,
+            mono.length,
+            sourceRate
+        );
+
+
+    buffer16.copyToChannel(
+        mono,
+        0
+    );
+
+
+    const source =
+        offline.createBufferSource();
+
+
+    source.buffer =
+        buffer16;
+
+
+    source.connect(
+        offline.destination
+    );
+
+
+    source.start(
+        0
+    );
+
+
+    const rendered =
+        await offline.startRendering();
+
+
+    return new Float32Array(
+        rendered.getChannelData(0)
+    );
+
+}
+
+
+/* ============================================================
+   SPEECH ERROR
+============================================================ */
+
+function finishSpeechWithError(
+    message
+) {
+
+    isRecording =
+        false;
+
+
+    isProcessingSpeech =
+        false;
+
+
+    if (recordingStream) {
+
+        recordingStream
+            .getTracks()
+            .forEach(
+                track =>
+                    track.stop()
+            );
+
+        recordingStream =
+            null;
+
+    }
+
+
+    resetRecordButton();
+
+
+    setSpeechStatus(
+        message,
+        "error"
+    );
+
+
+    alert(
+        message
+    );
+
+}
+
+
+/* ============================================================
+   RESET RECORD BUTTON
+============================================================ */
+
+function resetRecordButton() {
+
+    const rb =
+        document.getElementById(
+            "recordBtn"
+        );
+
+
+    if (!rb) {
+        return;
+    }
+
+
+    rb.disabled =
+        false;
+
+
+    rb.innerText =
+        "🎤 Start Recording";
+
+
+    rb.classList.remove(
+        "recording"
+    );
+
+
+    rb.classList.remove(
+        "processing"
+    );
+
+}
+
+
+/* ============================================================
+   MICROPHONE TEST
+============================================================ */
+
+async function startMicTest(event) {
+
+    if (event) {
+
+        event.preventDefault();
+
+    }
+
+
+    const btn =
+        document.getElementById(
+            "micTestBtn"
+        );
+
+
+    try {
+
+        if (
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia
+        ) {
+
+            throw new Error(
+                "getUserMedia unavailable"
+            );
+
+        }
+
+
+        /*
+         * If already testing, stop and restart.
+         */
+
+        stopMicTest();
+
+
+        micStream =
+            await navigator.mediaDevices.getUserMedia({
+                audio: true
+            });
+
+
+        document
+            .getElementById("micDot")
+            .classList.add(
+                "active"
+            );
+
+
+        document
+            .getElementById("micLabel")
+            .innerText =
+            "Mic Active:";
+
+
+        btn.innerText =
+            "Working!";
+
+
+        btn.style.opacity =
+            "0.6";
+
+
+        /*
+         * Audio analyser.
+         */
+
+        const AudioContext =
+            window.AudioContext ||
+            window.webkitAudioContext;
+
+
+        if (!AudioContext) {
+
+            /*
+             * Permission succeeded, even if visualisation
+             * is unavailable.
+             */
+
+            return;
+
+        }
+
+
+        audioContext =
+            new AudioContext();
+
+
+        if (
+            audioContext.state ===
+            "suspended"
+        ) {
+
+            try {
+
+                await audioContext.resume();
+
+            }
+
+            catch (e) {}
+
+        }
+
+
+        analyser =
+            audioContext.createAnalyser();
+
+
+        microphone =
+            audioContext.createMediaStreamSource(
+                micStream
+            );
+
+
+        analyser.fftSize =
+            512;
+
+
+        microphone.connect(
+            analyser
+        );
+
+
+        const data =
+            new Uint8Array(
+                analyser.frequencyBinCount
+            );
+
+
+        function updateMic() {
+
+            if (!analyser) {
+
+                return;
+
+            }
+
+
+            analyser.getByteFrequencyData(
+                data
+            );
+
+
+            let total =
+                0;
+
+
+            for (
+                let i = 0;
+                i < data.length;
+                i++
+            ) {
+
+                total +=
+                    data[i];
+
+            }
+
+
+            const average =
+                total /
+                data.length;
+
+
+            const level =
+                Math.min(
+                    100,
+                    average * 2.5
+                );
+
+
+            document
+                .getElementById("micBar")
+                .style.width =
+                level + "%";
+
+
+            micAnimationFrame =
+                requestAnimationFrame(
+                    updateMic
+                );
+
+        }
+
+
+        updateMic();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "[Mic Test] ERROR:",
+            error
+        );
+
+
+        stopMicTest();
+
+
+        if (
+            error.name ===
+            "NotAllowedError"
+        ) {
+
+            alert(
+                "Microphone permission was denied. " +
+                "Please allow microphone access for this website."
+            );
+
+        }
+
+        else {
+
+            alert(
+                "The microphone could not be accessed."
+            );
+
+        }
+
+    }
+
+}
+
+
+/* ============================================================
+   STOP MICROPHONE TEST
+============================================================ */
+
+function stopMicTest() {
+
+    if (micAnimationFrame) {
+
+        cancelAnimationFrame(
+            micAnimationFrame
+        );
+
+        micAnimationFrame =
+            null;
+
+    }
+
+
+    if (microphone) {
+
+        try {
+
+            microphone.disconnect();
+
+        }
+
+        catch (e) {}
+
+
+        microphone =
+            null;
+
+    }
+
+
+    if (analyser) {
+
+        try {
+
+            analyser.disconnect();
+
+        }
+
+        catch (e) {}
+
+
+        analyser =
+            null;
+
+    }
+
+
+    if (audioContext) {
+
+        try {
+
+            audioContext.close();
+
+        }
+
+        catch (e) {}
+
+
+        audioContext =
+            null;
+
+    }
+
+
+    if (micStream) {
+
+        micStream
+            .getTracks()
+            .forEach(
+                track =>
+                    track.stop()
+            );
+
+
+        micStream =
+            null;
+
+    }
+
+
+    const dot =
+        document.getElementById(
+            "micDot"
+        );
+
+
+    const label =
+        document.getElementById(
+            "micLabel"
+        );
+
+
+    const btn =
+        document.getElementById(
+            "micTestBtn"
+        );
+
+
+    const bar =
+        document.getElementById(
+            "micBar"
+        );
+
+
+    if (dot) {
+
+        dot.classList.remove(
+            "active"
+        );
+
+    }
+
+
+    if (label) {
+
+        label.innerText =
+            "Mic Check:";
+
+    }
+
+
+    if (btn) {
+
+        btn.innerText =
+            "Test Mic";
+
+        btn.style.opacity =
+            "1";
+
+    }
+
+
+    if (bar) {
+
+        bar.style.width =
+            "0%";
+
+    }
+
+}
+
+
+/* ============================================================
+   TASK ID
+============================================================ */
+
+function handleTaskIdInput(
+    input
+) {
+
+    if (
+        !input.value.startsWith(
+            "ID-"
+        )
+    ) {
+
+        input.value =
+            "ID-";
+
+    }
+
+
+    input.value =
+        input.value.toUpperCase();
+
+}
+
+
+/* ============================================================
+   FETCH TASK
+============================================================ */
+
+async function fetchTask() {
+
+    const sClass =
+        document.getElementById(
+            "sClass"
+        );
+
+
+    const sNo =
+        document.getElementById(
+            "sNo"
+        );
+
+
+    const sName =
+        document.getElementById(
+            "sName"
+        );
+
+
+    const sTaskId =
+        document.getElementById(
+            "sTaskId"
+        );
+
+
+    [
+        sClass,
+        sNo,
+        sName,
+        sTaskId
+    ].forEach(
+        el =>
+            el.classList.remove(
+                "error"
+            )
+    );
+
+
+    let err =
+        false;
+
+
+    if (!sClass.value.trim()) {
+
+        sClass.classList.add(
+            "error"
+        );
+
+        err =
+            true;
+
+    }
+
+
+    if (!sNo.value.trim()) {
+
+        sNo.classList.add(
+            "error"
+        );
+
+        err =
+            true;
+
+    }
+
+
+    if (!sName.value.trim()) {
+
+        sName.classList.add(
+            "error"
+        );
+
+        err =
+            true;
+
+    }
+
+
+    const cleanedId =
+        sTaskId.value
+            .trim()
+            .toUpperCase();
+
+
+    if (
+        !cleanedId ||
+        cleanedId === "ID-"
+    ) {
+
+        sTaskId.classList.add(
+            "error"
+        );
+
+        err =
+            true;
+
+    }
+
+
+    if (err) {
+
+        return;
+
+    }
+
+
+    localStorage.setItem(
+        "reader_class",
+        sClass.value.trim()
+    );
+
+
+    localStorage.setItem(
+        "reader_no",
+        sNo.value.trim()
+    );
+
+
+    localStorage.setItem(
+        "reader_name",
+        sName.value.trim()
+    );
+
+
+    /*
+     * Mic test does not affect Join Task.
+     */
+
+    stopMicTest();
+
+
+    setBtnLoading(
+        "btnJoin",
+        "spinJoin",
+        true,
+        "Join Task"
+    );
+
+
+    try {
+
+        const url =
+            `${API_URL}?action=getTask&taskId=${encodeURIComponent(cleanedId)}`;
+
+
+        console.log(
+            "[Task] Fetch:",
+            url
+        );
+
+
+        const res =
+            await fetch(
+                url
+            );
+
+
+        if (!res.ok) {
+
+            throw new Error(
+                "HTTP " +
+                res.status
+            );
+
+        }
+
+
+        const data =
+            await res.json();
+
+
+        console.log(
+            "[Task] Response:",
+            data
+        );
+
+
+        if (
+            data.passage ===
+            "NOT_FOUND"
+        ) {
+
+            sTaskId.classList.add(
+                "error"
+            );
+
+
+            alert(
+                "Invalid Task ID. Please check and try again."
+            );
+
+        }
+
+        else if (
+            !data.passage
+        ) {
+
+            alert(
+                "This task does not contain a reading passage."
+            );
+
+        }
+
+        else {
+
+            /*
+             * Correct sentence splitting.
+             */
+
+            chunks =
+                data.passage.match(
+                    /[^.!?]+[.!?]+/g
+                ) ||
+                [
+                    data.passage
+                ];
+
+
+            chunks =
+                chunks
+                    .map(
+                        c =>
+                            c.trim()
+                    )
+                    .filter(
+                        c =>
+                            c.length > 0
+                    );
+
+
+            document
+                .getElementById(
+                    "studentEntry"
+                )
+                .style.display =
+                "none";
+
+
+            document
+                .getElementById(
+                    "readingSection"
+                )
+                .style.display =
+                "block";
+
+
+            currentChunkIdx =
+                0;
+
+
+            totalMatches =
+                0;
+
+
+            totalWords =
+                0;
+
+
+            tempMatches =
+                0;
+
+
+            tempTotal =
+                0;
+
+
+            showChunk();
+
+        }
+
+    }
+
+    catch (e) {
+
+        console.error(
+            "[Task] ERROR:",
+            e
+        );
+
+
+        alert(
+            "Network error. Please check your connection."
+        );
+
+    }
+
+
+    setBtnLoading(
+        "btnJoin",
+        "spinJoin",
+        false,
+        "Join Task"
+    );
+
+}
+
+
+/* ============================================================
+   SHOW CHUNK
+============================================================ */
+
+async function showChunk() {
+
+    /*
+     * Reset any previous reading session.
+     */
+
+    if (isRecording) {
+
+        stopRecording();
+
+    }
+
+
+    isProcessingSpeech =
+        false;
+
+
+    recordedChunks =
+        [];
+
+
+    resetRecordButton();
+
+
+    setSpeechStatus(
+        ""
+    );
+
+
+    const text =
+        chunks[
+            currentChunkIdx
+        ];
+
+
+    document
+        .getElementById(
+            "chunkProgress"
+        )
+        .innerText =
+        `Sentence ${currentChunkIdx + 1} of ${chunks.length}`;
+
+
+    document
+        .getElementById(
+            "passageDisplay"
+        )
+        .innerText =
+        text;
+
+
+    document
+        .getElementById(
+            "passageDisplay"
+        )
+        .style.display =
+        "block";
+
+
+    document
+        .getElementById(
+            "feedbackArea"
+        )
+        .innerHTML =
+        "";
+
+
+    document
+        .getElementById(
+            "recordBtn"
+        )
+        .style.display =
+        "block";
+
+
+    document
+        .getElementById(
+            "postReadingActions"
+        )
+        .style.display =
+        "none";
+
+
+    document
+        .getElementById(
+            "nextBtnText"
+        )
+        .innerText =
+        currentChunkIdx ===
+        chunks.length - 1
+
+            ? "Finish & Submit 🎉"
+
+            : "Next Sentence →";
+
+
+    const trans =
+        document.getElementById(
+            "translationText"
+        );
+
+
+    trans.innerText =
+        "...";
+
+
+    try {
+
+        const res =
+            await fetch(
+                `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|zh-TW`
+            );
+
+
+        const d =
+            await res.json();
+
+
+        trans.innerText =
+            d.responseData &&
+            d.responseData.translatedText
+
+                ? d.responseData.translatedText
+
+                : "";
+
+    }
+
+    catch (e) {
+
+        console.error(
+            "[Translation] ERROR:",
+            e
+        );
+
+
+        trans.innerText =
+            "";
+
+    }
+
+}
+
+
+/* ============================================================
+   PLAY TEXT
+============================================================ */
+
+function playText() {
+
+    if (
+        !window.speechSynthesis
+    ) {
+
+        return;
+
+    }
+
+
+    window.speechSynthesis.cancel();
+
+
+    const utter =
+        new SpeechSynthesisUtterance(
+            chunks[
+                currentChunkIdx
+            ]
+        );
+
+
+    const voices =
+        window.speechSynthesis
+            .getVoices();
+
+
+    const naturalVoice =
+        voices.find(
+            v =>
+                v.name.includes(
+                    "Google US English"
+                )
+        ) ||
+
+        voices.find(
+            v =>
+                v.name.includes(
+                    "Samantha"
+                )
+        ) ||
+
+        voices.find(
+            v =>
+                v.lang.startsWith(
+                    "en-US"
+                )
+        );
+
+
+    if (naturalVoice) {
+
+        utter.voice =
+            naturalVoice;
+
+    }
+
+
+    utter.lang =
+        "en-US";
+
+
+    utter.rate =
+        0.85;
+
+
+    utter.pitch =
+        1.0;
+
+
+    window.speechSynthesis.speak(
+        utter
+    );
+
+}
+
+
+/* ============================================================
+   PROCESS RESULT
+============================================================ */
+
+function processResult(
+    transcript
+) {
+
+    if (
+        !transcript
+    ) {
+
+        return;
+
+    }
+
+
+    console.log(
+        "[Feedback] Transcript:",
+        transcript
+    );
+
+
+    const clean =
+        function(s) {
+
+            return s
+                .toLowerCase()
+                .replace(
+                    /[^\w\s]/g,
+                    ""
+                )
+                .trim();
+
+        };
+
+
+    const targetWords =
+        chunks[
+            currentChunkIdx
+        ]
+            .trim()
+            .split(
+                /\s+/
+            );
+
+
+    const userWords =
+        clean(
+            transcript
+        )
+            .split(
+                /\s+/
+            )
+            .filter(
+                Boolean
+            );
+
+
+    let html =
+        "";
+
+
+    let matches =
+        0;
+
+
+    targetWords.forEach(
+        function(word) {
+
+            const cleanedWord =
+                clean(word);
+
+
+            if (
+                userWords.includes(
+                    cleanedWord
+                )
+            ) {
+
+                html +=
+                    `<span class="word-correct">${word} </span>`;
+
+
+                matches++;
+
+            }
+
+            else {
+
+                html +=
+                    `<span class="word-wrong">${word} </span>`;
+
+            }
+
+        }
+    );
+
+
+    tempMatches =
+        matches;
+
+
+    tempTotal =
+        targetWords.length;
+
+
+    document
+        .getElementById(
+            "passageDisplay"
+        )
+        .style.display =
+        "none";
+
+
+    document
+        .getElementById(
+            "feedbackArea"
+        )
+        .innerHTML =
+        html;
+
+
+    document
+        .getElementById(
+            "recordBtn"
+        )
+        .style.display =
+        "none";
+
+
+    document
+        .getElementById(
+            "postReadingActions"
+        )
+        .style.display =
+        "flex";
+
+
+    setSpeechStatus(
+        `Speech analysed — ${matches}/${targetWords.length} words matched.`,
+        "success"
+    );
+
+}
+
+
+/* ============================================================
+   SCORE PARSING
+============================================================ */
+
+function parseScore(
+    val
+) {
+
+    let num =
+        parseFloat(
+            val
+        );
+
+
+    if (
+        isNaN(num)
+    ) {
+
+        return 0;
+
+    }
+
+
+    return (
+        num < 2
+
+            ? Math.round(
+                num * 100
+            )
+
+            : Math.round(
+                num
+            )
+    );
+
+}
+
+
+/* ============================================================
+   NEXT CHUNK
+============================================================ */
+
+async function nextChunk() {
+
+    if (
+        isSubmitting
+    ) {
+
+        return;
+
+    }
+
+
+    totalMatches +=
+        tempMatches;
+
+
+    totalWords +=
+        tempTotal;
+
+
+    if (
+        currentChunkIdx <
+        chunks.length - 1
+    ) {
+
+        currentChunkIdx++;
+
+
+        tempMatches =
+            0;
+
+
+        tempTotal =
+            0;
+
+
+        showChunk();
+
+
+        return;
+
+    }
+
+
+    isSubmitting =
+        true;
+
+
+    setBtnLoading(
+        "nextChunkBtn",
+        "spinNext",
+        true,
+        "Saving..."
+    );
+
+
+    const score =
+        totalWords > 0
+
+            ? Math.max(
+                0,
+                Math.min(
+                    100,
+                    Math.round(
+                        (
+                            totalMatches /
+                            totalWords
+                        ) * 100
+                    )
+                )
+            )
+
+            : 0;
+
+
+    const tId =
+        document
+            .getElementById(
+                "sTaskId"
+            )
+            .value
+            .trim()
+            .toUpperCase();
+
+
+    try {
+
+        await fetch(
+            API_URL,
+            {
+
+                method:
+                    "POST",
+
+                mode:
+                    "no-cors",
+
+                body:
+                    JSON.stringify({
+
+                        action:
+                            "submitScore",
+
+                        taskId:
+                            tId,
+
+                        className:
+                            document.getElementById(
+                                "sClass"
+                            ).value,
+
+                        classNo:
+                            document.getElementById(
+                                "sNo"
+                            ).value,
+
+                        name:
+                            document.getElementById(
+                                "sName"
+                            ).value,
+
+                        score:
+                            score
+
+                    })
+
+            }
+        );
+
+
+        const res =
+            await fetch(
+                `${API_URL}?action=getScores&taskId=${encodeURIComponent(tId)}`
+            );
+
+
+        const all =
+            await res.json();
+
+
+        let top =
+            all
+                .sort(
+                    (a, b) =>
+                        parseScore(
+                            b[5]
+                        ) -
+                        parseScore(
+                            a[5]
+                        )
+                )
+                .slice(
+                    0,
+                    5
+                );
+
+
+        let board =
+            "<table>";
+
+
+        top.forEach(
+            function(
+                r,
+                i
+            ) {
+
+                const icon =
+                    i === 0
+                        ? "🥇"
+                        : i === 1
+                        ? "🥈"
+                        : i === 2
+                        ? "🥉"
+                        : "";
+
+
+                const sVal =
+                    parseScore(
+                        r[5]
+                    );
+
+
+                board +=
+                    `<tr>
+                        <td>
+                            ${icon} ${r[2]}-${r[3]} ${r[4]}
+                        </td>
+                        <td style="text-align:right">
+                            <b>${sVal}%</b>
+                        </td>
+                    </tr>`;
+
+            }
+        );
+
+
+        board +=
+            "</table>";
+
+
+        document
+            .getElementById(
+                "leaderboardList"
+            )
+            .innerHTML =
+            board;
+
+
+        document
+            .getElementById(
+                "practiceArea"
+            )
+            .style.display =
+            "none";
+
+
+        document
+            .getElementById(
+                "resultScreen"
+            )
+            .style.display =
+            "block";
+
+
+        document
+            .getElementById(
+                "finalScoreDisplay"
+            )
+            .innerText =
+            score + "%";
+
+    }
+
+    catch (err) {
+
+        console.error(
+            "[Submit] ERROR:",
+            err
+        );
+
+
+        alert(
+            "Submission error. Your results might not have saved."
+        );
+
+
+        isSubmitting =
+            false;
+
+    }
+
+
+    setBtnLoading(
+        "nextChunkBtn",
+        "spinNext",
+        false,
+        "Next Sentence →"
+    );
+
+}
+
+
+/* ============================================================
+   RETRY SENTENCE
+============================================================ */
+
+function retrySentence() {
+
+    tempMatches =
+        0;
+
+
+    tempTotal =
+        0;
+
+
+    showChunk();
+
+}
+
+
+/* ============================================================
+   TEACHER ACCESS
+============================================================ */
+
+function setupTeacherAccess() {
+
+    const btn =
+        document.getElementById(
+            "btnTeacher"
+        );
+
+
+    const start =
+        function(e) {
+
+            if (
+                e.type ===
+                "touchstart"
+            ) {
+
+                e.preventDefault();
+
+            }
+
+
+            pressTimer =
+                setTimeout(
+                    function() {
+
+                        executeSwitch(
+                            "teacher"
+                        );
+
+                    },
+                    2500
+                );
+
+        };
+
+
+    const stop =
+        function() {
+
+            clearTimeout(
+                pressTimer
+            );
+
+        };
+
+
+    btn.addEventListener(
+        "touchstart",
+        start,
+        {
+            passive:
+                false
+        }
+    );
+
+
+    btn.addEventListener(
+        "touchend",
+        stop
+    );
+
+
+    btn.addEventListener(
+        "touchcancel",
+        stop
+    );
+
+
+    btn.addEventListener(
+        "mousedown",
+        start
+    );
+
+
+    btn.addEventListener(
+        "mouseup",
+        stop
+    );
+
+
+    btn.addEventListener(
+        "mouseleave",
+        stop
+    );
+
+}
+
+
+/* ============================================================
+   TEACHER MODE
+============================================================ */
+
+function toggleTeacherMode(
+    m
+) {
+
+    document
+        .getElementById(
+            "setupMode"
+        )
+        .style.display =
+        m === "setup"
+
+            ? "block"
+
+            : "none";
+
+
+    document
+        .getElementById(
+            "scoreMode"
+        )
+        .style.display =
+        m === "scores"
+
+            ? "block"
+
+            : "none";
+
+
+    document
+        .getElementById(
+            "subSet"
+        )
+        .className =
+        m === "setup"
+
+            ? "mode-btn active"
+
+            : "mode-btn";
+
+
+    document
+        .getElementById(
+            "subScore"
+        )
+        .className =
+        m === "scores"
+
+            ? "mode-btn active"
+
+            : "mode-btn";
+
+}
+
+
+/* ============================================================
+   VIEW SWITCH
+============================================================ */
+
+function switchView(
+    v
+) {
+
+    if (
+        v === "student"
+    ) {
+
+        executeSwitch(
+            "student"
+        );
+
+    }
+
+}
+
+
+function executeSwitch(
+    v
+) {
+
+    document
+        .querySelectorAll(
+            ".container"
+        )
+        .forEach(
+            function(c) {
+
+                c.classList.remove(
+                    "active"
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            v + "View"
+        )
+        .classList.add(
+            "active"
+        );
+
+
+    document
+        .querySelectorAll(
+            ".mode-nav .mode-btn"
+        )
+        .forEach(
+            function(b) {
+
+                b.classList.remove(
+                    "active"
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            "btn" +
+            v.charAt(0).toUpperCase() +
+            v.slice(1)
+        )
+        .classList.add(
+            "active"
+        );
+
+}
+
+
+/* ============================================================
+   GET SCORES
+============================================================ */
+
+async function getScores() {
+
+    const tId =
+        document
+            .getElementById(
+                "tSearchId"
+            )
+            .value
+            .trim()
+            .toUpperCase();
+
+
+    if (
+        !tId ||
+        tId === "ID-"
+    ) {
+
+        return;
+
+    }
+
+
+    setBtnLoading(
+        "btnLoadScores",
+        "spinScores",
+        true,
+        "Loading..."
+    );
+
+
+    try {
+
+        const res =
+            await fetch(
+                `${API_URL}?action=getScores&taskId=${encodeURIComponent(tId)}`
+            );
+
+
+        currentScores =
+            await res.json();
+
+
+        document
+            .getElementById(
+                "scoreActionArea"
+            )
+            .style.display =
+            currentScores.length
+
+                ? "block"
+
+                : "none";
+
+
+        let h =
+            `<table>
+                <tr>
+                    <th>Time</th>
+                    <th>Class</th>
+                    <th>Student</th>
+                    <th>Score</th>
+                </tr>`;
+
+
+        currentScores
+            .slice()
+            .reverse()
+            .forEach(
+                function(r) {
+
+                    const s =
+                        parseScore(
+                            r[5]
+                        );
+
+
+                    const rawDate =
+                        r[1];
+
+
+                    let dateDisplay =
+                        "N/A";
+
+
+                    if (
+                        rawDate
+                    ) {
+
+                        const d =
+                            new Date(
+                                rawDate
+                            );
+
+
+                        dateDisplay =
+                            isNaN(d)
+
+                                ? rawDate
+
+                                : `${d.toLocaleDateString()} ${d.getHours()}:${String(
+                                    d.getMinutes()
+                                ).padStart(
+                                    2,
+                                    "0"
+                                )}`;
+
+                    }
+
+
+                    h +=
+                        `<tr>
+
+                            <td style="
+                                font-size:10px;
+                                color:#888;
+                            ">
+                                ${dateDisplay}
+                            </td>
+
+                            <td>
+                                ${r[2]}-${r[3]}
+                            </td>
+
+                            <td>
+                                <b>${r[4]}</b>
+                            </td>
+
+                            <td style="
+                                color:var(--system-green);
+                                font-weight:700;
+                            ">
+                                ${s}%
+                            </td>
+
+                        </tr>`;
+
+                }
+            );
+
+
+        h +=
+            "</table>";
+
+
+        document
+            .getElementById(
+                "scoreTableArea"
+            )
+            .innerHTML =
+            h;
+
+    }
+
+    catch (e) {
+
+        console.error(
+            "[Scores] ERROR:",
+            e
+        );
+
+
+        alert(
+            "Failed to load scores."
+        );
+
+    }
+
+
+    setBtnLoading(
+        "btnLoadScores",
+        "spinScores",
+        false,
+        "Load Scores"
+    );
+
+}
+
+
+/* ============================================================
+   DOWNLOAD CSV
+============================================================ */
+
+function downloadCSV() {
+
+    if (
+        !currentScores.length
+    ) {
+
+        return;
+
+    }
+
+
+    const content =
+        [
+
+            "Timestamp,TaskID,Class,No,Name,Score",
+
+            ...currentScores.map(
+                function(r) {
+
+                    const s =
+                        parseScore(
+                            r[5]
+                        );
+
+
+                    return `"${r[1]}","${r[0]}","${r[2]}","${r[3]}","${r[4]}","${s}%"`;
+
+                }
+            )
+
+        ].join(
+            "\n"
+        );
+
+
+    const blob =
+        new Blob(
+            [content],
+            {
+                type:
+                    "text/csv"
+            }
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    link.href =
+        url;
+
+
+    link.download =
+        `reading_scores_${document.getElementById("tSearchId").value}.csv`;
+
+
+    document.body.appendChild(
+        link
+    );
+
+
+    link.click();
+
+
+    document.body.removeChild(
+        link
+    );
+
+
+    setTimeout(
+        function() {
+
+            URL.revokeObjectURL(
+                url
+            );
+
+        },
+        1000
+    );
+
+}
+
+
+/* ============================================================
+   CREATE TASK
+============================================================ */
+
+async function createTask() {
+
+    const p =
+        document
+            .getElementById(
+                "tPassage"
+            )
+            .value
+            .trim();
+
+
+    const t =
+        document
+            .getElementById(
+                "tName"
+            )
+            .value
+            .trim();
+
+
+    if (
+        !p ||
+        !t
+    ) {
+
+        return;
+
+    }
+
+
+    setBtnLoading(
+        "btnCreate",
+        "spinCreate",
+        true,
+        "Generating..."
+    );
+
+
+    try {
+
+        const res =
+            await fetch(
+                API_URL,
+                {
+
+                    method:
+                        "POST",
+
+                    body:
+                        JSON.stringify({
+
+                            action:
+                                "createTask",
+
+                            email:
+                                t,
+
+                            passage:
+                                p
+
+                        })
+
+                }
+            );
+
+
+        const newId =
+            await res.text();
+
+
+        document
+            .getElementById(
+                "displayId"
+            )
+            .innerText =
+            newId;
+
+
+        document
+            .getElementById(
+                "generatedIdArea"
+            )
+            .style.display =
+            "block";
+
+    }
+
+    catch (e) {
+
+        console.error(
+            "[Create Task] ERROR:",
+            e
+        );
+
+
+        alert(
+            "Failed to generate task ID."
+        );
+
+    }
+
+
+    setBtnLoading(
+        "btnCreate",
+        "spinCreate",
+        false,
+        "Generate Task ID"
+    );
+
+}
+
+
+/* ============================================================
+   BUTTON LOADING
+============================================================ */
+
+function setBtnLoading(
+    id,
+    spin,
+    load,
+    text
+) {
+
+    const b =
+        document.getElementById(
+            id
+        );
+
+
+    const s =
+        document.getElementById(
+            spin
+        );
+
+
+    if (!b) {
+
+        return;
+
+    }
+
+
+    b.disabled =
+        load;
+
+
+    if (s) {
+
+        s.style.display =
+            load
+
+                ? "inline-block"
+
+                : "none";
+
+    }
+
+
+    if (load) {
+
+        b.innerText =
+            "Wait...";
+
+    }
+
+    else {
+
+        b.innerHTML =
+            spin
+
+                ? `<div class="spinner" id="${spin}"></div> ${text}`
+
+                : text;
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
