@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <title>AI Read Aloud</title>
 
@@ -18,6 +19,10 @@
             --text-primary: #1d1d1f;
             --text-secondary: #86868b;
             --radius: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
@@ -91,7 +96,7 @@
             position: fixed;
             top: 20px;
             right: 30px;
-            background: rgba(255,255,255,0.7);
+            background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             padding: 4px;
@@ -159,7 +164,6 @@
             border-radius: 12px;
             font-size: 16px;
             margin-bottom: 12px;
-            box-sizing: border-box;
             outline: none;
             font-family: inherit;
             background: #fafafa;
@@ -260,6 +264,7 @@
             height: 8px;
             border-radius: 50%;
             background: #d1d1d6;
+            flex-shrink: 0;
         }
 
         .mic-status-dot.active {
@@ -297,7 +302,30 @@
             font-size: 15px;
             color: var(--text-secondary);
             opacity: 0.7;
-            margin-bottom: 25px;
+            margin-bottom: 12px;
+        }
+
+        .speech-status {
+            min-height: 22px;
+            font-size: 12px;
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .speech-status.active {
+            color: var(--system-red);
+            font-weight: 600;
+        }
+
+        .speech-status.success {
+            color: var(--system-green);
+            font-weight: 600;
+        }
+
+        .speech-status.error {
+            color: var(--system-red);
+            font-weight: 600;
         }
 
         .progress-text {
@@ -359,13 +387,32 @@
             border: 1px solid #d2d2d7;
         }
 
-        /* Speech recognition diagnostic message */
-        #speechStatus {
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-align: center;
-            min-height: 18px;
-            margin-top: 10px;
+        @media (max-width: 600px) {
+            body {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+
+            header {
+                padding: 0 18px;
+            }
+
+            header h1 {
+                font-size: 20px;
+            }
+
+            .mode-nav {
+                right: 12px;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            #passageDisplay,
+            #feedbackArea {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
@@ -377,6 +424,7 @@
 </header>
 
 <div class="mode-nav">
+
     <button
         class="mode-btn active"
         id="btnStudent"
@@ -389,12 +437,13 @@
         id="btnTeacher">
         Teacher
     </button>
+
 </div>
 
 
-<!-- ========================= -->
-<!-- STUDENT VIEW -->
-<!-- ========================= -->
+<!-- =========================================================
+     STUDENT VIEW
+========================================================= -->
 
 <div id="studentView" class="container active">
 
@@ -414,10 +463,12 @@
 
         </div>
 
+
         <input
             type="text"
             id="sName"
             placeholder="Full Name">
+
 
         <input
             type="text"
@@ -428,7 +479,7 @@
             oninput="handleTaskIdInput(this)">
 
 
-        <!-- MICROPHONE TEST -->
+        <!-- MIC TEST -->
 
         <div class="mic-test-container">
 
@@ -488,7 +539,9 @@
     </div>
 
 
-    <!-- READING SECTION -->
+    <!-- =====================================================
+         READING SECTION
+    ====================================================== -->
 
     <div
         id="readingSection"
@@ -527,7 +580,7 @@
 
                         <path
                             fill="currentColor"
-                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z">
+                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s2.99-7.86-7-8.77z">
                         </path>
 
                     </svg>
@@ -543,17 +596,27 @@
             </div>
 
 
+            <!-- SPEECH STATUS -->
+
+            <div
+                id="speechStatus"
+                class="speech-status">
+            </div>
+
+
+            <!-- RECORD BUTTON -->
+
             <button
                 id="recordBtn"
                 class="apple-btn"
                 onclick="toggleRecording()">
+
                 🎤 Start Recording
+
             </button>
 
 
-            <!-- Speech diagnostic/status -->
-            <div id="speechStatus"></div>
-
+            <!-- POST READING ACTIONS -->
 
             <div
                 id="postReadingActions"
@@ -602,7 +665,9 @@
         </div>
 
 
-        <!-- RESULT SCREEN -->
+        <!-- =================================================
+             RESULT SCREEN
+        ================================================== -->
 
         <div
             id="resultScreen"
@@ -620,9 +685,11 @@
                 🎉
             </div>
 
+
             <h2 style="margin-bottom:5px">
                 Mission Complete!
             </h2>
+
 
             <div
                 style="
@@ -675,9 +742,9 @@
 </div>
 
 
-<!-- ========================= -->
-<!-- TEACHER VIEW -->
-<!-- ========================= -->
+<!-- =========================================================
+     TEACHER VIEW
+========================================================= -->
 
 <div id="teacherView" class="container">
 
@@ -721,10 +788,12 @@
             id="tName"
             placeholder="Teacher Name">
 
+
         <textarea
             id="tPassage"
             placeholder="Paste reading passage..."
             rows="5"></textarea>
+
 
         <button
             class="apple-btn"
@@ -769,6 +838,7 @@
             placeholder="ENTER TASK ID"
             value="ID-"
             oninput="handleTaskIdInput(this)">
+
 
         <button
             class="apple-btn"
@@ -819,31 +889,48 @@
 
 <script>
 
-/* =========================================================
+/* ============================================================
    CONFIGURATION
-   ========================================================= */
+============================================================ */
 
 const API_URL =
     "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
 
 
-/* =========================================================
+/* ============================================================
    GLOBAL VARIABLES
-   ========================================================= */
+============================================================ */
 
 let chunks = [];
+
 let currentChunkIdx = 0;
 
 let totalMatches = 0;
+
 let totalWords = 0;
+
+
+/* SPEECH RECOGNITION */
 
 let recognition = null;
 
 let isRecording = false;
+
 let isProcessingSpeech = false;
 
+let recognitionTranscript = "";
+
+let recognitionTimeout = null;
+
+
+/* SENTENCE SCORE */
+
 let tempMatches = 0;
+
 let tempTotal = 0;
+
+
+/* OTHER */
 
 let pressTimer;
 
@@ -852,23 +939,22 @@ let currentScores = [];
 let isSubmitting = false;
 
 
-/* Microphone test */
+/* MICROPHONE TEST */
+
 let audioContext = null;
+
 let analyser = null;
+
 let microphone = null;
+
 let scriptProcessor = null;
+
 let micStream = null;
 
 
-/* Speech recognition */
-let recognitionTranscript = "";
-let recognitionSession = 0;
-let recognitionTimeout = null;
-
-
-/* =========================================================
+/* ============================================================
    PAGE LOAD
-   ========================================================= */
+============================================================ */
 
 window.onload = () => {
 
@@ -884,9 +970,9 @@ window.onload = () => {
         localStorage.getItem("reader_name") || "";
 
 
-    /* -----------------------------------------------------
-       SPEECH RECOGNITION INITIALISATION
-       ----------------------------------------------------- */
+    /* ========================================================
+       SPEECH RECOGNITION SETUP
+    ======================================================== */
 
     const SpeechRecognition =
         window.SpeechRecognition ||
@@ -895,146 +981,143 @@ window.onload = () => {
 
     if (SpeechRecognition) {
 
-        recognition = new SpeechRecognition();
+        recognition =
+            new SpeechRecognition();
 
-        recognition.lang = "en-US";
 
-        recognition.continuous = true;
+        /*
+         * IMPORTANT:
+         *
+         * continuous = false is intentional.
+         *
+         * Android/Oppo browsers often behave more reliably
+         * with a single recognition session.
+         */
 
-        recognition.interimResults = false;
+        recognition.continuous = false;
+
+
+        /*
+         * Interim results allow Android to provide speech
+         * before the final result is produced.
+         */
+
+        recognition.interimResults = true;
+
 
         recognition.maxAlternatives = 1;
 
 
-        /* Recognition actually started */
+        recognition.lang = "en-US";
+
+
+        /* ====================================================
+           RECOGNITION START
+        ==================================================== */
 
         recognition.onstart = () => {
 
-            console.log("[Speech] Recognition started");
+            console.log("[Speech] START");
 
-            setSpeechStatus("Listening…");
-
+            setSpeechStatus(
+                "Listening…",
+                "active"
+            );
         };
 
 
-        /* Speech result */
+        /* ====================================================
+           SPEECH START
+        ==================================================== */
+
+        recognition.onspeechstart = () => {
+
+            console.log("[Speech] SPEECH START");
+
+            setSpeechStatus(
+                "Listening to you…",
+                "active"
+            );
+        };
+
+
+        /* ====================================================
+           SPEECH END
+        ==================================================== */
+
+        recognition.onspeechend = () => {
+
+            console.log("[Speech] SPEECH END");
+
+            setSpeechStatus(
+                "Finishing…",
+                "active"
+            );
+        };
+
+
+        /* ====================================================
+           RESULT
+        ==================================================== */
 
         recognition.onresult = (event) => {
 
-            console.log("[Speech] Result received", event);
+            console.log(
+                "[Speech] RESULT:",
+                event
+            );
 
-            let newTranscript = "";
+
+            let transcript = "";
+
+
+            /*
+             * IMPORTANT:
+             *
+             * Do NOT just read the last result.
+             *
+             * Android may provide several result objects.
+             */
 
             for (
-                let i = event.resultIndex;
+                let i = 0;
                 i < event.results.length;
                 i++
             ) {
 
-                if (event.results[i].isFinal) {
-
-                    newTranscript +=
-                        event.results[i][0].transcript + " ";
-                }
+                transcript +=
+                    event.results[i][0].transcript + " ";
             }
 
 
-            newTranscript = newTranscript.trim();
+            transcript =
+                transcript.trim();
 
-
-            if (newTranscript) {
-
-                console.log(
-                    "[Speech] Transcript:",
-                    newTranscript
-                );
-
-                recognitionTranscript +=
-                    " " + newTranscript;
-
-                recognitionTranscript =
-                    recognitionTranscript.trim();
-
-
-                setSpeechStatus(
-                    "Heard: " + recognitionTranscript
-                );
-            }
-        };
-
-
-        /* Recognition ended */
-
-        recognition.onend = () => {
 
             console.log(
-                "[Speech] Recognition ended. Recording:",
-                isRecording,
-                "Transcript:",
-                recognitionTranscript
+                "[Speech] Transcript:",
+                transcript
             );
 
 
-            /*
-             * If the student is still recording, Android/Chrome
-             * may have stopped recognition temporarily.
-             *
-             * Restart it.
-             */
+            if (transcript) {
 
-            if (isRecording) {
+                recognitionTranscript =
+                    transcript;
+
 
                 setSpeechStatus(
-                    "Listening…"
+                    "Speech detected ✓",
+                    "success"
                 );
-
-
-                /*
-                 * Small delay prevents rapid start/stop races
-                 * on some Android browsers.
-                 */
-
-                setTimeout(() => {
-
-                    if (!isRecording) return;
-
-                    try {
-
-                        recognition.start();
-
-                    } catch (error) {
-
-                        console.log(
-                            "[Speech] Restart failed:",
-                            error
-                        );
-                    }
-
-                }, 150);
-
-                return;
             }
 
-
-            /*
-             * Student pressed Stop.
-             *
-             * Give the browser a little time to deliver
-             * the final result.
-             */
-
-            if (isProcessingSpeech) {
-
-                setSpeechStatus(
-                    "Processing speech…"
-                );
-
-                finishSpeechProcessing();
-            }
         };
 
 
-        /* Speech recognition error */
+        /* ====================================================
+           ERROR
+        ==================================================== */
 
         recognition.onerror = (event) => {
 
@@ -1045,198 +1128,504 @@ window.onload = () => {
             );
 
 
-            /*
-             * no-speech is common on Android.
-             * Don't immediately destroy the whole session.
-             */
+            switch (event.error) {
 
-            if (event.error === "no-speech") {
-
-                if (isRecording) {
+                case "no-speech":
 
                     setSpeechStatus(
-                        "No speech detected yet…"
+                        "The phone did not recognise any speech.",
+                        "error"
                     );
 
-                    return;
-                }
+                    break;
+
+
+                case "not-allowed":
+
+                    isRecording = false;
+                    isProcessingSpeech = false;
+
+                    resetRecordButton();
+
+                    alert(
+                        "Microphone access is blocked. " +
+                        "Please allow microphone access for this website."
+                    );
+
+                    break;
+
+
+                case "audio-capture":
+
+                    isRecording = false;
+                    isProcessingSpeech = false;
+
+                    resetRecordButton();
+
+                    alert(
+                        "The phone could not access the microphone."
+                    );
+
+                    break;
+
+
+                case "network":
+
+                    isRecording = false;
+                    isProcessingSpeech = false;
+
+                    resetRecordButton();
+
+                    alert(
+                        "The speech recognition service could not connect. " +
+                        "Please check the Internet connection."
+                    );
+
+                    break;
+
+
+                case "service-not-allowed":
+
+                    isRecording = false;
+                    isProcessingSpeech = false;
+
+                    resetRecordButton();
+
+                    alert(
+                        "Speech recognition is not available on this device."
+                    );
+
+                    break;
+
+
+                case "aborted":
+
+                    console.log(
+                        "[Speech] Recognition aborted."
+                    );
+
+                    break;
+
+
+                default:
+
+                    console.error(
+                        "[Speech] Unhandled error:",
+                        event.error
+                    );
+
+                    break;
             }
 
-
-            /*
-             * User denied microphone.
-             */
-
-            if (event.error === "not-allowed") {
-
-                isRecording = false;
-                isProcessingSpeech = false;
-
-                resetRecordButton();
-
-                alert(
-                    "Microphone permission is blocked. " +
-                    "Please allow microphone access for this website " +
-                    "and try again."
-                );
-
-                return;
-            }
-
-
-            /*
-             * Microphone unavailable.
-             */
-
-            if (event.error === "audio-capture") {
-
-                isRecording = false;
-                isProcessingSpeech = false;
-
-                resetRecordButton();
-
-                alert(
-                    "The microphone could not be accessed. " +
-                    "Please check your phone's microphone settings."
-                );
-
-                return;
-            }
-
-
-            /*
-             * Android/browser speech service unavailable.
-             */
-
-            if (event.error === "service-not-allowed") {
-
-                isRecording = false;
-                isProcessingSpeech = false;
-
-                resetRecordButton();
-
-                alert(
-                    "Speech recognition is not available " +
-                    "on this device or browser. " +
-                    "Please try Chrome or another supported browser."
-                );
-
-                return;
-            }
-
-
-            /*
-             * Speech recognition service could not connect.
-             */
-
-            if (event.error === "network") {
-
-                isRecording = false;
-                isProcessingSpeech = false;
-
-                resetRecordButton();
-
-                alert(
-                    "The speech recognition service could not connect. " +
-                    "Please check the Internet connection and try again."
-                );
-
-                return;
-            }
-
-
-            /*
-             * Recognition was deliberately aborted.
-             * Usually no message is necessary.
-             */
-
-            if (event.error === "aborted") {
-
-                console.log(
-                    "[Speech] Recognition aborted."
-                );
-
-                return;
-            }
-
-
-            /*
-             * Any other unexpected error.
-             */
-
-            console.error(
-                "[Speech] Unhandled error:",
-                event.error
-            );
         };
 
+
+        /* ====================================================
+           RECOGNITION END
+        ==================================================== */
+
+        recognition.onend = () => {
+
+            console.log(
+                "[Speech] END"
+            );
+
+            console.log(
+                "[Speech] Final transcript:",
+                recognitionTranscript
+            );
+
+
+            /*
+             * The student has pressed Stop.
+             */
+
+            if (isProcessingSpeech) {
+
+                finishSpeechProcessing();
+
+                return;
+            }
+
+
+            /*
+             * Recognition can end naturally.
+             *
+             * If we already have speech, process it.
+             */
+
+            if (
+                isRecording &&
+                recognitionTranscript.trim()
+            ) {
+
+                isRecording = false;
+
+                isProcessingSpeech = true;
+
+                finishSpeechProcessing();
+            }
+
+        };
+
+
+        /* ====================================================
+           NO MATCH
+        ==================================================== */
 
         recognition.onnomatch = () => {
 
             console.log(
-                "[Speech] No match."
+                "[Speech] NO MATCH"
             );
 
             setSpeechStatus(
-                "Speech was detected but could not be understood."
+                "I heard something, but could not understand it.",
+                "error"
             );
+
         };
 
 
         console.log(
-            "[Speech] SpeechRecognition available."
+            "[Speech] Speech recognition available."
         );
 
-    } else {
+    }
+
+    else {
 
         console.log(
-            "[Speech] SpeechRecognition NOT available."
+            "[Speech] Speech recognition unavailable."
         );
 
         setSpeechStatus(
-            "Speech recognition is not supported by this browser."
+            "Speech recognition is not supported in this browser.",
+            "error"
         );
+
     }
 
 
-    /* Teacher access */
+    /* ========================================================
+       OTHER SETUP
+    ======================================================== */
 
     setupTeacherAccess();
 
 
-    /* Speech synthesis */
-
     if (
-        window.speechSynthesis.onvoiceschanged !==
-        undefined
+        window.speechSynthesis &&
+        window.speechSynthesis.onvoiceschanged !== undefined
     ) {
 
         window.speechSynthesis.onvoiceschanged =
             () => window.speechSynthesis.getVoices();
+
     }
 
-    window.speechSynthesis.getVoices();
+
+    if (window.speechSynthesis) {
+
+        window.speechSynthesis.getVoices();
+
+    }
+
 };
 
 
-/* =========================================================
+/* ============================================================
    SPEECH STATUS
-   ========================================================= */
+============================================================ */
 
-function setSpeechStatus(message) {
+function setSpeechStatus(
+    text,
+    type = ""
+) {
 
-    const el =
+    const status =
         document.getElementById("speechStatus");
 
-    if (el) {
-        el.innerText = message || "";
-    }
+
+    if (!status) return;
+
+
+    status.innerText = text;
+
+    status.className =
+        "speech-status" +
+        (type ? " " + type : "");
+
 }
 
 
-/* =========================================================
+/* ============================================================
+   RESET RECORD BUTTON
+============================================================ */
+
+function resetRecordButton() {
+
+    const rb =
+        document.getElementById("recordBtn");
+
+
+    if (!rb) return;
+
+
+    rb.disabled = false;
+
+    rb.innerText =
+        "🎤 Start Recording";
+
+    rb.classList.remove("recording");
+
+    rb.classList.remove("processing");
+
+}
+
+
+/* ============================================================
+   START / STOP RECORDING
+============================================================ */
+
+function toggleRecording() {
+
+    const rb =
+        document.getElementById("recordBtn");
+
+
+    if (!recognition) {
+
+        alert(
+            "Speech recognition is not supported in this browser. " +
+            "Please try Chrome."
+        );
+
+        return;
+    }
+
+
+    /* ========================================================
+       START
+    ======================================================== */
+
+    if (
+        !isRecording &&
+        !isProcessingSpeech
+    ) {
+
+        recognitionTranscript = "";
+
+        isRecording = true;
+
+        isProcessingSpeech = false;
+
+
+        rb.disabled = false;
+
+        rb.innerText =
+            "⏹ Stop & Analyze";
+
+        rb.classList.add("recording");
+
+        rb.classList.remove("processing");
+
+
+        setSpeechStatus(
+            "Starting microphone…",
+            "active"
+        );
+
+
+        try {
+
+            recognition.start();
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "[Speech] START ERROR:",
+                error
+            );
+
+            isRecording = false;
+
+            resetRecordButton();
+
+            setSpeechStatus(
+                "Could not start speech recognition.",
+                "error"
+            );
+
+        }
+
+
+        return;
+    }
+
+
+    /* ========================================================
+       STOP
+    ======================================================== */
+
+    if (isRecording) {
+
+        console.log(
+            "[Speech] Student pressed STOP"
+        );
+
+
+        isRecording = false;
+
+        isProcessingSpeech = true;
+
+
+        rb.disabled = true;
+
+        rb.innerText =
+            "⏳ Analysing…";
+
+        rb.classList.remove("recording");
+
+        rb.classList.add("processing");
+
+
+        setSpeechStatus(
+            "Analysing your speech…",
+            "active"
+        );
+
+
+        try {
+
+            recognition.stop();
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "[Speech] STOP ERROR:",
+                error
+            );
+
+            finishSpeechProcessing();
+
+        }
+
+
+        /*
+         * Safety timeout.
+         *
+         * Some Android browsers may fail to fire onend.
+         */
+
+        clearTimeout(
+            recognitionTimeout
+        );
+
+
+        recognitionTimeout =
+            setTimeout(
+                () => {
+
+                    if (isProcessingSpeech) {
+
+                        console.log(
+                            "[Speech] Safety timeout."
+                        );
+
+                        finishSpeechProcessing();
+
+                    }
+
+                },
+                4000
+            );
+
+    }
+
+}
+
+
+/* ============================================================
+   FINISH SPEECH PROCESSING
+============================================================ */
+
+function finishSpeechProcessing() {
+
+    if (!isProcessingSpeech) {
+        return;
+    }
+
+
+    clearTimeout(
+        recognitionTimeout
+    );
+
+    recognitionTimeout = null;
+
+
+    isProcessingSpeech = false;
+
+
+    const transcript =
+        recognitionTranscript.trim();
+
+
+    console.log(
+        "[Speech] FINAL TRANSCRIPT:",
+        transcript
+    );
+
+
+    /* ========================================================
+       NO TRANSCRIPT
+    ======================================================== */
+
+    if (!transcript) {
+
+        resetRecordButton();
+
+
+        setSpeechStatus(
+            "No speech was detected.",
+            "error"
+        );
+
+
+        alert(
+            "No speech was detected.\n\n" +
+            "Please speak clearly and try again."
+        );
+
+
+        return;
+    }
+
+
+    /* ========================================================
+       TRANSCRIPT FOUND
+    ======================================================== */
+
+    setSpeechStatus(
+        "Speech detected ✓",
+        "success"
+    );
+
+
+    processResult(
+        transcript
+    );
+
+}
+
+
+/* ============================================================
    MICROPHONE TEST
-   ========================================================= */
+============================================================ */
 
 async function startMicTest(event) {
 
@@ -1247,9 +1636,7 @@ async function startMicTest(event) {
 
     try {
 
-        /*
-         * Stop previous microphone test first.
-         */
+        /* Stop previous test */
 
         stopMicTest();
 
@@ -1267,20 +1654,21 @@ async function startMicTest(event) {
 
         document
             .getElementById("micLabel")
-            .innerText = "Mic Active:";
+            .innerText =
+            "Mic Active:";
 
 
-        const btn =
+        const testBtn =
             document.getElementById("micTestBtn");
 
-        btn.innerText = "Working!";
 
-        btn.style.opacity = "0.6";
+        testBtn.innerText =
+            "Working!";
 
 
-        /*
-         * Audio visualiser
-         */
+        testBtn.style.opacity =
+            "0.6";
+
 
         const AudioContext =
             window.AudioContext ||
@@ -1289,21 +1677,12 @@ async function startMicTest(event) {
 
         if (!AudioContext) {
 
-            console.log(
-                "AudioContext not supported."
-            );
-
             return;
         }
 
 
-        audioContext = new AudioContext();
-
-
-        if (audioContext.state === "suspended") {
-
-            await audioContext.resume();
-        }
+        audioContext =
+            new AudioContext();
 
 
         analyser =
@@ -1324,94 +1703,111 @@ async function startMicTest(event) {
             );
 
 
-        analyser.smoothingTimeConstant = 0.8;
+        analyser.smoothingTimeConstant =
+            0.8;
 
-        analyser.fftSize = 1024;
+
+        analyser.fftSize =
+            1024;
 
 
-        microphone.connect(analyser);
+        microphone.connect(
+            analyser
+        );
 
-        analyser.connect(scriptProcessor);
+
+        analyser.connect(
+            scriptProcessor
+        );
+
 
         scriptProcessor.connect(
             audioContext.destination
         );
 
 
-        scriptProcessor.onaudioprocess = () => {
+        scriptProcessor.onaudioprocess =
+            () => {
 
-            if (!analyser) return;
+                if (!analyser) {
+                    return;
+                }
 
 
-            const array =
-                new Uint8Array(
-                    analyser.frequencyBinCount
+                const array =
+                    new Uint8Array(
+                        analyser.frequencyBinCount
+                    );
+
+
+                analyser.getByteFrequencyData(
+                    array
                 );
 
 
-            analyser.getByteFrequencyData(array);
+                let val = 0;
 
 
-            let val = 0;
+                for (
+                    let i = 0;
+                    i < array.length;
+                    i++
+                ) {
 
-            for (
-                let i = 0;
-                i < array.length;
-                i++
-            ) {
+                    val += array[i];
 
-                val += array[i];
-            }
-
-
-            const average =
-                val / array.length;
+                }
 
 
-            document
-                .getElementById("micBar")
-                .style.width =
-                Math.min(
-                    100,
-                    average * 2.5
-                ) + "%";
-        };
+                const average =
+                    val / array.length;
 
 
-    } catch (error) {
+                document
+                    .getElementById("micBar")
+                    .style.width =
+                    Math.min(
+                        100,
+                        average * 2.5
+                    ) + "%";
+
+            };
+
+    }
+
+    catch (err) {
 
         console.error(
             "Microphone test error:",
-            error
+            err
         );
 
 
         alert(
-            "Mic access denied or browser incompatible."
+            "Microphone access denied or browser incompatible."
         );
+
     }
+
 }
 
 
-/* =========================================================
-   STOP MICROPHONE TEST
-   ========================================================= */
+/* ============================================================
+   STOP MIC TEST
+============================================================ */
 
 function stopMicTest() {
 
     if (scriptProcessor) {
 
+        scriptProcessor.onaudioprocess =
+            null;
+
         try {
             scriptProcessor.disconnect();
         } catch (e) {}
-    }
 
-
-    if (analyser) {
-
-        try {
-            analyser.disconnect();
-        } catch (e) {}
+        scriptProcessor = null;
     }
 
 
@@ -1420,16 +1816,18 @@ function stopMicTest() {
         try {
             microphone.disconnect();
         } catch (e) {}
+
+        microphone = null;
     }
 
 
-    if (micStream) {
+    if (analyser) {
 
-        micStream
-            .getTracks()
-            .forEach(track => track.stop());
+        try {
+            analyser.disconnect();
+        } catch (e) {}
 
-        micStream = null;
+        analyser = null;
     }
 
 
@@ -1443,31 +1841,40 @@ function stopMicTest() {
     }
 
 
-    analyser = null;
-    microphone = null;
-    scriptProcessor = null;
+    if (micStream) {
+
+        micStream
+            .getTracks()
+            .forEach(track => track.stop());
+
+        micStream = null;
+    }
+
 }
 
 
-/* =========================================================
+/* ============================================================
    TASK ID INPUT
-   ========================================================= */
+============================================================ */
 
 function handleTaskIdInput(input) {
 
     if (!input.value.startsWith("ID-")) {
 
         input.value = "ID-";
+
     }
+
 
     input.value =
         input.value.toUpperCase();
+
 }
 
 
-/* =========================================================
+/* ============================================================
    FETCH TASK
-   ========================================================= */
+============================================================ */
 
 async function fetchTask() {
 
@@ -1489,9 +1896,9 @@ async function fetchTask() {
         sNo,
         sName,
         sTaskId
-    ].forEach(el => {
-        el.classList.remove("error");
-    });
+    ].forEach(
+        el => el.classList.remove("error")
+    );
 
 
     let err = false;
@@ -1500,21 +1907,27 @@ async function fetchTask() {
     if (!sClass.value.trim()) {
 
         sClass.classList.add("error");
+
         err = true;
+
     }
 
 
     if (!sNo.value.trim()) {
 
         sNo.classList.add("error");
+
         err = true;
+
     }
 
 
     if (!sName.value.trim()) {
 
         sName.classList.add("error");
+
         err = true;
+
     }
 
 
@@ -1530,11 +1943,15 @@ async function fetchTask() {
     ) {
 
         sTaskId.classList.add("error");
+
         err = true;
+
     }
 
 
-    if (err) return;
+    if (err) {
+        return;
+    }
 
 
     localStorage.setItem(
@@ -1542,16 +1959,20 @@ async function fetchTask() {
         sClass.value.trim()
     );
 
+
     localStorage.setItem(
         "reader_no",
         sNo.value.trim()
     );
+
 
     localStorage.setItem(
         "reader_name",
         sName.value.trim()
     );
 
+
+    /* Stop mic test before reading */
 
     stopMicTest();
 
@@ -1566,52 +1987,73 @@ async function fetchTask() {
 
     try {
 
-        const res = await fetch(
-            `${API_URL}?action=getTask&taskId=${encodeURIComponent(cleanedId)}`
-        );
+        const res =
+            await fetch(
+                `${API_URL}?action=getTask&taskId=${encodeURIComponent(cleanedId)}`
+            );
 
 
         const data =
             await res.json();
 
 
-        if (data.passage === "NOT_FOUND") {
+        if (
+            data.passage ===
+            "NOT_FOUND"
+        ) {
 
-            sTaskId.classList.add("error");
+            sTaskId.classList.add(
+                "error"
+            );
+
 
             alert(
                 "Invalid Task ID. Please check and try again."
             );
 
-        } else {
+        }
+
+        else {
 
             /*
-             * FIXED:
+             * IMPORTANT FIX:
              *
-             * Removed the accidental \*
-             * from the sentence regex.
+             * Original:
+             * /[^.!?]+[.!?]\*/g
+             *
+             * That required a literal * after punctuation.
+             *
+             * Correct:
              */
 
             chunks =
                 data.passage.match(
-                    /[^.!?]+[.!?]/g
-                ) || [data.passage];
+                    /[^.!?]+[.!?]+/g
+                ) || [
+                    data.passage
+                ];
 
 
             chunks =
                 chunks
-                    .map(c => c.trim())
-                    .filter(c => c.length > 0);
+                    .map(
+                        c => c.trim()
+                    )
+                    .filter(
+                        c => c.length > 0
+                    );
 
 
             document
                 .getElementById("studentEntry")
-                .style.display = "none";
+                .style.display =
+                "none";
 
 
             document
                 .getElementById("readingSection")
-                .style.display = "block";
+                .style.display =
+                "block";
 
 
             currentChunkIdx = 0;
@@ -1620,21 +2062,21 @@ async function fetchTask() {
 
             totalWords = 0;
 
-            tempMatches = 0;
-
-            tempTotal = 0;
 
             showChunk();
+
         }
 
+    }
 
-    } catch (error) {
+    catch (e) {
 
-        console.error(error);
+        console.error(e);
 
         alert(
             "Network error. Please check your connection."
         );
+
     }
 
 
@@ -1644,22 +2086,15 @@ async function fetchTask() {
         false,
         "Join Task"
     );
+
 }
 
 
-/* =========================================================
-   SHOW SENTENCE
-   ========================================================= */
+/* ============================================================
+   SHOW CHUNK
+============================================================ */
 
 async function showChunk() {
-
-    /*
-     * Make absolutely sure no previous recognition
-     * session can affect the new sentence.
-     */
-
-    cancelSpeechRecognition();
-
 
     const text =
         chunks[currentChunkIdx];
@@ -1673,27 +2108,32 @@ async function showChunk() {
 
     document
         .getElementById("passageDisplay")
-        .innerText = text;
+        .innerText =
+        text;
 
 
     document
         .getElementById("passageDisplay")
-        .style.display = "block";
+        .style.display =
+        "block";
 
 
     document
         .getElementById("feedbackArea")
-        .innerHTML = "";
+        .innerHTML =
+        "";
 
 
     document
         .getElementById("recordBtn")
-        .style.display = "block";
+        .style.display =
+        "block";
 
 
     document
         .getElementById("postReadingActions")
-        .style.display = "none";
+        .style.display =
+        "none";
 
 
     document
@@ -1711,17 +2151,21 @@ async function showChunk() {
 
 
     const trans =
-        document.getElementById("translationText");
+        document.getElementById(
+            "translationText"
+        );
 
 
-    trans.innerText = "...";
+    trans.innerText =
+        "...";
 
 
     try {
 
-        const res = await fetch(
-            `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|zh-TW`
-        );
+        const res =
+            await fetch(
+                `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|zh-TW`
+            );
 
 
         const d =
@@ -1729,26 +2173,39 @@ async function showChunk() {
 
 
         trans.innerText =
-            d.responseData.translatedText || "";
+            d.responseData &&
+            d.responseData.translatedText
+                ? d.responseData.translatedText
+                : "";
 
+    }
 
-    } catch (e) {
+    catch (e) {
 
         console.error(
             "Translation error:",
             e
         );
 
-        trans.innerText = "";
+
+        trans.innerText =
+            "";
+
     }
+
 }
 
 
-/* =========================================================
-   PLAY TEXT
-   ========================================================= */
+/* ============================================================
+   TEXT-TO-SPEECH
+============================================================ */
 
 function playText() {
+
+    if (!window.speechSynthesis) {
+        return;
+    }
+
 
     window.speechSynthesis.cancel();
 
@@ -1765,385 +2222,59 @@ function playText() {
 
     const naturalVoice =
         voices.find(
-            v => v.name.includes("Google US English")
+            v =>
+                v.name.includes(
+                    "Google US English"
+                )
         ) ||
         voices.find(
-            v => v.name.includes("Samantha")
+            v =>
+                v.name.includes(
+                    "Samantha"
+                )
         ) ||
         voices.find(
-            v => v.lang.startsWith("en-US")
+            v =>
+                v.lang.startsWith(
+                    "en-US"
+                )
         );
 
 
     if (naturalVoice) {
 
-        utter.voice = naturalVoice;
+        utter.voice =
+            naturalVoice;
+
     }
 
 
-    utter.lang = "en-US";
-
-    utter.rate = 0.85;
-
-    utter.pitch = 1.0;
+    utter.lang =
+        "en-US";
 
 
-    window.speechSynthesis.speak(utter);
+    utter.rate =
+        0.85;
+
+
+    utter.pitch =
+        1.0;
+
+
+    window.speechSynthesis.speak(
+        utter
+    );
+
 }
 
 
-/* =========================================================
-   START / STOP RECORDING
-   ========================================================= */
-
-function toggleRecording() {
-
-    const rb =
-        document.getElementById("recordBtn");
-
-
-    /*
-     * Browser doesn't support SpeechRecognition.
-     */
-
-    if (!recognition) {
-
-        alert(
-            "Speech recognition is not supported in this browser. " +
-            "Please use Chrome."
-        );
-
-        return;
-    }
-
-
-    /*
-     * START
-     */
-
-    if (!isRecording && !isProcessingSpeech) {
-
-        /*
-         * Clear any old transcript.
-         */
-
-        recognitionTranscript = "";
-
-
-        /*
-         * Give this recording session a unique ID.
-         */
-
-        recognitionSession++;
-
-
-        const session =
-            recognitionSession;
-
-
-        try {
-
-            recognition.start();
-
-            isRecording = true;
-
-            isProcessingSpeech = false;
-
-
-            rb.innerText =
-                "⏹ Stop & Analyze";
-
-
-            rb.classList.add(
-                "recording"
-            );
-
-
-            rb.disabled = false;
-
-
-            setSpeechStatus(
-                "Starting microphone…"
-            );
-
-
-            console.log(
-                "[Speech] Starting session:",
-                session
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "[Speech] Start error:",
-                error
-            );
-
-
-            isRecording = false;
-
-            isProcessingSpeech = false;
-
-
-            resetRecordButton();
-
-
-            alert(
-                "Could not start speech recognition. " +
-                "Please try again."
-            );
-        }
-
-
-        return;
-    }
-
-
-    /*
-     * STOP
-     */
-
-    if (isRecording) {
-
-        console.log(
-            "[Speech] Student pressed STOP."
-        );
-
-
-        isRecording = false;
-
-        isProcessingSpeech = true;
-
-
-        rb.innerText =
-            "⏳ Analysing…";
-
-
-        rb.classList.remove(
-            "recording"
-        );
-
-
-        rb.classList.add(
-            "processing"
-        );
-
-
-        rb.disabled = true;
-
-
-        setSpeechStatus(
-            "Analysing your speech…"
-        );
-
-
-        /*
-         * Stop recognition.
-         */
-
-        try {
-
-            recognition.stop();
-
-        } catch (error) {
-
-            console.error(
-                "[Speech] Stop error:",
-                error
-            );
-
-            finishSpeechProcessing();
-        }
-
-
-        /*
-         * IMPORTANT:
-         *
-         * Some Android browsers don't reliably
-         * fire onend/onresult after stop().
-         *
-         * Therefore we have a safety timeout.
-         */
-
-        clearTimeout(
-            recognitionTimeout
-        );
-
-
-        recognitionTimeout =
-            setTimeout(() => {
-
-                if (isProcessingSpeech) {
-
-                    console.log(
-                        "[Speech] Safety timeout reached."
-                    );
-
-
-                    finishSpeechProcessing();
-                }
-
-            }, 3000);
-    }
-}
-
-
-/* =========================================================
-   FINISH SPEECH PROCESSING
-   ========================================================= */
-
-function finishSpeechProcessing() {
-
-    if (!isProcessingSpeech) {
-        return;
-    }
-
-
-    clearTimeout(
-        recognitionTimeout
-    );
-
-
-    recognitionTimeout = null;
-
-
-    isProcessingSpeech = false;
-
-
-    const transcript =
-        recognitionTranscript.trim();
-
-
-    console.log(
-        "[Speech] Final transcript:",
-        transcript
-    );
-
-
-    /*
-     * NO TRANSCRIPT
-     *
-     * This is the critical fallback for the Oppo problem.
-     */
-
-    if (!transcript) {
-
-        resetRecordButton();
-
-
-        setSpeechStatus(
-            "No speech was detected."
-        );
-
-
-        alert(
-            "No speech was detected. " +
-            "Please try again and speak clearly."
-        );
-
-
-        return;
-    }
-
-
-    /*
-     * We have speech.
-     */
-
-    setSpeechStatus(
-        "Speech detected ✓"
-    );
-
-
-    processResult(
-        transcript
-    );
-}
-
-
-/* =========================================================
-   CANCEL SPEECH RECOGNITION
-   ========================================================= */
-
-function cancelSpeechRecognition() {
-
-    isRecording = false;
-
-    isProcessingSpeech = false;
-
-
-    clearTimeout(
-        recognitionTimeout
-    );
-
-
-    recognitionTimeout = null;
-
-
-    recognitionTranscript = "";
-
-
-    recognitionSession++;
-
-
-    if (recognition) {
-
-        try {
-            recognition.abort();
-        } catch (e) {
-            console.log(
-                "Recognition abort:",
-                e
-            );
-        }
-    }
-
-
-    resetRecordButton();
-}
-
-
-/* =========================================================
-   RESET RECORD BUTTON
-   ========================================================= */
-
-function resetRecordButton() {
-
-    const rb =
-        document.getElementById(
-            "recordBtn"
-        );
-
-
-    rb.disabled = false;
-
-
-    rb.innerText =
-        "🎤 Start Recording";
-
-
-    rb.classList.remove(
-        "recording"
-    );
-
-
-    rb.classList.remove(
-        "processing"
-    );
-}
-
-
-/* =========================================================
+/* ============================================================
    PROCESS RESULT
-   ========================================================= */
+============================================================ */
 
 function processResult(transcript) {
 
     if (!transcript) {
-
-        resetRecordButton();
-
         return;
     }
 
@@ -2154,11 +2285,15 @@ function processResult(transcript) {
     );
 
 
-    const clean = (s) =>
-        s
-            .toLowerCase()
-            .replace(/[^\w\s']/g, "")
-            .trim();
+    const clean =
+        (s) =>
+            s
+                .toLowerCase()
+                .replace(
+                    /[^\w\s]/g,
+                    ""
+                )
+                .trim();
 
 
     const targetWords =
@@ -2169,8 +2304,7 @@ function processResult(transcript) {
 
     const userWords =
         clean(transcript)
-            .split(/\s+/)
-            .filter(Boolean);
+            .split(/\s+/);
 
 
     let html = "";
@@ -2178,69 +2312,80 @@ function processResult(transcript) {
     let matches = 0;
 
 
-    targetWords.forEach(word => {
+    targetWords.forEach(
+        word => {
 
-        const cleanedWord =
-            clean(word);
+            const cleanedWord =
+                clean(word);
 
 
-        if (
-            userWords.includes(
-                cleanedWord
-            )
-        ) {
+            if (
+                userWords.includes(
+                    cleanedWord
+                )
+            ) {
 
-            html +=
-                `<span class="word-correct">${word} </span>`;
+                html +=
+                    `<span class="word-correct">${word} </span>`;
 
-            matches++;
+                matches++;
 
-        } else {
+            }
 
-            html +=
-                `<span class="word-wrong">${word} </span>`;
+            else {
+
+                html +=
+                    `<span class="word-wrong">${word} </span>`;
+
+            }
+
         }
-    });
+    );
 
 
-    tempMatches = matches;
+    tempMatches =
+        matches;
 
-    tempTotal = targetWords.length;
 
+    tempTotal =
+        targetWords.length;
 
-    /*
-     * Replace sentence with feedback.
-     */
 
     document
         .getElementById("passageDisplay")
-        .style.display = "none";
+        .style.display =
+        "none";
 
 
     document
         .getElementById("feedbackArea")
-        .innerHTML = html;
+        .innerHTML =
+        html;
 
 
     document
         .getElementById("recordBtn")
-        .style.display = "none";
+        .style.display =
+        "none";
 
 
     document
         .getElementById("postReadingActions")
-        .style.display = "flex";
+        .style.display =
+        "flex";
 
 
     setSpeechStatus(
-        `Speech analysed — ${matches}/${targetWords.length} words matched.`
+        `Speech analysed ✓`,
+        "success"
     );
+
 }
 
 
-/* =========================================================
-   SCORE PARSING
-   ========================================================= */
+/* ============================================================
+   PARSE SCORE
+============================================================ */
 
 function parseScore(val) {
 
@@ -2258,27 +2403,27 @@ function parseScore(val) {
             ? Math.round(num * 100)
             : Math.round(num)
     );
+
 }
 
 
-/* =========================================================
-   NEXT SENTENCE
-   ========================================================= */
+/* ============================================================
+   NEXT CHUNK
+============================================================ */
 
 async function nextChunk() {
-
-    /*
-     * Prevent double submission.
-     */
 
     if (isSubmitting) {
         return;
     }
 
 
-    totalMatches += tempMatches;
+    totalMatches +=
+        tempMatches;
 
-    totalWords += tempTotal;
+
+    totalWords +=
+        tempTotal;
 
 
     if (
@@ -2288,19 +2433,11 @@ async function nextChunk() {
 
         currentChunkIdx++;
 
-        tempMatches = 0;
-
-        tempTotal = 0;
-
         showChunk();
 
         return;
     }
 
-
-    /*
-     * FINAL SENTENCE
-     */
 
     isSubmitting = true;
 
@@ -2320,7 +2457,10 @@ async function nextChunk() {
                 Math.min(
                     100,
                     Math.round(
-                        (totalMatches / totalWords) * 100
+                        (
+                            totalMatches /
+                            totalWords
+                        ) * 100
                     )
                 )
             )
@@ -2343,23 +2483,37 @@ async function nextChunk() {
                 method: "POST",
                 mode: "no-cors",
                 body: JSON.stringify({
-                    action: "submitScore",
-                    taskId: tId,
+
+                    action:
+                        "submitScore",
+
+                    taskId:
+                        tId,
+
                     className:
-                        document.getElementById("sClass").value,
+                        document.getElementById(
+                            "sClass"
+                        ).value,
+
                     classNo:
-                        document.getElementById("sNo").value,
+                        document.getElementById(
+                            "sNo"
+                        ).value,
+
                     name:
-                        document.getElementById("sName").value,
-                    score: score
+                        document.getElementById(
+                            "sName"
+                        ).value,
+
+                    score:
+                        score
+
                 })
             }
         );
 
 
-        /*
-         * Fetch leaderboard.
-         */
+        /* Load leaderboard */
 
         const res =
             await fetch(
@@ -2378,69 +2532,87 @@ async function nextChunk() {
                         parseScore(b[5]) -
                         parseScore(a[5])
                 )
-                .slice(0, 5);
+                .slice(
+                    0,
+                    5
+                );
 
 
         let board =
-            `<table>`;
+            "<table>";
 
 
-        top.forEach((r, i) => {
+        top.forEach(
+            (r, i) => {
 
-            const icon =
-                i === 0
-                    ? "🥇"
-                    : i === 1
-                    ? "🥈"
-                    : i === 2
-                    ? "🥉"
-                    : "";
-
-
-            const sVal =
-                parseScore(r[5]);
+                const icon =
+                    i === 0
+                        ? "🥇"
+                        : i === 1
+                            ? "🥈"
+                            : i === 2
+                                ? "🥉"
+                                : "";
 
 
-            board +=
-                `<tr>
-                    <td>
-                        ${icon} ${r[2]}-${r[3]} ${r[4]}
-                    </td>
-                    <td style="text-align:right">
-                        <b>${sVal}%</b>
-                    </td>
-                </tr>`;
-        });
+                const sVal =
+                    parseScore(r[5]);
+
+
+                board +=
+                    `<tr>
+                        <td>
+                            ${icon} ${r[2]}-${r[3]} ${r[4]}
+                        </td>
+                        <td style="text-align:right">
+                            <b>${sVal}%</b>
+                        </td>
+                    </tr>`;
+
+            }
+        );
+
+
+        board +=
+            "</table>";
 
 
         document
-            .getElementById("leaderboardList")
+            .getElementById(
+                "leaderboardList"
+            )
             .innerHTML =
-            board + `</table>`;
+            board;
 
 
         document
-            .getElementById("practiceArea")
-            .style.display = "none";
+            .getElementById(
+                "practiceArea"
+            )
+            .style.display =
+            "none";
 
 
         document
-            .getElementById("resultScreen")
-            .style.display = "block";
+            .getElementById(
+                "resultScreen"
+            )
+            .style.display =
+            "block";
 
 
         document
-            .getElementById("finalScoreDisplay")
+            .getElementById(
+                "finalScoreDisplay"
+            )
             .innerText =
             score + "%";
 
+    }
 
-    } catch (err) {
+    catch (err) {
 
-        console.error(
-            "Submission error:",
-            err
-        );
+        console.error(err);
 
 
         alert(
@@ -2449,6 +2621,7 @@ async function nextChunk() {
 
 
         isSubmitting = false;
+
     }
 
 
@@ -2458,12 +2631,13 @@ async function nextChunk() {
         false,
         "Next Sentence →"
     );
+
 }
 
 
-/* =========================================================
+/* ============================================================
    RETRY SENTENCE
-   ========================================================= */
+============================================================ */
 
 function retrySentence() {
 
@@ -2471,14 +2645,14 @@ function retrySentence() {
 
     tempTotal = 0;
 
-
     showChunk();
+
 }
 
 
-/* =========================================================
+/* ============================================================
    TEACHER ACCESS
-   ========================================================= */
+============================================================ */
 
 function setupTeacherAccess() {
 
@@ -2488,34 +2662,39 @@ function setupTeacherAccess() {
         );
 
 
-    const start = (e) => {
+    const start =
+        (e) => {
 
-        if (
-            e.type === "touchstart"
-        ) {
+            if (
+                e.type ===
+                "touchstart"
+            ) {
 
-            e.preventDefault();
-        }
+                e.preventDefault();
+
+            }
 
 
-        pressTimer =
-            setTimeout(
-                () => {
-                    executeSwitch(
-                        "teacher"
-                    );
-                },
-                2500
+            pressTimer =
+                setTimeout(
+                    () => {
+
+                        executeSwitch(
+                            "teacher"
+                        );
+
+                    },
+                    2500
+                );
+
+        };
+
+
+    const stop =
+        () =>
+            clearTimeout(
+                pressTimer
             );
-    };
-
-
-    const stop = () => {
-
-        clearTimeout(
-            pressTimer
-        );
-    };
 
 
     btn.addEventListener(
@@ -2524,36 +2703,42 @@ function setupTeacherAccess() {
         { passive:false }
     );
 
+
     btn.addEventListener(
         "touchend",
         stop
     );
+
 
     btn.addEventListener(
         "touchcancel",
         stop
     );
 
+
     btn.addEventListener(
         "mousedown",
         start
     );
+
 
     btn.addEventListener(
         "mouseup",
         stop
     );
 
+
     btn.addEventListener(
         "mouseleave",
         stop
     );
+
 }
 
 
-/* =========================================================
+/* ============================================================
    TEACHER MODE
-   ========================================================= */
+============================================================ */
 
 function toggleTeacherMode(m) {
 
@@ -2587,12 +2772,13 @@ function toggleTeacherMode(m) {
         m === "scores"
             ? "mode-btn active"
             : "mode-btn";
+
 }
 
 
-/* =========================================================
+/* ============================================================
    SWITCH VIEW
-   ========================================================= */
+============================================================ */
 
 function switchView(v) {
 
@@ -2601,16 +2787,23 @@ function switchView(v) {
         executeSwitch(
             "student"
         );
+
     }
+
 }
 
 
 function executeSwitch(v) {
 
     document
-        .querySelectorAll(".container")
-        .forEach(c =>
-            c.classList.remove("active")
+        .querySelectorAll(
+            ".container"
+        )
+        .forEach(
+            c =>
+                c.classList.remove(
+                    "active"
+                )
         );
 
 
@@ -2618,15 +2811,20 @@ function executeSwitch(v) {
         .getElementById(
             v + "View"
         )
-        .classList.add("active");
+        .classList.add(
+            "active"
+        );
 
 
     document
         .querySelectorAll(
             ".mode-nav .mode-btn"
         )
-        .forEach(b =>
-            b.classList.remove("active")
+        .forEach(
+            b =>
+                b.classList.remove(
+                    "active"
+                )
         );
 
 
@@ -2636,19 +2834,24 @@ function executeSwitch(v) {
             v.charAt(0).toUpperCase() +
             v.slice(1)
         )
-        .classList.add("active");
+        .classList.add(
+            "active"
+        );
+
 }
 
 
-/* =========================================================
+/* ============================================================
    GET SCORES
-   ========================================================= */
+============================================================ */
 
 async function getScores() {
 
     const tId =
         document
-            .getElementById("tSearchId")
+            .getElementById(
+                "tSearchId"
+            )
             .value
             .trim()
             .toUpperCase();
@@ -2660,6 +2863,7 @@ async function getScores() {
     ) {
 
         return;
+
     }
 
 
@@ -2684,7 +2888,9 @@ async function getScores() {
 
 
         document
-            .getElementById("scoreActionArea")
+            .getElementById(
+                "scoreActionArea"
+            )
             .style.display =
             currentScores.length
                 ? "block"
@@ -2704,54 +2910,72 @@ async function getScores() {
         currentScores
             .slice()
             .reverse()
-            .forEach(r => {
+            .forEach(
+                r => {
 
-                const s =
-                    parseScore(r[5]);
-
-
-                const rawDate =
-                    r[1];
-
-
-                let dateDisplay =
-                    "N/A";
+                    const s =
+                        parseScore(
+                            r[5]
+                        );
 
 
-                if (rawDate) {
-
-                    const d =
-                        new Date(rawDate);
+                    const rawDate =
+                        r[1];
 
 
-                    dateDisplay =
-                        isNaN(d)
-                            ? rawDate
-                            : `${d.toLocaleDateString()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`;
+                    let dateDisplay =
+                        "N/A";
+
+
+                    if (rawDate) {
+
+                        const d =
+                            new Date(
+                                rawDate
+                            );
+
+
+                        dateDisplay =
+                            isNaN(d)
+                                ? rawDate
+                                : `${d.toLocaleDateString()} ${d.getHours()}:${String(
+                                    d.getMinutes()
+                                ).padStart(
+                                    2,
+                                    "0"
+                                )}`;
+
+                    }
+
+
+                    h +=
+                        `<tr>
+                            <td style="font-size:10px;color:#888">
+                                ${dateDisplay}
+                            </td>
+
+                            <td>
+                                ${r[2]}-${r[3]}
+                            </td>
+
+                            <td>
+                                <b>${r[4]}</b>
+                            </td>
+
+                            <td style="
+                                color:var(--system-green);
+                                font-weight:700
+                            ">
+                                ${s}%
+                            </td>
+                        </tr>`;
+
                 }
+            );
 
 
-                h +=
-                    `<tr>
-                        <td style="font-size:10px;color:#888">
-                            ${dateDisplay}
-                        </td>
-
-                        <td>
-                            ${r[2]}-${r[3]}
-                        </td>
-
-                        <td>
-                            <b>${r[4]}</b>
-                        </td>
-
-                        <td style="
-                            color:var(--system-green);
-                            font-weight:700">
-                            ${s}%
-                        </td>
-                    </tr>`;
-            });
+        h +=
+            "</table>";
 
 
         document
@@ -2759,16 +2983,18 @@ async function getScores() {
                 "scoreTableArea"
             )
             .innerHTML =
-            h + `</table>`;
+            h;
 
+    }
 
-    } catch (e) {
+    catch (e) {
 
         console.error(e);
 
         alert(
             "Failed to load scores."
         );
+
     }
 
 
@@ -2778,12 +3004,13 @@ async function getScores() {
         false,
         "Load Scores"
     );
+
 }
 
 
-/* =========================================================
+/* ============================================================
    DOWNLOAD CSV
-   ========================================================= */
+============================================================ */
 
 function downloadCSV() {
 
@@ -2796,14 +3023,19 @@ function downloadCSV() {
         [
             "Timestamp,TaskID,Class,No,Name,Score",
 
-            ...currentScores.map(r => {
+            ...currentScores.map(
+                r => {
 
-                const s =
-                    parseScore(r[5]);
+                    const s =
+                        parseScore(
+                            r[5]
+                        );
 
 
-                return `"${r[1]}","${r[0]}","${r[2]}","${r[3]}","${r[4]}","${s}%"`
-            })
+                    return `"${r[1]}","${r[0]}","${r[2]}","${r[3]}","${r[4]}","${s}%"`;
+
+                }
+            )
 
         ].join("\n");
 
@@ -2811,16 +3043,23 @@ function downloadCSV() {
     const blob =
         new Blob(
             [content],
-            { type:"text/csv" }
+            {
+                type:
+                    "text/csv"
+            }
         );
 
 
     const link =
-        document.createElement("a");
+        document.createElement(
+            "a"
+        );
 
 
     link.href =
-        URL.createObjectURL(blob);
+        URL.createObjectURL(
+            blob
+        );
 
 
     link.download =
@@ -2833,25 +3072,30 @@ function downloadCSV() {
     URL.revokeObjectURL(
         link.href
     );
+
 }
 
 
-/* =========================================================
+/* ============================================================
    CREATE TASK
-   ========================================================= */
+============================================================ */
 
 async function createTask() {
 
     const p =
         document
-            .getElementById("tPassage")
+            .getElementById(
+                "tPassage"
+            )
             .value
             .trim();
 
 
     const t =
         document
-            .getElementById("tName")
+            .getElementById(
+                "tName"
+            )
             .value
             .trim();
 
@@ -2875,13 +3119,21 @@ async function createTask() {
             await fetch(
                 API_URL,
                 {
-                    method:"POST",
+                    method: "POST",
 
-                    body:JSON.stringify({
-                        action:"createTask",
-                        email:t,
-                        passage:p
-                    })
+                    body:
+                        JSON.stringify({
+
+                            action:
+                                "createTask",
+
+                            email:
+                                t,
+
+                            passage:
+                                p
+
+                        })
                 }
             );
 
@@ -2891,7 +3143,9 @@ async function createTask() {
 
 
         document
-            .getElementById("displayId")
+            .getElementById(
+                "displayId"
+            )
             .innerText =
             newId;
 
@@ -2903,14 +3157,16 @@ async function createTask() {
             .style.display =
             "block";
 
+    }
 
-    } catch (e) {
+    catch (e) {
 
         console.error(e);
 
         alert(
             "Failed to generate task ID."
         );
+
     }
 
 
@@ -2920,12 +3176,13 @@ async function createTask() {
         false,
         "Generate Task ID"
     );
+
 }
 
 
-/* =========================================================
+/* ============================================================
    BUTTON LOADING
-   ========================================================= */
+============================================================ */
 
 function setBtnLoading(
     id,
@@ -2935,14 +3192,24 @@ function setBtnLoading(
 ) {
 
     const b =
-        document.getElementById(id);
+        document.getElementById(
+            id
+        );
 
 
     const s =
-        document.getElementById(spin);
+        document.getElementById(
+            spin
+        );
 
 
-    b.disabled = load;
+    if (!b) {
+        return;
+    }
+
+
+    b.disabled =
+        load;
 
 
     if (s) {
@@ -2951,6 +3218,7 @@ function setBtnLoading(
             load
                 ? "inline-block"
                 : "none";
+
     }
 
 
@@ -2959,13 +3227,17 @@ function setBtnLoading(
         b.innerText =
             "Wait...";
 
-    } else {
+    }
+
+    else {
 
         b.innerHTML =
             spin
                 ? `<div class="spinner" id="${spin}"></div> ${text}`
                 : text;
+
     }
+
 }
 
 </script>
