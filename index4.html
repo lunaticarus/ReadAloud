@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -8,6 +10,7 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <title>AI Read Aloud</title>
+
 
     <style>
 
@@ -24,41 +27,76 @@
             --radius: 20px;
         }
 
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-            background-color: var(--system-gray-bg);
-            color: var(--text-primary);
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "SF Pro Text",
+                sans-serif;
+
+            background-color:
+                var(--system-gray-bg);
+
+            color:
+                var(--text-primary);
+
             margin: 0;
-            padding: 100px 20px 40px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            -webkit-font-smoothing: antialiased;
-            overscroll-behavior-y: contain;
+
+            padding:
+                100px 20px 40px 20px;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            -webkit-font-smoothing:
+                antialiased;
+
+            overscroll-behavior-y:
+                contain;
         }
+
 
         header {
             position: fixed;
+
             top: 0;
             left: 0;
             right: 0;
+
             height: 74px;
 
-            background: rgba(245, 245, 247, 0.8);
+            background:
+                rgba(245,245,247,0.8);
 
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter:
+                blur(20px);
+
+            -webkit-backdrop-filter:
+                blur(20px);
 
             z-index: 900;
 
-            display: flex;
-            align-items: center;
+            display:
+                flex;
 
-            padding: 0 30px;
+            align-items:
+                center;
+
+            padding:
+                0 30px;
 
             box-shadow:
-                0 4px 12px rgba(0,0,0,0.03);
+                0 4px 12px
+                rgba(0,0,0,0.03);
         }
+
 
         header::after {
             content: "";
@@ -78,8 +116,10 @@
                     transparent
                 );
 
-            pointer-events: none;
+            pointer-events:
+                none;
         }
+
 
         h1 {
             font-weight: 600;
@@ -87,28 +127,36 @@
             margin: 0;
         }
 
+
         .spinner {
             display: none;
 
             width: 14px;
             height: 14px;
 
-            border: 2px solid rgba(0,0,0,0.1);
+            border:
+                2px solid
+                rgba(0,0,0,0.1);
 
-            border-top-color: currentColor;
+            border-top-color:
+                currentColor;
 
             border-radius: 50%;
 
-            animation: spin 0.8s linear infinite;
+            animation:
+                spin 0.8s linear infinite;
 
             margin-right: 8px;
         }
 
+
         @keyframes spin {
             to {
-                transform: rotate(360deg);
+                transform:
+                    rotate(360deg);
             }
         }
+
 
         .mode-nav {
             position: fixed;
@@ -116,54 +164,77 @@
             top: 20px;
             right: 30px;
 
-            background: rgba(255,255,255,0.7);
+            background:
+                rgba(255,255,255,0.7);
 
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter:
+                blur(20px);
+
+            -webkit-backdrop-filter:
+                blur(20px);
 
             padding: 4px;
 
             border-radius: 12px;
 
             border:
-                1px solid rgba(0,0,0,0.05);
+                1px solid
+                rgba(0,0,0,0.05);
 
-            display: flex;
+            display:
+                flex;
 
             gap: 4px;
 
             z-index: 1000;
         }
 
+
         .mode-btn {
             border: none;
-            background: transparent;
 
-            padding: 6px 14px;
+            background:
+                transparent;
 
-            border-radius: 9px;
+            padding:
+                6px 14px;
 
-            font-size: 13px;
-            font-weight: 500;
+            border-radius:
+                9px;
 
-            cursor: pointer;
+            font-size:
+                13px;
 
-            transition: all 0.2s;
+            font-weight:
+                500;
 
-            color: var(--text-secondary);
+            cursor:
+                pointer;
+
+            transition:
+                all 0.2s;
+
+            color:
+                var(--text-secondary);
         }
+
 
         .mode-btn.active {
-            background: white;
+            background:
+                white;
 
-            color: var(--text-primary);
+            color:
+                var(--text-primary);
 
             box-shadow:
-                0 2px 8px rgba(0,0,0,0.08);
+                0 2px 8px
+                rgba(0,0,0,0.08);
         }
+
 
         .container {
             width: 100%;
+
             max-width: 600px;
 
             display: none;
@@ -172,187 +243,270 @@
                 fadeIn 0.4s ease;
         }
 
+
         .container.active {
             display: block;
         }
 
+
         @keyframes fadeIn {
+
             from {
                 opacity: 0;
-                transform: translateY(8px);
+                transform:
+                    translateY(8px);
             }
 
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform:
+                    translateY(0);
             }
+
         }
+
 
         .card {
-            background: var(--system-card-bg);
+            background:
+                var(--system-card-bg);
 
-            padding: 30px;
+            padding:
+                30px;
 
-            border-radius: var(--radius);
+            border-radius:
+                var(--radius);
 
             box-shadow:
-                0 4px 24px rgba(0,0,0,0.04);
+                0 4px 24px
+                rgba(0,0,0,0.04);
 
-            margin-bottom: 20px;
+            margin-bottom:
+                20px;
         }
+
 
         input,
         textarea {
+
             width: 100%;
 
-            padding: 14px;
+            padding:
+                14px;
 
             border:
-                1px solid #d2d2d7;
+                1px solid
+                #d2d2d7;
 
-            border-radius: 12px;
+            border-radius:
+                12px;
 
-            font-size: 16px;
+            font-size:
+                16px;
 
-            margin-bottom: 12px;
+            margin-bottom:
+                12px;
 
-            box-sizing: border-box;
+            box-sizing:
+                border-box;
 
-            outline: none;
+            outline:
+                none;
 
-            font-family: inherit;
+            font-family:
+                inherit;
 
-            background: #fafafa;
+            background:
+                #fafafa;
 
-            transition: all 0.2s;
+            transition:
+                all 0.2s;
         }
+
 
         input:focus,
         textarea:focus {
+
             border-color:
                 var(--system-blue);
 
-            background: white;
+            background:
+                white;
         }
 
+
         input.error {
+
             border-color:
                 var(--system-red) !important;
 
-            background: #fffcfc;
+            background:
+                #fffcfc;
         }
+
 
         .uppercase-input {
-            text-transform: uppercase;
+            text-transform:
+                uppercase;
         }
 
+
         .apple-btn {
+
             background:
                 var(--system-btn-grey);
 
             color:
                 var(--text-primary);
 
-            border: none;
+            border:
+                none;
 
-            padding: 14px 24px;
+            padding:
+                14px 24px;
 
-            border-radius: 24px;
+            border-radius:
+                24px;
 
-            font-weight: 600;
+            font-weight:
+                600;
 
-            cursor: pointer;
+            cursor:
+                pointer;
 
-            width: 100%;
+            width:
+                100%;
 
-            font-size: 15px;
+            font-size:
+                15px;
 
-            transition: all 0.2s;
+            transition:
+                all 0.2s;
 
-            display: flex;
+            display:
+                flex;
 
-            align-items: center;
+            align-items:
+                center;
 
-            justify-content: center;
+            justify-content:
+                center;
         }
+
 
         .apple-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+
+            opacity:
+                0.6;
+
+            cursor:
+                not-allowed;
         }
 
+
         .apple-btn.recording {
+
             background:
                 var(--system-red);
 
-            color: white;
+            color:
+                white;
 
             animation:
                 pulse 1.5s infinite;
         }
 
+
         .apple-btn.processing {
+
             background:
                 var(--system-blue);
 
-            color: white;
+            color:
+                white;
         }
+
 
         @keyframes pulse {
 
             0% {
-                opacity: 1;
+                opacity:
+                    1;
             }
 
             50% {
-                opacity: 0.8;
+                opacity:
+                    0.8;
             }
 
             100% {
-                opacity: 1;
+                opacity:
+                    1;
             }
 
         }
 
+
         .mic-test-container {
-            margin: 10px 0 20px 0;
 
-            padding: 14px;
+            margin:
+                10px 0 20px 0;
 
-            background: #f9f9fb;
+            padding:
+                14px;
 
-            border-radius: 12px;
+            background:
+                #f9f9fb;
 
-            display: flex;
+            border-radius:
+                12px;
 
-            align-items: center;
+            display:
+                flex;
 
-            gap: 12px;
+            align-items:
+                center;
 
-            font-size: 13px;
+            gap:
+                12px;
+
+            font-size:
+                13px;
 
             border:
-                1px solid #efeff4;
+                1px solid
+                #efeff4;
         }
+
 
         .mic-visualizer {
-            flex-grow: 1;
 
-            height: 6px;
+            flex-grow:
+                1;
 
-            background: #e3e3e8;
+            height:
+                6px;
 
-            border-radius: 3px;
+            background:
+                #e3e3e8;
 
-            overflow: hidden;
+            border-radius:
+                3px;
 
-            position: relative;
+            overflow:
+                hidden;
+
+            position:
+                relative;
         }
 
-        .mic-bar {
-            height: 100%;
 
-            width: 0%;
+        .mic-bar {
+
+            height:
+                100%;
+
+            width:
+                0%;
 
             background:
                 var(--system-green);
@@ -361,58 +515,85 @@
                 width 0.1s ease;
         }
 
+
         .mic-status-dot {
-            width: 8px;
-            height: 8px;
 
-            border-radius: 50%;
+            width:
+                8px;
 
-            background: #d1d1d6;
+            height:
+                8px;
 
-            flex-shrink: 0;
+            border-radius:
+                50%;
+
+            background:
+                #d1d1d6;
+
+            flex-shrink:
+                0;
         }
 
+
         .mic-status-dot.active {
+
             background:
                 var(--system-green);
 
             box-shadow:
-                0 0 8px var(--system-green);
+                0 0 8px
+                var(--system-green);
         }
 
+
         .passage-wrapper {
-            display: grid;
+
+            display:
+                grid;
 
             grid-template-columns:
                 1fr 44px;
 
-            align-items: center;
+            align-items:
+                center;
 
-            gap: 16px;
+            gap:
+                16px;
 
-            margin: 30px 0 10px 0;
+            margin:
+                30px 0 10px 0;
 
-            min-height: 80px;
+            min-height:
+                80px;
         }
+
 
         #passageDisplay,
         #feedbackArea {
 
-            font-size: 22px;
+            font-size:
+                22px;
 
-            font-weight: 500;
+            font-weight:
+                500;
 
-            line-height: 1.5;
+            line-height:
+                1.5;
 
-            margin: 0;
+            margin:
+                0;
         }
 
+
         .word-correct {
+
             color:
                 var(--system-green);
         }
 
+
         .word-wrong {
+
             color:
                 var(--system-red);
 
@@ -420,122 +601,149 @@
                 underline;
         }
 
+
         .translation-text {
-            font-size: 15px;
+
+            font-size:
+                15px;
 
             color:
                 var(--text-secondary);
 
-            opacity: 0.7;
+            opacity:
+                0.7;
 
-            margin-bottom: 15px;
+            margin-bottom:
+                15px;
         }
+
 
         .progress-text {
-            font-size: 11px;
 
-            font-weight: 700;
+            font-size:
+                11px;
+
+            font-weight:
+                700;
 
             color:
                 var(--text-secondary);
 
-            text-transform: uppercase;
+            text-transform:
+                uppercase;
 
-            letter-spacing: 0.8px;
+            letter-spacing:
+                0.8px;
         }
 
-        .speak-icon {
-            width: 44px;
-            height: 44px;
-
-            background:
-                var(--system-btn-grey);
-
-            border: none;
-
-            border-radius: 50%;
-
-            cursor: pointer;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-        }
 
         .speech-status {
-            text-align: center;
 
-            min-height: 20px;
+            min-height:
+                20px;
 
-            font-size: 12px;
+            text-align:
+                center;
+
+            font-size:
+                12px;
 
             color:
                 var(--text-secondary);
 
             margin:
-                4px 0 10px 0;
+                5px 0 10px 0;
         }
 
+
         .speech-status.active {
+
             color:
                 var(--system-red);
 
-            font-weight: 600;
+            font-weight:
+                600;
         }
 
+
         .speech-status.success {
+
             color:
                 var(--system-green);
 
-            font-weight: 600;
+            font-weight:
+                600;
         }
 
+
         .speech-status.error {
+
             color:
                 var(--system-red);
 
-            font-weight: 600;
+            font-weight:
+                600;
         }
 
+
         .ai-status {
+
+            display:
+                none;
+
+            margin:
+                10px 0;
+
+            padding:
+                12px;
+
             background:
                 #f9f9fb;
 
             border:
-                1px solid #efeff4;
+                1px solid
+                #efeff4;
 
-            border-radius: 12px;
+            border-radius:
+                12px;
 
-            padding: 12px;
-
-            margin-top: 12px;
-
-            font-size: 12px;
+            font-size:
+                12px;
 
             color:
                 var(--text-secondary);
-
-            display: none;
         }
+
 
         .ai-progress {
-            margin-top: 8px;
 
-            height: 5px;
+            width:
+                100%;
 
-            background: #e3e3e8;
+            height:
+                5px;
 
-            border-radius: 3px;
+            margin-top:
+                8px;
 
-            overflow: hidden;
+            background:
+                #e3e3e8;
+
+            border-radius:
+                3px;
+
+            overflow:
+                hidden;
         }
 
-        .ai-progress-bar {
-            height: 100%;
 
-            width: 0%;
+        .ai-progress-bar {
+
+            width:
+                0%;
+
+            height:
+                100%;
 
             background:
                 var(--system-blue);
@@ -544,31 +752,77 @@
                 width 0.2s ease;
         }
 
-        #scoreTableArea {
-            width: 100%;
-            overflow-x: auto;
+
+        .speak-icon {
+
+            width:
+                44px;
+
+            height:
+                44px;
+
+            background:
+                var(--system-btn-grey);
+
+            border:
+                none;
+
+            border-radius:
+                50%;
+
+            cursor:
+                pointer;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
         }
+
+
+        #scoreTableArea {
+
+            width:
+                100%;
+
+            overflow-x:
+                auto;
+        }
+
 
         table {
-            width: 100%;
 
-            border-collapse: collapse;
+            width:
+                100%;
 
-            text-align: left;
+            border-collapse:
+                collapse;
 
-            margin: 15px 0;
+            text-align:
+                left;
+
+            margin:
+                15px 0;
         }
 
+
         th {
+
             background:
                 #f9f9fb;
 
             color:
                 var(--text-secondary);
 
-            font-size: 10px;
+            font-size:
+                10px;
 
-            padding: 12px 10px;
+            padding:
+                12px 10px;
 
             border-bottom:
                 1px solid #eee;
@@ -577,68 +831,102 @@
                 uppercase;
         }
 
+
         td {
-            padding: 12px 10px;
+
+            padding:
+                12px 10px;
 
             border-bottom:
                 1px solid #f9f9f9;
 
-            font-size: 13px;
+            font-size:
+                13px;
         }
 
+
         .id-badge {
+
             background:
                 var(--system-btn-grey);
 
-            padding: 20px;
+            padding:
+                20px;
 
-            border-radius: 14px;
+            border-radius:
+                14px;
 
-            text-align: center;
+            text-align:
+                center;
 
-            font-family: monospace;
+            font-family:
+                monospace;
 
-            font-size: 24px;
+            font-size:
+                24px;
 
             color:
                 var(--text-primary);
 
-            margin: 20px 0;
+            margin:
+                20px 0;
 
             border:
                 1px solid #d2d2d7;
         }
 
+
         @media (max-width: 600px) {
 
             body {
-                padding-left: 12px;
-                padding-right: 12px;
+
+                padding-left:
+                    12px;
+
+                padding-right:
+                    12px;
             }
+
 
             header {
-                padding: 0 18px;
+
+                padding:
+                    0 18px;
             }
+
 
             header h1 {
-                font-size: 20px;
+
+                font-size:
+                    20px;
             }
+
 
             .mode-nav {
-                right: 12px;
+
+                right:
+                    12px;
             }
 
+
             .card {
-                padding: 22px;
+
+                padding:
+                    22px;
             }
+
 
             #passageDisplay,
             #feedbackArea {
-                font-size: 20px;
+
+                font-size:
+                    20px;
             }
+
         }
 
     </style>
+
 </head>
 
 
@@ -646,7 +934,11 @@
 
 
 <header>
-    <h1>Read Aloud</h1>
+
+    <h1>
+        Read Aloud
+    </h1>
+
 </header>
 
 
@@ -695,6 +987,7 @@
                 grid-template-columns:1fr 1fr;
                 gap:10px;
             ">
+
 
             <input
                 type="text"
@@ -747,12 +1040,15 @@
             </div>
 
 
-            <div class="mic-visualizer">
+            <div
+                class="mic-visualizer">
+
 
                 <div
                     class="mic-bar"
                     id="micBar">
                 </div>
+
 
             </div>
 
@@ -785,20 +1081,24 @@
             onclick="fetchTask()"
             type="button">
 
+
             <div
                 class="spinner"
                 id="spinJoin">
             </div>
 
+
             Join Task
 
+
         </button>
+
 
     </div>
 
 
     <!-- =====================================================
-         READING SECTION
+         READING
     ====================================================== -->
 
     <div
@@ -821,6 +1121,7 @@
 
                 <div id="textContainer">
 
+
                     <div
                         id="passageDisplay">
                     </div>
@@ -829,6 +1130,7 @@
                     <div
                         id="feedbackArea">
                     </div>
+
 
                 </div>
 
@@ -848,11 +1150,11 @@
                         <path
                             fill="currentColor"
                             d="
-                                M3 9v6h4l5 5V4L7 9H3zm13.5
-                                3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73
-                                2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5
-                                3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91
-                                7-4.49 7-8.77s-2.99-7.86-7-8.77z
+                            M3 9v6h4l5 5V4L7 9H3zm13.5
+                            3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73
+                            2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86
+                            5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06
+                            c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z
                             ">
                         </path>
 
@@ -872,25 +1174,33 @@
             </div>
 
 
-            <!-- AI STATUS -->
+            <!-- WHISPER STATUS -->
 
             <div
                 id="aiStatus"
                 class="ai-status">
 
-                <div id="aiStatusText">
-                    Preparing speech recognition…
+
+                <div
+                    id="aiStatusText">
+
+                    Loading speech recognition…
+
                 </div>
 
 
-                <div class="ai-progress">
+                <div
+                    class="ai-progress">
+
 
                     <div
                         id="aiProgressBar"
                         class="ai-progress-bar">
                     </div>
 
+
                 </div>
+
 
             </div>
 
@@ -916,7 +1226,7 @@
             </button>
 
 
-            <!-- POST READING -->
+            <!-- POST ACTIONS -->
 
             <div
                 id="postReadingActions"
@@ -944,8 +1254,11 @@
                     </div>
 
 
-                    <span id="nextBtnText">
+                    <span
+                        id="nextBtnText">
+
                         Next Sentence →
+
                     </span>
 
 
@@ -968,7 +1281,9 @@
 
                 </button>
 
+
             </div>
+
 
         </div>
 
@@ -991,12 +1306,19 @@
                     font-size:48px;
                     margin-bottom:10px;
                 ">
+
                 🎉
+
             </div>
 
 
-            <h2 style="margin-bottom:5px">
+            <h2
+                style="
+                    margin-bottom:5px;
+                ">
+
                 Mission Complete!
+
             </h2>
 
 
@@ -1035,7 +1357,9 @@
                 </h3>
 
 
-                <div id="leaderboardList"></div>
+                <div
+                    id="leaderboardList">
+                </div>
 
 
             </div>
@@ -1044,17 +1368,21 @@
             <button
                 class="apple-btn"
                 onclick="location.reload()"
-                style="margin-top:20px;"
+                style="
+                    margin-top:20px;
+                "
                 type="button">
 
                 Back to Home
 
             </button>
 
+
         </div>
 
 
     </div>
+
 
 </div>
 
@@ -1139,6 +1467,7 @@
 
             Generate Task ID
 
+
         </button>
 
 
@@ -1189,6 +1518,7 @@
 
             Load Scores
 
+
         </button>
 
 
@@ -1219,16 +1549,16 @@
         </div>
 
 
-        <div id="scoreTableArea"></div>
+        <div
+            id="scoreTableArea">
+        </div>
+
 
     </div>
 
+
 </div>
 
-
-<!-- =========================================================
-     MAIN JAVASCRIPT
-========================================================= -->
 
 <script>
 
@@ -1241,23 +1571,22 @@ const API_URL =
 
 
 /*
- * Whisper model.
+ * Transformers.js 3.8.1
  *
- * This is a public English Whisper model prepared for
- * Transformers.js.
+ * This version is intentionally used instead of the v4 setup
+ * from the previous attempt.
  */
-const WHISPER_MODEL =
-    "onnx-community/whisper-tiny.en";
+
+const TRANSFORMERS_URL =
+    "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
 
 /*
- * Transformers.js is loaded dynamically.
- *
- * This keeps all your existing onclick="..." handlers
- * working because the rest of this script is NOT a module.
+ * Official Transformers.js-compatible Whisper model.
  */
 
-let pipeline = null;
+const WHISPER_MODEL =
+    "Xenova/whisper-tiny.en";
 
 
 /* ============================================================
@@ -1274,14 +1603,14 @@ let totalWords = 0;
 
 
 /* ============================================================
-   RECORDING VARIABLES
+   RECORDING
 ============================================================ */
 
 let mediaRecorder = null;
 
-let recordedChunks = [];
-
 let recordingStream = null;
+
+let recordedChunks = [];
 
 let isRecording = false;
 
@@ -1289,20 +1618,20 @@ let isProcessingSpeech = false;
 
 
 /* ============================================================
-   WHISPER VARIABLES
+   WHISPER
 ============================================================ */
+
+let pipelineFunction = null;
 
 let whisper = null;
 
-let whisperLoading = false;
-
 let whisperReady = false;
 
-let whisperDevice = "wasm";
+let whisperLoadingPromise = null;
 
 
 /* ============================================================
-   AUDIO VARIABLES
+   MICROPHONE TEST
 ============================================================ */
 
 let audioContext = null;
@@ -1317,7 +1646,7 @@ let micAnimationFrame = null;
 
 
 /* ============================================================
-   OTHER VARIABLES
+   OTHER
 ============================================================ */
 
 let tempMatches = 0;
@@ -1337,30 +1666,30 @@ let isSubmitting = false;
 
 window.onload = async function() {
 
-    /*
-     * Restore student information.
-     */
-
     document.getElementById("sClass").value =
         localStorage.getItem("reader_class") || "";
 
+
     document.getElementById("sNo").value =
         localStorage.getItem("reader_no") || "";
+
 
     document.getElementById("sName").value =
         localStorage.getItem("reader_name") || "";
 
 
-    /*
-     * Teacher controls.
-     */
-
     setupTeacherAccess();
 
 
     /*
-     * Speech synthesis.
+     * We deliberately DO NOT load Whisper here.
+     *
+     * Loading it immediately would make the Join screen
+     * unnecessarily slow.
+     *
+     * Whisper loads when Start Recording is pressed.
      */
+
 
     if (
         window.speechSynthesis &&
@@ -1383,25 +1712,42 @@ window.onload = async function() {
 
     }
 
+};
 
-    /*
-     * Load Transformers.js library.
-     *
-     * This does NOT download the Whisper model yet.
-     *
-     * The model is loaded only when the student first
-     * presses Start Recording.
-     */
+
+/* ============================================================
+   LOAD TRANSFORMERS.JS
+============================================================ */
+
+async function loadTransformers() {
+
+    if (pipelineFunction) {
+
+        return pipelineFunction;
+
+    }
+
 
     try {
 
         const transformers =
             await import(
-                "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0"
+                TRANSFORMERS_URL
             );
 
 
-        pipeline =
+        if (
+            !transformers.pipeline
+        ) {
+
+            throw new Error(
+                "pipeline() was not found."
+            );
+
+        }
+
+
+        pipelineFunction =
             transformers.pipeline;
 
 
@@ -1410,63 +1756,29 @@ window.onload = async function() {
         );
 
 
-        /*
-         * Select WebGPU when available.
-         *
-         * Otherwise Transformers.js uses WASM/CPU.
-         */
+        return pipelineFunction;
 
-        if (
-            navigator.gpu &&
-            typeof navigator.gpu.requestAdapter === "function"
-        ) {
+    }
 
-            try {
-
-                const adapter =
-                    await navigator.gpu.requestAdapter();
-
-
-                if (adapter) {
-
-                    whisperDevice =
-                        "webgpu";
-
-                }
-
-            } catch (e) {
-
-                whisperDevice =
-                    "wasm";
-
-            }
-
-        }
-
-
-        console.log(
-            "[AI] Selected device:",
-            whisperDevice
-        );
-
-
-    } catch (error) {
+    catch (error) {
 
         console.error(
-            "[AI] Transformers.js failed to load:",
+            "[AI] Could not load Transformers.js:",
             error
         );
 
 
-        pipeline = null;
+        throw new Error(
+            "The speech-recognition library could not be loaded."
+        );
 
     }
 
-};
+}
 
 
 /* ============================================================
-   AI STATUS
+   SHOW AI STATUS
 ============================================================ */
 
 function showAIStatus(
@@ -1480,7 +1792,7 @@ function showAIStatus(
         );
 
 
-    const label =
+    const textElement =
         document.getElementById(
             "aiStatusText"
         );
@@ -1501,8 +1813,12 @@ function showAIStatus(
         "block";
 
 
-    label.innerText =
-        text || "";
+    if (textElement) {
+
+        textElement.innerText =
+            text || "";
+
+    }
 
 
     if (
@@ -1547,55 +1863,16 @@ function hideAIStatus() {
 
 
 /* ============================================================
-   SPEECH STATUS
-============================================================ */
-
-function setSpeechStatus(
-    text,
-    type
-) {
-
-    const el =
-        document.getElementById(
-            "speechStatus"
-        );
-
-
-    if (!el) {
-        return;
-    }
-
-
-    el.innerText =
-        text || "";
-
-
-    el.className =
-        "speech-status";
-
-
-    if (type) {
-
-        el.classList.add(
-            type
-        );
-
-    }
-
-}
-
-
-/* ============================================================
    LOAD WHISPER
 ============================================================ */
 
 async function loadWhisper() {
 
     /*
-     * Already loaded.
+     * Already ready.
      */
 
-    if (whisperReady) {
+    if (whisperReady && whisper) {
 
         return whisper;
 
@@ -1604,221 +1881,173 @@ async function loadWhisper() {
 
     /*
      * Already loading.
+     *
+     * Return the same promise rather than starting
+     * two model downloads.
      */
 
-    if (whisperLoading) {
+    if (whisperLoadingPromise) {
 
-        /*
-         * Wait until the loading promise resolves.
-         */
-
-        while (whisperLoading) {
-
-            await new Promise(
-                resolve =>
-                    setTimeout(
-                        resolve,
-                        100
-                    )
-            );
-
-        }
-
-
-        if (whisperReady) {
-
-            return whisper;
-
-        }
-
-        throw new Error(
-            "Whisper failed to load."
-        );
+        return whisperLoadingPromise;
 
     }
 
 
-    if (!pipeline) {
+    whisperLoadingPromise =
+        (async function() {
 
-        /*
-         * Try one more time to load Transformers.js.
-         */
+            showAIStatus(
+                "Loading free speech recognition…",
+                0
+            );
 
-        try {
 
-            const transformers =
-                await import(
-                    "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0"
+            try {
+
+                const pipeline =
+                    await loadTransformers();
+
+
+                /*
+                 * IMPORTANT:
+                 *
+                 * No explicit q4, fp16 or WebGPU settings.
+                 *
+                 * Transformers.js handles the browser-side
+                 * model selection.
+                 */
+
+                whisper =
+                    await pipeline(
+                        "automatic-speech-recognition",
+                        WHISPER_MODEL,
+                        {
+
+                            progress_callback:
+                                function(info) {
+
+                                    console.log(
+                                        "[AI]",
+                                        info
+                                    );
+
+
+                                    /*
+                                     * Different versions of the
+                                     * Hub loader report progress
+                                     * slightly differently.
+                                     */
+
+                                    if (
+                                        info &&
+                                        typeof info.progress ===
+                                        "number"
+                                    ) {
+
+                                        showAIStatus(
+                                            "Downloading speech model…",
+                                            info.progress
+                                        );
+
+                                    }
+
+                                    else if (
+                                        info &&
+                                        info.status ===
+                                        "ready"
+                                    ) {
+
+                                        showAIStatus(
+                                            "Speech recognition ready.",
+                                            100
+                                        );
+
+                                    }
+
+                                }
+
+                        }
+                    );
+
+
+                whisperReady =
+                    true;
+
+
+                showAIStatus(
+                    "Speech recognition ready.",
+                    100
                 );
 
 
-            pipeline =
-                transformers.pipeline;
-
-        }
-
-        catch (error) {
-
-            throw new Error(
-                "AI library could not be loaded."
-            );
-
-        }
-
-    }
+                console.log(
+                    "[AI] Whisper is ready."
+                );
 
 
-    whisperLoading =
-        true;
+                setTimeout(
+                    function() {
+
+                        hideAIStatus();
+
+                    },
+                    1200
+                );
 
 
-    showAIStatus(
-        "Loading speech recognition model…",
-        0
-    );
+                return whisper;
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "[AI] Whisper loading error:",
+                    error
+                );
 
 
-    try {
+                whisper =
+                    null;
 
-        console.log(
-            "[AI] Loading Whisper..."
-        );
-
-
-        whisper =
-            await pipeline(
-                "automatic-speech-recognition",
-                WHISPER_MODEL,
-                {
-
-                    /*
-                     * WebGPU can be substantially faster
-                     * when supported.
-                     */
-
-                    device:
-                        whisperDevice,
-
-                    /*
-                     * Quantized model keeps the browser-side
-                     * memory/download requirements lower.
-                     */
-
-                    dtype:
-                        "q4",
-
-                    /*
-                     * Model download progress.
-                     */
-
-                    progress_callback:
-                        function(info) {
-
-                            console.log(
-                                "[AI]",
-                                info
-                            );
+                whisperReady =
+                    false;
 
 
-                            if (
-                                info.status ===
-                                "progress_total"
-                            ) {
+                throw error;
 
-                                showAIStatus(
-                                    "Loading speech recognition model…",
-                                    info.progress || 0
-                                );
+            }
 
-                            }
+            finally {
 
-                            else if (
-                                info.status ===
-                                "ready"
-                            ) {
+                whisperLoadingPromise =
+                    null;
 
-                                showAIStatus(
-                                    "Speech recognition ready.",
-                                    100
-                                );
+            }
 
-                            }
-
-                        }
-
-                }
-            );
+        })();
 
 
-        whisperReady =
-            true;
-
-
-        whisperLoading =
-            false;
-
-
-        showAIStatus(
-            "Speech recognition ready.",
-            100
-        );
-
-
-        console.log(
-            "[AI] Whisper ready."
-        );
-
-
-        /*
-         * Leave the message visible briefly.
-         */
-
-        setTimeout(
-            hideAIStatus,
-            1200
-        );
-
-
-        return whisper;
-
-    }
-
-    catch (error) {
-
-        whisperLoading =
-            false;
-
-        whisperReady =
-            false;
-
-        whisper =
-            null;
-
-
-        console.error(
-            "[AI] Whisper loading failed:",
-            error
-        );
-
-
-        showAIStatus(
-            "Speech recognition could not be loaded.",
-            0
-        );
-
-
-        throw error;
-
-    }
+    return whisperLoadingPromise;
 
 }
 
 
 /* ============================================================
-   FIND SUPPORTED RECORDING FORMAT
+   RECORDING MIME TYPE
 ============================================================ */
 
 function getSupportedMimeType() {
+
+    if (
+        typeof MediaRecorder ===
+        "undefined"
+    ) {
+
+        return "";
+
+    }
+
 
     const types = [
 
@@ -1831,16 +2060,6 @@ function getSupportedMimeType() {
         "audio/ogg;codecs=opus"
 
     ];
-
-
-    if (
-        typeof MediaRecorder ===
-        "undefined"
-    ) {
-
-        return "";
-
-    }
 
 
     for (
@@ -1875,23 +2094,28 @@ function getSupportedMimeType() {
    START RECORDING
 ============================================================ */
 
-async function startRecording() {
+async function beginRecording() {
 
-    /*
-     * Browser does not support MediaRecorder.
-     */
+    if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+    ) {
+
+        throw new Error(
+            "Microphone access is not supported."
+        );
+
+    }
+
 
     if (
         typeof MediaRecorder ===
         "undefined"
     ) {
 
-        alert(
-            "This browser cannot record audio. " +
-            "Please try Chrome."
+        throw new Error(
+            "Audio recording is not supported."
         );
-
-        return false;
 
     }
 
@@ -1900,110 +2124,54 @@ async function startRecording() {
      * Request microphone.
      */
 
-    try {
+    recordingStream =
+        await navigator.mediaDevices.getUserMedia({
 
-        recordingStream =
-            await navigator.mediaDevices.getUserMedia({
-                audio: {
+            audio: {
 
-                    echoCancellation: true,
+                echoCancellation:
+                    true,
 
-                    noiseSuppression: true,
+                noiseSuppression:
+                    true,
 
-                    autoGainControl: true
+                autoGainControl:
+                    true
 
-                }
-            });
+            }
 
-    }
-
-    catch (error) {
-
-        console.error(
-            "[Recorder] Microphone error:",
-            error
-        );
+        });
 
 
-        if (
-            error.name ===
-            "NotAllowedError"
-        ) {
-
-            alert(
-                "Microphone access was blocked. " +
-                "Please allow microphone access for this website."
-            );
-
-        }
-
-        else {
-
-            alert(
-                "The microphone could not be accessed."
-            );
-
-        }
-
-
-        return false;
-
-    }
+    recordedChunks =
+        [];
 
 
     const mimeType =
         getSupportedMimeType();
 
 
-    try {
+    if (mimeType) {
 
         mediaRecorder =
-            mimeType
-                ? new MediaRecorder(
-                    recordingStream,
-                    {
-                        mimeType:
-                            mimeType
-                    }
-                )
-                : new MediaRecorder(
-                    recordingStream
-                );
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "[Recorder] MediaRecorder error:",
-            error
-        );
-
-
-        recordingStream
-            .getTracks()
-            .forEach(
-                track =>
-                    track.stop()
+            new MediaRecorder(
+                recordingStream,
+                {
+                    mimeType:
+                        mimeType
+                }
             );
 
-
-        recordingStream =
-            null;
-
-
-        alert(
-            "This browser cannot create an audio recording."
-        );
-
-
-        return false;
-
     }
 
+    else {
 
-    recordedChunks =
-        [];
+        mediaRecorder =
+            new MediaRecorder(
+                recordingStream
+            );
+
+    }
 
 
     mediaRecorder.ondataavailable =
@@ -2027,7 +2195,7 @@ async function startRecording() {
         function(event) {
 
             console.error(
-                "[Recorder] ERROR:",
+                "[Recorder] Error:",
                 event
             );
 
@@ -2043,7 +2211,7 @@ async function startRecording() {
 
 
             /*
-             * Release microphone.
+             * Release microphone immediately.
              */
 
             if (recordingStream) {
@@ -2061,10 +2229,6 @@ async function startRecording() {
             }
 
 
-            /*
-             * Convert recording into a Blob.
-             */
-
             if (
                 !recordedChunks.length
             ) {
@@ -2078,44 +2242,51 @@ async function startRecording() {
             }
 
 
-            const type =
-                mediaRecorder.mimeType ||
-                mimeType ||
-                "audio/webm";
-
-
             const blob =
                 new Blob(
                     recordedChunks,
                     {
                         type:
-                            type
+                            mediaRecorder.mimeType ||
+                            mimeType ||
+                            "audio/webm"
                     }
                 );
 
 
             console.log(
-                "[Recorder] Blob size:",
-                blob.size,
-                "type:",
-                blob.type
+                "[Recorder] blob:",
+                blob.type,
+                blob.size
             );
 
 
-            /*
-             * Process locally using Whisper.
-             */
+            try {
 
-            await transcribeRecording(
-                blob
-            );
+                await transcribeAudio(
+                    blob
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "[AI] Transcription error:",
+                    error
+                );
+
+
+                finishSpeechWithError(
+                    "Your speech could not be analysed. Please try again."
+                );
+
+            }
 
         };
 
 
-    mediaRecorder.start(
-        250
-    );
+    mediaRecorder.start();
 
 
     isRecording =
@@ -2123,12 +2294,9 @@ async function startRecording() {
 
 
     console.log(
-        "[Recorder] started:",
+        "[Recorder] recording started:",
         mimeType
     );
-
-
-    return true;
 
 }
 
@@ -2137,7 +2305,7 @@ async function startRecording() {
    STOP RECORDING
 ============================================================ */
 
-function stopRecording() {
+function stopCurrentRecording() {
 
     if (
         !mediaRecorder
@@ -2153,34 +2321,7 @@ function stopRecording() {
         "recording"
     ) {
 
-        try {
-
-            mediaRecorder.stop();
-
-        }
-
-        catch (error) {
-
-            console.error(
-                "[Recorder] stop error:",
-                error
-            );
-
-            if (recordingStream) {
-
-                recordingStream
-                    .getTracks()
-                    .forEach(
-                        track =>
-                            track.stop()
-                    );
-
-                recordingStream =
-                    null;
-
-            }
-
-        }
+        mediaRecorder.stop();
 
     }
 
@@ -2204,9 +2345,7 @@ async function toggleRecording() {
 
 
     /*
-     * Currently recording.
-     *
-     * Stop.
+     * STOP
      */
 
     if (isRecording) {
@@ -2239,7 +2378,7 @@ async function toggleRecording() {
         );
 
 
-        stopRecording();
+        stopCurrentRecording();
 
 
         return;
@@ -2248,8 +2387,7 @@ async function toggleRecording() {
 
 
     /*
-     * Don't allow a second recording while
-     * Whisper is processing.
+     * Ignore button presses while AI is working.
      */
 
     if (
@@ -2262,7 +2400,7 @@ async function toggleRecording() {
 
 
     /*
-     * First load Whisper.
+     * Load Whisper.
      */
 
     try {
@@ -2274,12 +2412,9 @@ async function toggleRecording() {
     catch (error) {
 
         console.error(
+            "[AI] Load failed:",
             error
         );
-
-
-        isProcessingSpeech =
-            false;
 
 
         resetRecordButton();
@@ -2292,7 +2427,7 @@ async function toggleRecording() {
 
 
         alert(
-            "The free speech-recognition model could not be loaded. " +
+            "The free speech-recognition model could not be loaded.\n\n" +
             "Please check your Internet connection and try again."
         );
 
@@ -2303,51 +2438,357 @@ async function toggleRecording() {
 
 
     /*
-     * Start MediaRecorder.
+     * Start recording.
      */
 
-    const started =
-        await startRecording();
+    try {
+
+        await beginRecording();
+
+        isProcessingSpeech =
+            false;
 
 
-    if (!started) {
+        rb.disabled =
+            false;
 
-        return;
+
+        rb.innerText =
+            "⏹ Stop & Analyze";
+
+
+        rb.classList.add(
+            "recording"
+        );
+
+
+        rb.classList.remove(
+            "processing"
+        );
+
+
+        setSpeechStatus(
+            "Listening…",
+            "active"
+        );
 
     }
 
+    catch (error) {
 
-    rb.disabled =
-        false;
-
-
-    rb.innerText =
-        "⏹ Stop & Analyze";
-
-
-    rb.classList.add(
-        "recording"
-    );
+        console.error(
+            "[Recorder] Start failed:",
+            error
+        );
 
 
-    rb.classList.remove(
-        "processing"
-    );
+        isRecording =
+            false;
 
 
-    setSpeechStatus(
-        "Listening…",
-        "active"
-    );
+        isProcessingSpeech =
+            false;
+
+
+        resetRecordButton();
+
+
+        if (
+            error.name ===
+            "NotAllowedError"
+        ) {
+
+            alert(
+                "Microphone access was blocked. " +
+                "Please allow microphone access for this website."
+            );
+
+        }
+
+        else {
+
+            alert(
+                "Could not start the recording. Please try again."
+            );
+
+        }
+
+    }
 
 }
 
 
 /* ============================================================
-   TRANSCRIBE RECORDING
+   CONVERT BLOB TO FLOAT32 AUDIO
 ============================================================ */
 
-async function transcribeRecording(
+async function blobToFloat32Audio(
+    blob
+) {
+
+    const arrayBuffer =
+        await blob.arrayBuffer();
+
+
+    const AudioContextClass =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+
+    if (!AudioContextClass) {
+
+        throw new Error(
+            "Web Audio is not supported."
+        );
+
+    }
+
+
+    const ctx =
+        new AudioContextClass();
+
+
+    let decoded;
+
+
+    try {
+
+        decoded =
+            await ctx.decodeAudioData(
+                arrayBuffer.slice(0)
+            );
+
+    }
+
+    finally {
+
+        try {
+
+            await ctx.close();
+
+        }
+
+        catch (e) {}
+
+    }
+
+
+    const channelCount =
+        decoded.numberOfChannels;
+
+
+    const sourceLength =
+        decoded.length;
+
+
+    const sourceRate =
+        decoded.sampleRate;
+
+
+    /*
+     * Convert to mono.
+     */
+
+    let mono =
+        new Float32Array(
+            sourceLength
+        );
+
+
+    if (
+        channelCount === 1
+    ) {
+
+        mono.set(
+            decoded.getChannelData(0)
+        );
+
+    }
+
+    else {
+
+        for (
+            let c = 0;
+            c < channelCount;
+            c++
+        ) {
+
+            const channel =
+                decoded.getChannelData(
+                    c
+                );
+
+
+            for (
+                let i = 0;
+                i < sourceLength;
+                i++
+            ) {
+
+                mono[i] +=
+                    channel[i] /
+                    channelCount;
+
+            }
+
+        }
+
+    }
+
+
+    /*
+     * Whisper expects 16 kHz audio.
+     */
+
+    if (
+        sourceRate === 16000
+    ) {
+
+        return mono;
+
+    }
+
+
+    /*
+     * Use OfflineAudioContext for resampling.
+     */
+
+    const OfflineContext =
+        window.OfflineAudioContext ||
+        window.webkitOfflineAudioContext;
+
+
+    if (OfflineContext) {
+
+        const targetLength =
+            Math.ceil(
+                mono.length *
+                16000 /
+                sourceRate
+            );
+
+
+        const offline =
+            new OfflineContext(
+                1,
+                targetLength,
+                16000
+            );
+
+
+        const sourceBuffer =
+            offline.createBuffer(
+                1,
+                mono.length,
+                sourceRate
+            );
+
+
+        sourceBuffer.copyToChannel(
+            mono,
+            0
+        );
+
+
+        const source =
+            offline.createBufferSource();
+
+
+        source.buffer =
+            sourceBuffer;
+
+
+        source.connect(
+            offline.destination
+        );
+
+
+        source.start(
+            0
+        );
+
+
+        const rendered =
+            await offline.startRendering();
+
+
+        return new Float32Array(
+            rendered.getChannelData(0)
+        );
+
+    }
+
+
+    /*
+     * Fallback linear resampling.
+     */
+
+    const targetLength =
+        Math.round(
+            mono.length *
+            16000 /
+            sourceRate
+        );
+
+
+    const output =
+        new Float32Array(
+            targetLength
+        );
+
+
+    const ratio =
+        sourceRate /
+        16000;
+
+
+    for (
+        let i = 0;
+        i < targetLength;
+        i++
+    ) {
+
+        const position =
+            i * ratio;
+
+
+        const left =
+            Math.floor(
+                position
+            );
+
+
+        const right =
+            Math.min(
+                left + 1,
+                mono.length - 1
+            );
+
+
+        const fraction =
+            position -
+            left;
+
+
+        output[i] =
+            mono[left] *
+            (1 - fraction) +
+            mono[right] *
+            fraction;
+
+    }
+
+
+    return output;
+
+}
+
+
+/* ============================================================
+   TRANSCRIBE AUDIO
+============================================================ */
+
+async function transcribeAudio(
     blob
 ) {
 
@@ -2359,13 +2800,8 @@ async function transcribeRecording(
         );
 
 
-        /*
-         * Convert the browser's recording format
-         * into mono 16 kHz Float32 audio.
-         */
-
         const audio =
-            await blobTo16kMono(
+            await blobToFloat32Audio(
                 blob
             );
 
@@ -2376,14 +2812,14 @@ async function transcribeRecording(
         ) {
 
             throw new Error(
-                "Audio recording is too short."
+                "Recording is too short."
             );
 
         }
 
 
         console.log(
-            "[AI] Audio samples:",
+            "[AI] Audio length:",
             audio.length
         );
 
@@ -2395,11 +2831,7 @@ async function transcribeRecording(
 
 
         /*
-         * Whisper expects raw audio sampled at
-         * approximately 16 kHz.
-         *
-         * This raw Float32Array input is supported
-         * by Transformers.js ASR pipelines.
+         * Run Whisper.
          */
 
         const result =
@@ -2407,26 +2839,11 @@ async function transcribeRecording(
                 audio,
                 {
 
-                    /*
-                     * English-only model.
-                     */
-
                     language:
                         "en",
 
-                    /*
-                     * Don't translate.
-                     */
-
                     task:
                         "transcribe",
-
-                    /*
-                     * Don't return timestamps.
-                     *
-                     * We only need the transcript
-                     * for word matching.
-                     */
 
                     return_timestamps:
                         false
@@ -2436,7 +2853,7 @@ async function transcribeRecording(
 
 
         console.log(
-            "[AI] Whisper result:",
+            "[AI] Result:",
             result
         );
 
@@ -2457,19 +2874,19 @@ async function transcribeRecording(
                 .trim();
 
 
+        console.log(
+            "[AI] Transcript:",
+            transcript
+        );
+
+
         if (!transcript) {
 
             throw new Error(
-                "Whisper returned an empty transcript."
+                "Whisper returned no transcript."
             );
 
         }
-
-
-        console.log(
-            "[AI] FINAL TRANSCRIPT:",
-            transcript
-        );
 
 
         isProcessingSpeech =
@@ -2486,7 +2903,7 @@ async function transcribeRecording(
 
 
         /*
-         * Use your existing feedback engine.
+         * Existing feedback system.
          */
 
         processResult(
@@ -2498,14 +2915,12 @@ async function transcribeRecording(
     catch (error) {
 
         console.error(
-            "[AI] Transcription error:",
+            "[AI] Transcription failed:",
             error
         );
 
 
-        finishSpeechWithError(
-            "Your speech could not be transcribed. Please try again."
-        );
+        throw error;
 
     }
 
@@ -2513,293 +2928,7 @@ async function transcribeRecording(
 
 
 /* ============================================================
-   RECORDING BLOB → MONO 16 kHz FLOAT32
-============================================================ */
-
-async function blobTo16kMono(
-    blob
-) {
-
-    /*
-     * Read recorded audio.
-     */
-
-    const buffer =
-        await blob.arrayBuffer();
-
-
-    /*
-     * Decode browser audio.
-     */
-
-    const OfflineContext =
-        window.OfflineAudioContext ||
-        window.webkitOfflineAudioContext;
-
-
-    /*
-     * We can first try standard AudioContext.
-     */
-
-    const DecodeContext =
-        window.AudioContext ||
-        window.webkitAudioContext;
-
-
-    if (!DecodeContext) {
-
-        throw new Error(
-            "Web Audio API is unavailable."
-        );
-
-    }
-
-
-    let ctx =
-        new DecodeContext();
-
-
-    let decoded;
-
-
-    try {
-
-        decoded =
-            await ctx.decodeAudioData(
-                buffer.slice(0)
-            );
-
-    }
-
-    finally {
-
-        try {
-            await ctx.close();
-        }
-
-        catch (e) {}
-
-    }
-
-
-    /*
-     * Decode channels to mono.
-     */
-
-    const numberOfChannels =
-        decoded.numberOfChannels;
-
-
-    const length =
-        decoded.length;
-
-
-    const sourceRate =
-        decoded.sampleRate;
-
-
-    let mono;
-
-
-    if (
-        numberOfChannels ===
-        1
-    ) {
-
-        mono =
-            new Float32Array(
-                decoded.getChannelData(0)
-            );
-
-    }
-
-    else {
-
-        mono =
-            new Float32Array(
-                length
-            );
-
-
-        for (
-            let channel = 0;
-            channel < numberOfChannels;
-            channel++
-        ) {
-
-            const data =
-                decoded.getChannelData(
-                    channel
-                );
-
-
-            for (
-                let i = 0;
-                i < length;
-                i++
-            ) {
-
-                mono[i] +=
-                    data[i] /
-                    numberOfChannels;
-
-            }
-
-        }
-
-    }
-
-
-    /*
-     * Already 16 kHz.
-     */
-
-    if (
-        sourceRate ===
-        16000
-    ) {
-
-        return mono;
-
-    }
-
-
-    /*
-     * Resample to 16 kHz.
-     */
-
-    if (!OfflineContext) {
-
-        /*
-         * Manual linear resampling fallback.
-         */
-
-        const targetLength =
-            Math.round(
-                mono.length *
-                16000 /
-                sourceRate
-            );
-
-
-        const output =
-            new Float32Array(
-                targetLength
-            );
-
-
-        const ratio =
-            sourceRate /
-            16000;
-
-
-        for (
-            let i = 0;
-            i < targetLength;
-            i++
-        ) {
-
-            const position =
-                i * ratio;
-
-
-            const left =
-                Math.floor(
-                    position
-                );
-
-
-            const right =
-                Math.min(
-                    left + 1,
-                    mono.length - 1
-                );
-
-
-            const fraction =
-                position - left;
-
-
-            output[i] =
-                mono[left] *
-                (1 - fraction) +
-                mono[right] *
-                fraction;
-
-        }
-
-
-        return output;
-
-    }
-
-
-    /*
-     * Use OfflineAudioContext for high-quality
-     * browser-native resampling.
-     */
-
-    const targetLength =
-        Math.ceil(
-            mono.length *
-            16000 /
-            sourceRate
-        );
-
-
-    const offline =
-        new OfflineContext(
-            1,
-            targetLength,
-            16000
-        );
-
-
-    const buffer16 =
-        offline.createBuffer(
-            1,
-            mono.length,
-            sourceRate
-        );
-
-
-    buffer16.copyToChannel(
-        mono,
-        0
-    );
-
-
-    const source =
-        offline.createBufferSource();
-
-
-    source.buffer =
-        buffer16;
-
-
-    source.connect(
-        offline.destination
-    );
-
-
-    source.start(
-        0
-    );
-
-
-    const rendered =
-        await offline.startRendering();
-
-
-    return new Float32Array(
-        rendered.getChannelData(0)
-    );
-
-}
-
-
-/* ============================================================
-   SPEECH ERROR
+   ERROR
 ============================================================ */
 
 function finishSpeechWithError(
@@ -2814,7 +2943,9 @@ function finishSpeechWithError(
         false;
 
 
-    if (recordingStream) {
+    if (
+        recordingStream
+    ) {
 
         recordingStream
             .getTracks()
@@ -2822,6 +2953,7 @@ function finishSpeechWithError(
                 track =>
                     track.stop()
             );
+
 
         recordingStream =
             null;
@@ -2883,22 +3015,18 @@ function resetRecordButton() {
 
 
 /* ============================================================
-   MICROPHONE TEST
+   MIC TEST
 ============================================================ */
 
-async function startMicTest(event) {
+async function startMicTest(
+    event
+) {
 
     if (event) {
 
         event.preventDefault();
 
     }
-
-
-    const btn =
-        document.getElementById(
-            "micTestBtn"
-        );
 
 
     try {
@@ -2909,15 +3037,11 @@ async function startMicTest(event) {
         ) {
 
             throw new Error(
-                "getUserMedia unavailable"
+                "Microphone API unavailable."
             );
 
         }
 
-
-        /*
-         * If already testing, stop and restart.
-         */
 
         stopMicTest();
 
@@ -2929,16 +3053,26 @@ async function startMicTest(event) {
 
 
         document
-            .getElementById("micDot")
+            .getElementById(
+                "micDot"
+            )
             .classList.add(
                 "active"
             );
 
 
         document
-            .getElementById("micLabel")
+            .getElementById(
+                "micLabel"
+            )
             .innerText =
             "Mic Active:";
+
+
+        const btn =
+            document.getElementById(
+                "micTestBtn"
+            );
 
 
         btn.innerText =
@@ -2950,20 +3084,15 @@ async function startMicTest(event) {
 
 
         /*
-         * Audio analyser.
+         * Visualiser.
          */
 
-        const AudioContext =
+        const AudioContextClass =
             window.AudioContext ||
             window.webkitAudioContext;
 
 
-        if (!AudioContext) {
-
-            /*
-             * Permission succeeded, even if visualisation
-             * is unavailable.
-             */
+        if (!AudioContextClass) {
 
             return;
 
@@ -2971,7 +3100,7 @@ async function startMicTest(event) {
 
 
         audioContext =
-            new AudioContext();
+            new AudioContextClass();
 
 
         if (
@@ -2994,14 +3123,14 @@ async function startMicTest(event) {
             audioContext.createAnalyser();
 
 
+        analyser.fftSize =
+            512;
+
+
         microphone =
             audioContext.createMediaStreamSource(
                 micStream
             );
-
-
-        analyser.fftSize =
-            512;
 
 
         microphone.connect(
@@ -3058,7 +3187,9 @@ async function startMicTest(event) {
 
 
             document
-                .getElementById("micBar")
+                .getElementById(
+                    "micBar"
+                )
                 .style.width =
                 level + "%";
 
@@ -3078,7 +3209,7 @@ async function startMicTest(event) {
     catch (error) {
 
         console.error(
-            "[Mic Test] ERROR:",
+            "[Mic] ERROR:",
             error
         );
 
@@ -3112,16 +3243,19 @@ async function startMicTest(event) {
 
 
 /* ============================================================
-   STOP MICROPHONE TEST
+   STOP MIC TEST
 ============================================================ */
 
 function stopMicTest() {
 
-    if (micAnimationFrame) {
+    if (
+        micAnimationFrame
+    ) {
 
         cancelAnimationFrame(
             micAnimationFrame
         );
+
 
         micAnimationFrame =
             null;
@@ -3129,7 +3263,9 @@ function stopMicTest() {
     }
 
 
-    if (microphone) {
+    if (
+        microphone
+    ) {
 
         try {
 
@@ -3146,7 +3282,9 @@ function stopMicTest() {
     }
 
 
-    if (analyser) {
+    if (
+        analyser
+    ) {
 
         try {
 
@@ -3163,7 +3301,9 @@ function stopMicTest() {
     }
 
 
-    if (audioContext) {
+    if (
+        audioContext
+    ) {
 
         try {
 
@@ -3180,7 +3320,9 @@ function stopMicTest() {
     }
 
 
-    if (micStream) {
+    if (
+        micStream
+    ) {
 
         micStream
             .getTracks()
@@ -3259,7 +3401,7 @@ function stopMicTest() {
 
 
 /* ============================================================
-   TASK ID
+   TASK ID INPUT
 ============================================================ */
 
 function handleTaskIdInput(
@@ -3320,10 +3462,13 @@ async function fetchTask() {
         sName,
         sTaskId
     ].forEach(
-        el =>
+        function(el) {
+
             el.classList.remove(
                 "error"
-            )
+            );
+
+        }
     );
 
 
@@ -3331,7 +3476,9 @@ async function fetchTask() {
         false;
 
 
-    if (!sClass.value.trim()) {
+    if (
+        !sClass.value.trim()
+    ) {
 
         sClass.classList.add(
             "error"
@@ -3343,7 +3490,9 @@ async function fetchTask() {
     }
 
 
-    if (!sNo.value.trim()) {
+    if (
+        !sNo.value.trim()
+    ) {
 
         sNo.classList.add(
             "error"
@@ -3355,7 +3504,9 @@ async function fetchTask() {
     }
 
 
-    if (!sName.value.trim()) {
+    if (
+        !sName.value.trim()
+    ) {
 
         sName.classList.add(
             "error"
@@ -3414,7 +3565,7 @@ async function fetchTask() {
 
 
     /*
-     * Mic test does not affect Join Task.
+     * Stop mic test, but this does not affect Join Task.
      */
 
     stopMicTest();
@@ -3434,19 +3585,15 @@ async function fetchTask() {
             `${API_URL}?action=getTask&taskId=${encodeURIComponent(cleanedId)}`;
 
 
-        console.log(
-            "[Task] Fetch:",
-            url
-        );
-
-
         const res =
             await fetch(
                 url
             );
 
 
-        if (!res.ok) {
+        if (
+            !res.ok
+        ) {
 
             throw new Error(
                 "HTTP " +
@@ -3461,7 +3608,7 @@ async function fetchTask() {
 
 
         console.log(
-            "[Task] Response:",
+            "[Task]",
             data
         );
 
@@ -3592,15 +3739,15 @@ async function fetchTask() {
 
 async function showChunk() {
 
-    /*
-     * Reset any previous reading session.
-     */
-
     if (isRecording) {
 
-        stopRecording();
+        stopCurrentRecording();
 
     }
+
+
+    isRecording =
+        false;
 
 
     isProcessingSpeech =
@@ -3721,7 +3868,7 @@ async function showChunk() {
     catch (e) {
 
         console.error(
-            "[Translation] ERROR:",
+            "[Translation]",
             e
         );
 
@@ -3886,7 +4033,9 @@ function processResult(
         function(word) {
 
             const cleanedWord =
-                clean(word);
+                clean(
+                    word
+                );
 
 
             if (
@@ -3963,7 +4112,7 @@ function processResult(
 
 
 /* ============================================================
-   SCORE PARSING
+   SCORE
 ============================================================ */
 
 function parseScore(
@@ -4146,7 +4295,7 @@ async function nextChunk() {
         let top =
             all
                 .sort(
-                    (a, b) =>
+                    (a,b) =>
                         parseScore(
                             b[5]
                         ) -
@@ -4165,10 +4314,7 @@ async function nextChunk() {
 
 
         top.forEach(
-            function(
-                r,
-                i
-            ) {
+            function(r,i) {
 
                 const icon =
                     i === 0
@@ -4240,7 +4386,7 @@ async function nextChunk() {
     catch (err) {
 
         console.error(
-            "[Submit] ERROR:",
+            "[Submit]",
             err
         );
 
@@ -4267,7 +4413,7 @@ async function nextChunk() {
 
 
 /* ============================================================
-   RETRY SENTENCE
+   RETRY
 ============================================================ */
 
 function retrySentence() {
@@ -4436,7 +4582,7 @@ function toggleTeacherMode(
 
 
 /* ============================================================
-   VIEW SWITCH
+   VIEW
 ============================================================ */
 
 function switchView(
@@ -4513,7 +4659,7 @@ function executeSwitch(
 
 
 /* ============================================================
-   GET SCORES
+   SCORES
 ============================================================ */
 
 async function getScores() {
@@ -4564,9 +4710,7 @@ async function getScores() {
             )
             .style.display =
             currentScores.length
-
                 ? "block"
-
                 : "none";
 
 
@@ -4672,7 +4816,7 @@ async function getScores() {
     catch (e) {
 
         console.error(
-            "[Scores] ERROR:",
+            "[Scores]",
             e
         );
 
@@ -4695,7 +4839,7 @@ async function getScores() {
 
 
 /* ============================================================
-   DOWNLOAD CSV
+   CSV
 ============================================================ */
 
 function downloadCSV() {
@@ -4711,7 +4855,6 @@ function downloadCSV() {
 
     const content =
         [
-
             "Timestamp,TaskID,Class,No,Name,Score",
 
             ...currentScores.map(
@@ -4884,7 +5027,7 @@ async function createTask() {
     catch (e) {
 
         console.error(
-            "[Create Task] ERROR:",
+            "[Create Task]",
             e
         );
 
@@ -4944,9 +5087,7 @@ function setBtnLoading(
 
         s.style.display =
             load
-
                 ? "inline-block"
-
                 : "none";
 
     }
@@ -4973,6 +5114,7 @@ function setBtnLoading(
 }
 
 </script>
+
 
 </body>
 </html>
