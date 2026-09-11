@@ -2062,7 +2062,7 @@ async function fetchTask() {
 
             chunks =
                 data.passage.match(
-                    /[^.!?]+[.!?]+/g
+                    /[^.!?]+[.!?]*/g
                 ) ||
                 [data.passage];
 
