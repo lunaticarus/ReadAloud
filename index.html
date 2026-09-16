@@ -894,10 +894,6 @@ let isRecording = false;
 let isProcessingSpeech = false;
 let recognitionStarted = false;
 let recognitionSession = 0;
-let recognitionAudioStarted = false;
-let recognitionRetryCount = 0;
-let recognitionMicStream = null;
-let audioStartWatchdog = null;
 
 let finalTranscript = "";
 let recognitionTranscript = "";
@@ -1973,6 +1969,7 @@ function createRecognitionInstance() {
     instance.interimResults = false;
     instance.maxAlternatives = 1;
 
+
     instance.onstart = function() {
 
         if (thisSession !== recognitionSession) {
@@ -1983,25 +1980,13 @@ function createRecognitionInstance() {
 
         console.log("[Speech] START", thisSession);
 
-        setSpeechStatus("Listening…", "active");
+        setSpeechStatus(
+            "Listening…",
+            "active"
+        );
 
     };
 
-    instance.onaudiostart = function() {
-
-        if (thisSession !== recognitionSession) {
-            return;
-        }
-
-        recognitionAudioStarted = true;
-        clearTimeout(audioStartWatchdog);
-        audioStartWatchdog = null;
-
-        console.log("[Speech] AUDIO START", thisSession);
-
-        setSpeechStatus("Listening…", "active");
-
-    };
 
     instance.onspeechstart = function() {
 
@@ -2010,9 +1995,14 @@ function createRecognitionInstance() {
         }
 
         console.log("[Speech] SPEECH START", thisSession);
-        setSpeechStatus("Listening to you…", "active");
+
+        setSpeechStatus(
+            "Listening to you…",
+            "active"
+        );
 
     };
+
 
     instance.onspeechend = function() {
 
@@ -2024,16 +2014,6 @@ function createRecognitionInstance() {
 
     };
 
-    instance.onaudioend = function() {
-
-        if (thisSession !== recognitionSession) {
-            return;
-        }
-
-        recognitionAudioStarted = false;
-        console.log("[Speech] AUDIO END", thisSession);
-
-    };
 
     instance.onresult = function(event) {
 
@@ -2075,11 +2055,18 @@ function createRecognitionInstance() {
 
         recognitionTranscript = finalTranscript;
 
-        console.log("[Speech] FINAL RESULT:", finalTranscript);
+        console.log(
+            "[Speech] FINAL RESULT:",
+            finalTranscript
+        );
 
-        setSpeechStatus("Speech detected ✓", "success");
+        setSpeechStatus(
+            "Speech detected ✓",
+            "success"
+        );
 
     };
+
 
     instance.onerror = function(event) {
 
@@ -2087,64 +2074,82 @@ function createRecognitionInstance() {
             return;
         }
 
-        console.error("[Speech] ERROR:", event.error, event);
+        console.error(
+            "[Speech] ERROR:",
+            event.error,
+            event
+        );
 
+        /*
+         * no-speech is not treated as a hard failure.
+         * Chrome/Android may emit it after a period of silence.
+         */
         if (event.error === "no-speech") {
 
             if (isRecording) {
+
                 setSpeechStatus(
                     finalTranscript
                         ? "Speech captured — keep reading…"
                         : "Listening…",
                     "active"
                 );
+
+                return;
+
             }
 
             return;
+
         }
 
+
         if (event.error === "aborted") {
+
             console.log("[Speech] aborted", thisSession);
             return;
+
         }
+
 
         if (event.error === "not-allowed") {
 
             isRecording = false;
             isProcessingSpeech = false;
             recognitionStarted = false;
-            recognitionAudioStarted = false;
 
             clearSpeechTimers();
-            clearTimeout(audioStartWatchdog);
-            audioStartWatchdog = null;
             resetRecordButton();
-            stopRecognitionMic();
 
-            setSpeechStatus("Microphone permission was blocked.", "error");
+            setSpeechStatus(
+                "Microphone permission was blocked.",
+                "error"
+            );
 
             alert(
                 "Microphone access is blocked. " +
-                "Please allow microphone access for this website and try again."
+                "Please allow microphone access for this website " +
+                "and try again."
             );
 
             return;
+
         }
+
 
         if (event.error === "audio-capture") {
 
             isRecording = false;
             isProcessingSpeech = false;
             recognitionStarted = false;
-            recognitionAudioStarted = false;
 
             clearSpeechTimers();
-            clearTimeout(audioStartWatchdog);
-            audioStartWatchdog = null;
             resetRecordButton();
-            stopRecognitionMic();
 
-            setSpeechStatus("The microphone could not be accessed.", "error");
+            setSpeechStatus(
+                "The microphone could not be accessed.",
+                "error"
+            );
 
             alert(
                 "The microphone could not be accessed. " +
@@ -2152,22 +2157,23 @@ function createRecognitionInstance() {
             );
 
             return;
+
         }
+
 
         if (event.error === "network") {
 
             isRecording = false;
             isProcessingSpeech = false;
             recognitionStarted = false;
-            recognitionAudioStarted = false;
 
             clearSpeechTimers();
-            clearTimeout(audioStartWatchdog);
-            audioStartWatchdog = null;
             resetRecordButton();
-            stopRecognitionMic();
 
-            setSpeechStatus("Speech recognition service unavailable.", "error");
+            setSpeechStatus(
+                "Speech recognition service unavailable.",
+                "error"
+            );
 
             alert(
                 "The speech recognition service could not connect. " +
@@ -2175,31 +2181,32 @@ function createRecognitionInstance() {
             );
 
             return;
+
         }
+
 
         if (event.error === "service-not-allowed") {
 
             isRecording = false;
             isProcessingSpeech = false;
             recognitionStarted = false;
-            recognitionAudioStarted = false;
 
             clearSpeechTimers();
-            clearTimeout(audioStartWatchdog);
-            audioStartWatchdog = null;
             resetRecordButton();
-            stopRecognitionMic();
 
             setSpeechStatus(
                 "Speech recognition is unavailable on this device.",
                 "error"
             );
 
-            alert("Speech recognition is not available on this device.");
+            alert(
+                "Speech recognition is not available on this device."
+            );
 
         }
 
     };
+
 
     instance.onend = function() {
 
@@ -2208,7 +2215,6 @@ function createRecognitionInstance() {
         }
 
         recognitionStarted = false;
-        recognitionAudioStarted = false;
 
         console.log(
             "[Speech] END",
@@ -2218,6 +2224,10 @@ function createRecognitionInstance() {
             "transcript:", finalTranscript
         );
 
+        /*
+         * When the student presses Stop, wait briefly before processing.
+         * This avoids racing the browser's final result dispatch.
+         */
         if (isProcessingSpeech) {
 
             clearTimeout(finishDelayTimeout);
@@ -2234,26 +2244,48 @@ function createRecognitionInstance() {
                     }
 
                 },
-                500
+                400
             );
 
             return;
+
         }
 
         /*
-         * Recognition ended unexpectedly while the student still wants
-         * to record. We deliberately retry through the same controlled
-         * start path instead of silently accepting a partial sentence.
+         * The recognition service ended without the student pressing Stop.
+         * Do not start another recognition session automatically. This keeps
+         * sentence transitions deterministic and avoids overlapping sessions.
          */
-        if (isRecording && !isProcessingSpeech) {
+        if (isRecording) {
 
-            console.log("[Speech] Unexpected end while recording.");
+            isRecording = false;
+            recognitionStarted = false;
 
-            retryRecognitionStart();
+            clearSpeechTimers();
+            resetRecordButton();
+
+            if (finalTranscript.trim()) {
+
+                setSpeechStatus(
+                    "Speech detected ✓",
+                    "success"
+                );
+
+                processResult(finalTranscript.trim());
+
+            } else {
+
+                setSpeechStatus(
+                    "Listening stopped. Please try again.",
+                    "error"
+                );
+
+            }
 
         }
 
     };
+
 
     instance.onnomatch = function() {
 
@@ -2265,370 +2297,8 @@ function createRecognitionInstance() {
 
     };
 
+
     return instance;
-
-}
-
-
-async function startRecognitionWithMic() {
-
-    /* Stop any previous retry/watchdog state. */
-    clearTimeout(audioStartWatchdog);
-    audioStartWatchdog = null;
-
-    stopRecognitionMic();
-
-    /* Stop any text-to-speech audio before opening the microphone. */
-    if (window.speechSynthesis) {
-        try {
-            window.speechSynthesis.cancel();
-        }
-        catch (e) {}
-    }
-
-    setSpeechStatus("Starting microphone…", "active");
-
-    /*
-     * Explicitly open the microphone first. Besides making permission
-     * behaviour visible to the user, this primes the iOS audio session
-     * before SpeechRecognition starts.
-     */
-    if (
-        navigator.mediaDevices &&
-        navigator.mediaDevices.getUserMedia
-    ) {
-
-        try {
-
-            recognitionMicStream =
-                await navigator.mediaDevices.getUserMedia({
-                    audio: true
-                });
-
-            if (!isRecording || isProcessingSpeech) {
-                stopRecognitionMic();
-                return;
-            }
-
-            const tracks =
-                recognitionMicStream.getAudioTracks();
-
-            if (!tracks.length || tracks[0].readyState !== "live") {
-                throw new Error("Microphone track is not live.");
-            }
-
-            console.log(
-                "[Speech] Mic primed:",
-                tracks[0].label || "microphone"
-            );
-
-        }
-        catch (err) {
-
-            console.error("[Speech] Mic prime failed:", err);
-
-            isRecording = false;
-            isProcessingSpeech = false;
-            recognitionStarted = false;
-            recognitionAudioStarted = false;
-
-            resetRecordButton();
-            stopRecognitionMic();
-
-            if (err && err.name === "NotAllowedError") {
-
-                setSpeechStatus("Microphone permission was blocked.", "error");
-
-                alert(
-                    "Please allow microphone access for this website and try again."
-                );
-
-            }
-            else {
-
-                setSpeechStatus("Could not start the microphone.", "error");
-
-                alert(
-                    "The microphone could not be started. Please try again."
-                );
-
-            }
-
-            return;
-        }
-
-    }
-
-    if (!isRecording || isProcessingSpeech) {
-        stopRecognitionMic();
-        return;
-    }
-
-    /* Short settle period after the previous audio session. */
-    await new Promise(
-        resolve => setTimeout(resolve, 350)
-    );
-
-    if (!isRecording || isProcessingSpeech) {
-        stopRecognitionMic();
-        return;
-    }
-
-    recognition = createRecognitionInstance();
-
-    if (!recognition) {
-
-        isRecording = false;
-        isProcessingSpeech = false;
-        stopRecognitionMic();
-        resetRecordButton();
-        setSpeechStatus("Speech recognition is unavailable.", "error");
-        return;
-
-    }
-
-    recognitionAudioStarted = false;
-    recognitionStarted = false;
-
-    try {
-        recognition.start();
-        console.log("[Speech] recognition.start() called");
-    }
-    catch (err) {
-
-        console.error("[Speech] start() failed:", err);
-
-        try {
-            recognition.abort();
-        }
-        catch (e) {}
-
-        recognition = null;
-        stopRecognitionMic();
-
-        isRecording = false;
-        isProcessingSpeech = false;
-
-        resetRecordButton();
-        setSpeechStatus("Could not start speech recognition.", "error");
-        return;
-    }
-
-    /*
-     * If onstart/audiostart never arrives, the button must not leave the
-     * student in a fake recording state. Retry automatically instead.
-     */
-    clearTimeout(audioStartWatchdog);
-
-    audioStartWatchdog = setTimeout(
-        function() {
-
-            if (
-                !isRecording ||
-                isProcessingSpeech ||
-                recognitionAudioStarted
-            ) {
-                return;
-            }
-
-            console.warn("[Speech] No audiostart — retrying recognition.");
-            retryRecognitionStart();
-
-        },
-        2200
-    );
-
-}
-
-
-async function retryRecognitionStart() {
-
-    if (!isRecording || isProcessingSpeech) {
-        return;
-    }
-
-    if (recognitionRetryCount >= 3) {
-
-        clearTimeout(audioStartWatchdog);
-        audioStartWatchdog = null;
-
-        resetRecordButton();
-        stopRecognitionMic();
-
-        isRecording = false;
-
-        setSpeechStatus(
-            "Microphone could not be started. Please tap Start Recording again.",
-            "error"
-        );
-
-        return;
-    }
-
-    recognitionRetryCount++;
-
-    const delay =
-        recognitionRetryCount === 1
-            ? 700
-            : recognitionRetryCount === 2
-                ? 1600
-                : 3000;
-
-    console.log(
-        "[Speech] recognition retry",
-        recognitionRetryCount,
-        "delay:",
-        delay
-    );
-
-    clearTimeout(audioStartWatchdog);
-    audioStartWatchdog = null;
-
-    const oldRecognition = recognition;
-    recognition = null;
-
-    if (oldRecognition) {
-        try {
-            oldRecognition.abort();
-        }
-        catch (e) {}
-    }
-
-    recognitionStarted = false;
-    recognitionAudioStarted = false;
-
-    await new Promise(
-        resolve => setTimeout(resolve, delay)
-    );
-
-    if (!isRecording || isProcessingSpeech) {
-        return;
-    }
-
-    stopRecognitionMic();
-
-    try {
-
-        if (
-            navigator.mediaDevices &&
-            navigator.mediaDevices.getUserMedia
-        ) {
-
-            recognitionMicStream =
-                await navigator.mediaDevices.getUserMedia({
-                    audio: true
-                });
-
-        }
-
-    }
-    catch (err) {
-
-        console.error("[Speech] Retry mic prime failed:", err);
-
-        if (recognitionRetryCount < 3) {
-            retryRecognitionStart();
-            return;
-        }
-
-        isRecording = false;
-        resetRecordButton();
-        setSpeechStatus("Microphone could not be started. Please try again.", "error");
-        return;
-
-    }
-
-    if (!isRecording || isProcessingSpeech) {
-        stopRecognitionMic();
-        return;
-    }
-
-    await new Promise(
-        resolve => setTimeout(resolve, 350)
-    );
-
-    if (!isRecording || isProcessingSpeech) {
-        stopRecognitionMic();
-        return;
-    }
-
-    recognition = createRecognitionInstance();
-
-    if (!recognition) {
-        stopRecognitionMic();
-        return;
-    }
-
-    recognitionAudioStarted = false;
-    recognitionStarted = false;
-
-    try {
-        recognition.start();
-    }
-    catch (err) {
-
-        console.error("[Speech] Retry start failed:", err);
-
-        try {
-            recognition.abort();
-        }
-        catch (e) {}
-
-        recognition = null;
-        stopRecognitionMic();
-
-        if (recognitionRetryCount < 3) {
-            retryRecognitionStart();
-        }
-        else {
-            isRecording = false;
-            resetRecordButton();
-            setSpeechStatus(
-                "Microphone could not be started. Please try again.",
-                "error"
-            );
-        }
-
-        return;
-    }
-
-    clearTimeout(audioStartWatchdog);
-
-    audioStartWatchdog = setTimeout(
-        function() {
-
-            if (
-                !isRecording ||
-                isProcessingSpeech ||
-                recognitionAudioStarted
-            ) {
-                return;
-            }
-
-            retryRecognitionStart();
-
-        },
-        2200
-    );
-
-}
-
-
-function stopRecognitionMic() {
-
-    if (recognitionMicStream) {
-
-        try {
-            recognitionMicStream
-                .getTracks()
-                .forEach(
-                    track => track.stop()
-                );
-        }
-        catch (e) {}
-
-        recognitionMicStream = null;
-    }
 
 }
 
@@ -2642,11 +2312,13 @@ function toggleRecording() {
 
         alert(
             "Speech recognition is not supported in this browser. " +
-            "Please use Chrome or Safari."
+            "Please use Chrome."
         );
 
         return;
+
     }
+
 
     /* ========================================================
        START
@@ -2655,29 +2327,77 @@ function toggleRecording() {
     if (!isRecording && !isProcessingSpeech) {
 
         clearSpeechTimers();
-        clearTimeout(audioStartWatchdog);
-        audioStartWatchdog = null;
 
-        recognitionRetryCount = 0;
+        /*
+         * Invalidate any old recognition object before beginning the
+         * next attempt. A completely fresh object is used per attempt.
+         */
+        recognitionSession++;
+
+        const oldRecognition = recognition;
+        recognition = null;
+
+        if (oldRecognition) {
+
+            try {
+                oldRecognition.abort();
+            }
+            catch (e) {}
+
+        }
 
         finalTranscript = "";
         recognitionTranscript = "";
         recognitionStarted = false;
-        recognitionAudioStarted = false;
 
         isRecording = true;
         isProcessingSpeech = false;
 
-        rb.disabled = true;
-        rb.innerText = "🎤 Starting microphone…";
+        rb.disabled = false;
+        rb.innerText = "⏹ Stop & Analyze";
         rb.classList.add("recording");
         rb.classList.remove("processing");
 
-        setSpeechStatus("Starting microphone…", "active");
+        setSpeechStatus(
+            "Listening…",
+            "active"
+        );
 
-        startRecognitionWithMic();
+        try {
+
+            recognition = createRecognitionInstance();
+
+            if (!recognition) {
+                throw new Error("Speech recognition could not be created.");
+            }
+
+            recognition.start();
+
+        }
+        catch (e) {
+
+            console.error(
+                "[Speech] START ERROR:",
+                e
+            );
+
+            isRecording = false;
+            recognitionStarted = false;
+            recognition = null;
+
+            resetRecordButton();
+
+            setSpeechStatus(
+                "Could not start speech recognition.",
+                "error"
+            );
+
+        }
+
         return;
+
     }
+
 
     /* ========================================================
        STOP
@@ -2685,10 +2405,10 @@ function toggleRecording() {
 
     if (isRecording) {
 
-        console.log("[Speech] STUDENT STOP", recognitionSession);
-
-        clearTimeout(audioStartWatchdog);
-        audioStartWatchdog = null;
+        console.log(
+            "[Speech] STUDENT STOP",
+            recognitionSession
+        );
 
         isRecording = false;
         isProcessingSpeech = true;
@@ -2698,7 +2418,10 @@ function toggleRecording() {
         rb.classList.remove("recording");
         rb.classList.add("processing");
 
-        setSpeechStatus("Analysing…", "active");
+        setSpeechStatus(
+            "Analysing…",
+            "active"
+        );
 
         const activeRecognition = recognition;
 
@@ -2709,14 +2432,19 @@ function toggleRecording() {
             }
             catch (e) {
 
-                console.error("[Speech] STOP ERROR:", e);
+                console.error(
+                    "[Speech] STOP ERROR:",
+                    e
+                );
+
                 finishSpeechProcessing();
 
             }
 
-        }
-        else {
+        } else {
+
             finishSpeechProcessing();
+
         }
 
     }
@@ -2739,10 +2467,6 @@ function finishSpeechProcessing() {
     isProcessingSpeech = false;
     isRecording = false;
     recognitionStarted = false;
-    recognitionAudioStarted = false;
-    clearTimeout(audioStartWatchdog);
-    audioStartWatchdog = null;
-    stopRecognitionMic();
 
     const transcript =
         finalTranscript.trim();
@@ -2791,12 +2515,8 @@ function cancelSpeechRecognition() {
     isRecording = false;
     isProcessingSpeech = false;
     recognitionStarted = false;
-    recognitionAudioStarted = false;
 
     clearSpeechTimers();
-    clearTimeout(audioStartWatchdog);
-    audioStartWatchdog = null;
-    stopRecognitionMic();
 
     /* Invalidate all callbacks belonging to the old sentence. */
     recognitionSession++;
@@ -3892,7 +3612,7 @@ function setBtnLoading(
 }
 
 </script>
-    <div id="appVersion" aria-hidden="true">v1.8</div>
+    <div id="appVersion" aria-hidden="true">v1.7</div>
 
 </body>
 </html>
