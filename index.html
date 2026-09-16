@@ -1985,7 +1985,21 @@ function playText() {
    RECORDING
 ============================================================ */
 
-function createRecognitionInstance() {
+/*
+ * Speech recognition design:
+ * - One recognition object per recording attempt.
+ * - continuous=true so short pauses do not end the sentence.
+ * - interimResults=false so we only save completed recognition results.
+ * - The student's STOP request is remembered separately from the
+ *   recognition service ending.
+ * - We wait briefly after onend so a final result can still arrive.
+ */
+
+let stopRequested = false;
+let activeRecognitionSession = 0;
+
+
+function createRecognitionForAttempt() {
 
     const SpeechRecognition = window.SpeechRecognitionClass;
 
@@ -1994,23 +2008,24 @@ function createRecognitionInstance() {
     }
 
     const instance = new SpeechRecognition();
+    const sessionId = ++activeRecognitionSession;
 
     instance.lang = "en-US";
-    instance.continuous = false;
+    instance.continuous = true;
     instance.interimResults = false;
     instance.maxAlternatives = 1;
 
-    const thisSession = ++recognitionSession;
+    recognition = instance;
 
     instance.onstart = function() {
 
-        if (thisSession !== recognitionSession) {
+        if (sessionId !== activeRecognitionSession) {
             return;
         }
 
         recognitionStarted = true;
 
-        console.log("[Speech] onstart", thisSession);
+        console.log("[Speech] START session", sessionId);
 
         setSpeechStatus(
             "Listening…",
@@ -2022,11 +2037,11 @@ function createRecognitionInstance() {
 
     instance.onspeechstart = function() {
 
-        if (thisSession !== recognitionSession) {
+        if (sessionId !== activeRecognitionSession) {
             return;
         }
 
-        console.log("[Speech] onspeechstart", thisSession);
+        console.log("[Speech] SPEECH START session", sessionId);
 
         setSpeechStatus(
             "Listening to you…",
@@ -2038,24 +2053,28 @@ function createRecognitionInstance() {
 
     instance.onspeechend = function() {
 
-        if (thisSession !== recognitionSession) {
+        if (sessionId !== activeRecognitionSession) {
             return;
         }
 
-        console.log("[Speech] onspeechend", thisSession);
+        console.log("[Speech] SPEECH END session", sessionId);
 
     };
 
 
     instance.onresult = function(event) {
 
-        if (thisSession !== recognitionSession) {
+        if (sessionId !== activeRecognitionSession) {
             return;
         }
 
-        console.log("[Speech] onresult", event);
+        console.log(
+            "[Speech] RESULT session",
+            sessionId,
+            event
+        );
 
-        let currentFinal = "";
+        let heard = "";
 
         for (
             let i = event.resultIndex;
@@ -2063,51 +2082,67 @@ function createRecognitionInstance() {
             i++
         ) {
 
-            if (event.results[i].isFinal) {
+            const result = event.results[i];
 
-                currentFinal +=
-                    event.results[i][0].transcript + " ";
+            if (result && result[0] && result[0].transcript) {
+
+                heard += result[0].transcript + " ";
 
             }
 
         }
 
-        currentFinal = currentFinal.trim();
+        heard = heard.trim();
 
-        if (currentFinal) {
-
-            finalTranscript =
-                (finalTranscript + " " + currentFinal).trim();
-
-            recognitionTranscript = finalTranscript;
-
-            console.log(
-                "[Speech] FINAL RESULT:",
-                finalTranscript
-            );
-
-            setSpeechStatus(
-                "Speech detected ✓",
-                "success"
-            );
-
+        if (!heard) {
+            return;
         }
+
+        /*
+         * Keep everything that the recognition service has positively
+         * recognized during this attempt.
+         */
+        finalTranscript =
+            (finalTranscript + " " + heard).trim();
+
+        recognitionTranscript = finalTranscript;
+
+        console.log(
+            "[Speech] HEARD:",
+            heard
+        );
+
+        console.log(
+            "[Speech] ACCUMULATED:",
+            finalTranscript
+        );
+
+        setSpeechStatus(
+            "Speech detected ✓",
+            "success"
+        );
 
     };
 
 
     instance.onerror = function(event) {
 
-        if (thisSession !== recognitionSession) {
+        if (sessionId !== activeRecognitionSession) {
             return;
         }
 
         console.error(
-            "[Speech] ERROR:",
+            "[Speech] ERROR session:",
+            sessionId,
             event.error,
             event
         );
 
+        /*
+         * no-speech does NOT mean the microphone failed.
+         * The browser may simply have detected silence for a moment.
+         * The end event will handle the next step.
+         */
         if (event.error === "no-speech") {
 
             if (isRecording) {
@@ -2119,8 +2154,6 @@ function createRecognitionInstance() {
                     "active"
                 );
 
-                return;
-
             }
 
             return;
@@ -2130,7 +2163,11 @@ function createRecognitionInstance() {
 
         if (event.error === "aborted") {
 
-            console.log("[Speech] aborted");
+            console.log(
+                "[Speech] aborted session",
+                sessionId
+            );
+
             return;
 
         }
@@ -2231,41 +2268,40 @@ function createRecognitionInstance() {
 
         }
 
-        console.error(
-            "[Speech] unhandled error:",
-            event.error
-        );
-
     };
 
 
     instance.onend = function() {
 
-        if (thisSession !== recognitionSession) {
+        if (sessionId !== activeRecognitionSession) {
             return;
         }
 
         recognitionStarted = false;
 
         console.log(
-            "[Speech] onend session:",
-            thisSession,
+            "[Speech] END session",
+            sessionId,
+            "stopRequested:",
+            stopRequested,
+            "isRecording:",
+            isRecording,
             "transcript:",
             finalTranscript
         );
 
         /*
-         * Student pressed Stop. Do not process instantly; give the
-         * browser a brief moment to finish dispatching the final result.
+         * The student pressed STOP. Give the browser a short grace period
+         * before deciding that no result was received.
          */
-        if (isProcessingSpeech) {
+        if (isProcessingSpeech || stopRequested) {
 
             clearTimeout(finishDelayTimeout);
 
             finishDelayTimeout = setTimeout(
                 function() {
 
-                    if (thisSession !== recognitionSession) {
+                    if (sessionId !== activeRecognitionSession) {
                         return;
                     }
 
@@ -2274,18 +2310,16 @@ function createRecognitionInstance() {
                     }
 
                 },
-                350
+                800
             );
 
             return;
 
         }
 
-
         /*
-         * Recognition ended naturally while the student is still reading.
-         * Start a completely NEW recognition instance rather than reusing
-         * the old one. This is the important fix for later sentences.
+         * The recognition service ended by itself while the student is
+         * still reading. Start another session and preserve the transcript.
          */
         if (isRecording) {
 
@@ -2298,10 +2332,10 @@ function createRecognitionInstance() {
                         return;
                     }
 
-                    startFreshRecognition();
+                    startRecognitionAttempt();
 
                 },
-                180
+                250
             );
 
         }
@@ -2311,11 +2345,14 @@ function createRecognitionInstance() {
 
     instance.onnomatch = function() {
 
-        if (thisSession !== recognitionSession) {
+        if (sessionId !== activeRecognitionSession) {
             return;
         }
 
-        console.log("[Speech] onnomatch");
+        console.log(
+            "[Speech] NOMATCH session",
+            sessionId
+        );
 
     };
 
@@ -2325,7 +2362,7 @@ function createRecognitionInstance() {
 }
 
 
-function startFreshRecognition() {
+function startRecognitionAttempt() {
 
     if (!isRecording || isProcessingSpeech) {
         return;
@@ -2337,36 +2374,44 @@ function startFreshRecognition() {
         return;
     }
 
+    clearTimeout(restartTimeout);
+    restartTimeout = null;
+
     try {
 
-        recognition = createRecognitionInstance();
+        const instance =
+            createRecognitionForAttempt();
 
-        recognition.start();
+        if (!instance) {
+            return;
+        }
 
-        console.log("[Speech] started fresh recognition instance");
+        instance.start();
+
+        console.log(
+            "[Speech] recognition.start()"
+        );
 
     }
 
     catch (e) {
 
         console.error(
-            "[Speech] fresh start failed:",
+            "[Speech] START ERROR:",
             e
         );
 
-        if (isRecording) {
-
-            clearTimeout(restartTimeout);
+        if (isRecording && !isProcessingSpeech) {
 
             restartTimeout = setTimeout(
                 function() {
 
                     if (isRecording && !isProcessingSpeech) {
-                        startFreshRecognition();
+                        startRecognitionAttempt();
                     }
 
                 },
-                300
+                500
             );
 
         }
@@ -2382,6 +2427,7 @@ function toggleRecording() {
         document.getElementById(
             "recordBtn"
         );
+
 
     if (!window.SpeechRecognitionClass) {
 
@@ -2406,6 +2452,11 @@ function toggleRecording() {
 
         clearSpeechTimers();
 
+        activeRecognitionSession++;
+
+        stopRequested = false;
+        recognitionStarted = false;
+
         finalTranscript = "";
         recognitionTranscript = "";
 
@@ -2422,7 +2473,7 @@ function toggleRecording() {
             "active"
         );
 
-        startFreshRecognition();
+        startRecognitionAttempt();
 
         return;
 
@@ -2435,8 +2486,11 @@ function toggleRecording() {
 
     if (isRecording) {
 
-        console.log("[Speech] Student pressed STOP");
+        console.log(
+            "[Speech] Student pressed STOP"
+        );
 
+        stopRequested = true;
         isRecording = false;
         isProcessingSpeech = true;
 
@@ -2458,8 +2512,11 @@ function toggleRecording() {
         if (oldRecognition) {
 
             try {
+
                 oldRecognition.stop();
+
             }
+
             catch (e) {
 
                 console.error(
@@ -2471,12 +2528,16 @@ function toggleRecording() {
 
             }
 
-        } else {
+        }
+        else {
 
             finishSpeechProcessing();
 
         }
 
+        /*
+         * Last-resort fallback if the browser never fires onend.
+         */
         clearTimeout(recognitionTimeout);
 
         recognitionTimeout = setTimeout(
@@ -2494,7 +2555,7 @@ function toggleRecording() {
                 }
 
             },
-            6000
+            6500
         );
 
     }
@@ -2515,6 +2576,8 @@ function finishSpeechProcessing() {
     clearSpeechTimers();
 
     isProcessingSpeech = false;
+    stopRequested = false;
+    recognitionStarted = false;
 
     const transcript =
         finalTranscript.trim();
@@ -2562,10 +2625,11 @@ function cancelSpeechRecognition() {
     isRecording = false;
     isProcessingSpeech = false;
     recognitionStarted = false;
+    stopRequested = false;
 
     clearSpeechTimers();
 
-    recognitionSession++;
+    activeRecognitionSession++;
 
     finalTranscript = "";
     recognitionTranscript = "";
@@ -2600,18 +2664,14 @@ function resetRecordButton() {
     }
 
 
-    rb.disabled =
-        false;
-
+    rb.disabled = false;
 
     rb.innerText =
         "🎤 Start Recording";
 
-
     rb.classList.remove(
         "recording"
     );
-
 
     rb.classList.remove(
         "processing"
@@ -3675,7 +3735,7 @@ function setBtnLoading(
 
 </script>
 
-    <div id="appVersion" aria-hidden="true">v1.4</div>
+    <div id="appVersion" aria-hidden="true">v1.6</div>
 
 <div id="versionLabel">v1.5</div>
 
