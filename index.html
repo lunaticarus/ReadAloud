@@ -950,383 +950,7 @@ window.onload = function() {
         localStorage.getItem("reader_name") || "";
 
 
-    /* ========================================================
-       SPEECH RECOGNITION
-    ======================================================== */
-
-    const SpeechRecognition =
-        window.SpeechRecognition ||
-        window.webkitSpeechRecognition;
-
-
-    if (SpeechRecognition) {
-
-        recognition = new SpeechRecognition();
-
-        recognition.lang = "en-US";
-
-        /*
-         * Desktop browsers can keep a continuous session.
-         * Mobile browsers use shorter sessions and are restarted
-         * automatically while the student is still recording.
-         */
-        const isAndroid =
-            /Android/i.test(navigator.userAgent);
-
-        recognition.continuous = !isAndroid;
-
-        /*
-         * We only need completed recognition results for scoring.
-         * This avoids relying on interim text that may disappear
-         * immediately before the session ends.
-         */
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-
-
-        /* --------------------------------------------
-           Recognition started
-        -------------------------------------------- */
-
-        recognition.onstart = function() {
-
-            recognitionStarted = true;
-
-            console.log("[Speech] onstart");
-
-            setSpeechStatus(
-                "Listening…",
-                "active"
-            );
-
-        };
-
-
-        /* --------------------------------------------
-           Speech detected
-        -------------------------------------------- */
-
-        recognition.onspeechstart = function() {
-
-            console.log("[Speech] onspeechstart");
-
-            setSpeechStatus(
-                "Listening to you…",
-                "active"
-            );
-
-        };
-
-
-        /* --------------------------------------------
-           Speech stopped
-        -------------------------------------------- */
-
-        recognition.onspeechend = function() {
-
-            console.log("[Speech] onspeechend");
-
-        };
-
-
-        /* --------------------------------------------
-           Speech result
-        -------------------------------------------- */
-
-        recognition.onresult = function(event) {
-
-            console.log("[Speech] onresult", event);
-
-            let currentFinal = "";
-
-            for (
-                let i = event.resultIndex;
-                i < event.results.length;
-                i++
-            ) {
-
-                if (event.results[i].isFinal) {
-
-                    currentFinal +=
-                        event.results[i][0].transcript + " ";
-
-                }
-
-            }
-
-            currentFinal = currentFinal.trim();
-
-            if (currentFinal) {
-
-                finalTranscript =
-                    (finalTranscript + " " + currentFinal).trim();
-
-                recognitionTranscript = finalTranscript;
-
-                console.log(
-                    "[Speech] FINAL RESULT:",
-                    finalTranscript
-                );
-
-                setSpeechStatus(
-                    "Speech detected ✓",
-                    "success"
-                );
-
-            }
-
-        };
-
-
-        /* --------------------------------------------
-           Recognition error
-        -------------------------------------------- */
-
-        recognition.onerror = function(event) {
-
-            console.error(
-                "[Speech] ERROR:",
-                event.error,
-                event
-            );
-
-            /*
-             * A no-speech event is not treated as a final failure
-             * while the student is still recording. The onend handler
-             * below will restart the recognizer.
-             */
-            if (event.error === "no-speech") {
-
-                if (isRecording) {
-
-                    setSpeechStatus(
-                        finalTranscript
-                            ? "Speech captured — keep reading…"
-                            : "Listening…",
-                        "active"
-                    );
-
-                    return;
-
-                }
-
-                return;
-
-            }
-
-
-            if (event.error === "aborted") {
-
-                console.log("[Speech] aborted");
-                return;
-
-            }
-
-
-            if (event.error === "not-allowed") {
-
-                isRecording = false;
-                isProcessingSpeech = false;
-                recognitionStarted = false;
-
-                clearSpeechTimers();
-                resetRecordButton();
-
-                setSpeechStatus(
-                    "Microphone permission was blocked.",
-                    "error"
-                );
-
-                alert(
-                    "Microphone access is blocked. " +
-                    "Please allow microphone access for this website " +
-                    "and try again."
-                );
-
-                return;
-
-            }
-
-
-            if (event.error === "audio-capture") {
-
-                isRecording = false;
-                isProcessingSpeech = false;
-                recognitionStarted = false;
-
-                clearSpeechTimers();
-                resetRecordButton();
-
-                setSpeechStatus(
-                    "The microphone could not be accessed.",
-                    "error"
-                );
-
-                alert(
-                    "The microphone could not be accessed. " +
-                    "Please check the phone's microphone settings."
-                );
-
-                return;
-
-            }
-
-
-            if (event.error === "network") {
-
-                isRecording = false;
-                isProcessingSpeech = false;
-                recognitionStarted = false;
-
-                clearSpeechTimers();
-                resetRecordButton();
-
-                setSpeechStatus(
-                    "Speech recognition service unavailable.",
-                    "error"
-                );
-
-                alert(
-                    "The speech recognition service could not connect. " +
-                    "Please check the Internet connection."
-                );
-
-                return;
-
-            }
-
-
-            if (event.error === "service-not-allowed") {
-
-                isRecording = false;
-                isProcessingSpeech = false;
-                recognitionStarted = false;
-
-                clearSpeechTimers();
-                resetRecordButton();
-
-                setSpeechStatus(
-                    "Speech recognition is unavailable on this device.",
-                    "error"
-                );
-
-                alert(
-                    "Speech recognition is not available on this device."
-                );
-
-                return;
-
-            }
-
-
-            console.error(
-                "[Speech] unhandled error:",
-                event.error
-            );
-
-        };
-
-
-        /* --------------------------------------------
-           Recognition ended
-        -------------------------------------------- */
-
-        recognition.onend = function() {
-
-            recognitionStarted = false;
-
-            console.log("[Speech] onend");
-            console.log("[Speech] final transcript:", finalTranscript);
-
-            /*
-             * IMPORTANT:
-             *
-             * After stop(), allow one short grace period before
-             * processing. This gives the browser a chance to finish
-             * delivering the final result event.
-             */
-            if (isProcessingSpeech) {
-
-                clearTimeout(finishDelayTimeout);
-
-                finishDelayTimeout = setTimeout(
-                    function() {
-
-                        if (isProcessingSpeech) {
-                            finishSpeechProcessing();
-                        }
-
-                    },
-                    350
-                );
-
-                return;
-
-            }
-
-
-            /*
-             * If recognition ended naturally while the student is
-             * still recording, restart it. Any completed transcript
-             * is retained.
-             */
-            if (isRecording) {
-
-                clearTimeout(restartTimeout);
-
-                restartTimeout = setTimeout(
-                    function() {
-
-                        if (!isRecording || isProcessingSpeech) {
-                            return;
-                        }
-
-                        try {
-
-                            recognition.start();
-
-                        } catch (e) {
-
-                            console.log(
-                                "[Speech] restart failed",
-                                e
-                            );
-
-                            /*
-                             * Another attempt will happen on the
-                             * next end event. Do not show an error
-                             * while the student is still recording.
-                             */
-
-                        }
-
-                    },
-                    180
-                );
-
-            }
-
-        };
-
-
-        recognition.onnomatch = function() {
-
-            console.log("[Speech] onnomatch");
-
-        };
-
-
-        console.log("[Speech] SpeechRecognition available");
-
-    } else {
-
-        console.log("[Speech] SpeechRecognition unavailable");
-
-    }
-
-
-    /* Teacher */
-
+    /* Teacher Access */
     setupTeacherAccess();
 
 
@@ -1357,17 +981,419 @@ window.onload = function() {
 
 
 /* ============================================================
+   SPEECH RECOGNITION FACTORY & CLEANUP
+============================================================ */
+
+function cancelSpeechRecognition() {
+
+    isRecording = false;
+    isProcessingSpeech = false;
+    recognitionStarted = false;
+
+    finalTranscript = "";
+    recognitionTranscript = "";
+
+    clearSpeechTimers();
+
+    if (recognition) {
+
+        // Remove listeners to prevent ghost triggers during abort/reset
+        recognition.onstart = null;
+        recognition.onspeechstart = null;
+        recognition.onspeechend = null;
+        recognition.onresult = null;
+        recognition.onerror = null;
+        recognition.onend = null;
+
+        try {
+
+            recognition.abort();
+
+        } catch (e) {}
+
+        recognition = null;
+
+    }
+
+    resetRecordButton();
+
+}
+
+
+function initSpeechRecognition() {
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+
+    if (!SpeechRecognition) {
+
+        console.log("[Speech] SpeechRecognition unavailable");
+
+        return;
+
+    }
+
+
+    recognition = new SpeechRecognition();
+
+    recognition.lang = "en-US";
+
+    const isAndroid =
+        /Android/i.test(navigator.userAgent);
+
+    recognition.continuous = !isAndroid;
+
+    recognition.interimResults = false;
+
+    recognition.maxAlternatives = 1;
+
+
+    /* --------------------------------------------
+       Recognition started
+    -------------------------------------------- */
+
+    recognition.onstart = function() {
+
+        recognitionStarted = true;
+
+        console.log("[Speech] onstart");
+
+        setSpeechStatus(
+            "Listening…",
+            "active"
+        );
+
+    };
+
+
+    /* --------------------------------------------
+       Speech detected
+    -------------------------------------------- */
+
+    recognition.onspeechstart = function() {
+
+        console.log("[Speech] onspeechstart");
+
+        setSpeechStatus(
+            "Listening to you…",
+            "active"
+        );
+
+    };
+
+
+    /* --------------------------------------------
+       Speech stopped
+    -------------------------------------------- */
+
+    recognition.onspeechend = function() {
+
+        console.log("[Speech] onspeechend");
+
+    };
+
+
+    /* --------------------------------------------
+       Speech result
+    -------------------------------------------- */
+
+    recognition.onresult = function(event) {
+
+        console.log("[Speech] onresult", event);
+
+        let currentFinal = "";
+
+        for (
+            let i = event.resultIndex;
+            i < event.results.length;
+            i++
+        ) {
+
+            if (event.results[i].isFinal) {
+
+                currentFinal +=
+                    event.results[i][0].transcript + " ";
+
+            }
+
+        }
+
+        currentFinal = currentFinal.trim();
+
+        if (currentFinal) {
+
+            finalTranscript =
+                (finalTranscript + " " + currentFinal).trim();
+
+            recognitionTranscript = finalTranscript;
+
+            console.log(
+                "[Speech] FINAL RESULT:",
+                finalTranscript
+            );
+
+            setSpeechStatus(
+                "Speech detected ✓",
+                "success"
+            );
+
+        }
+
+    };
+
+
+    /* --------------------------------------------
+       Recognition error
+    -------------------------------------------- */
+
+    recognition.onerror = function(event) {
+
+        console.error(
+            "[Speech] ERROR:",
+            event.error,
+            event
+        );
+
+
+        if (event.error === "no-speech") {
+
+            if (isRecording) {
+
+                setSpeechStatus(
+                    finalTranscript
+                        ? "Speech captured — keep reading…"
+                        : "Listening…",
+                    "active"
+                );
+
+                return;
+
+            }
+
+            return;
+
+        }
+
+
+        if (event.error === "aborted") {
+
+            console.log("[Speech] aborted");
+
+            return;
+
+        }
+
+
+        if (event.error === "not-allowed") {
+
+            isRecording = false;
+
+            isProcessingSpeech = false;
+
+            recognitionStarted = false;
+
+            clearSpeechTimers();
+
+            resetRecordButton();
+
+            setSpeechStatus(
+                "Microphone permission was blocked.",
+                "error"
+            );
+
+            alert(
+                "Microphone access is blocked. " +
+                "Please allow microphone access for this website " +
+                "and try again."
+            );
+
+            return;
+
+        }
+
+
+        if (event.error === "audio-capture") {
+
+            isRecording = false;
+
+            isProcessingSpeech = false;
+
+            recognitionStarted = false;
+
+            clearSpeechTimers();
+
+            resetRecordButton();
+
+            setSpeechStatus(
+                "The microphone could not be accessed.",
+                "error"
+            );
+
+            alert(
+                "The microphone could not be accessed. " +
+                "Please check the phone's microphone settings."
+            );
+
+            return;
+
+        }
+
+
+        if (event.error === "network") {
+
+            isRecording = false;
+
+            isProcessingSpeech = false;
+
+            recognitionStarted = false;
+
+            clearSpeechTimers();
+
+            resetRecordButton();
+
+            setSpeechStatus(
+                "Speech recognition service unavailable.",
+                "error"
+            );
+
+            alert(
+                "The speech recognition service could not connect. " +
+                "Please check the Internet connection."
+            );
+
+            return;
+
+        }
+
+
+        if (event.error === "service-not-allowed") {
+
+            isRecording = false;
+
+            isProcessingSpeech = false;
+
+            recognitionStarted = false;
+
+            clearSpeechTimers();
+
+            resetRecordButton();
+
+            setSpeechStatus(
+                "Speech recognition is unavailable on this device.",
+                "error"
+            );
+
+            alert(
+                "Speech recognition is not available on this device."
+            );
+
+            return;
+
+        }
+
+    };
+
+
+    /* --------------------------------------------
+       Recognition ended
+    -------------------------------------------- */
+
+    recognition.onend = function() {
+
+        recognitionStarted = false;
+
+        console.log("[Speech] onend");
+
+        console.log("[Speech] final transcript:", finalTranscript);
+
+
+        if (isProcessingSpeech) {
+
+            clearTimeout(finishDelayTimeout);
+
+            finishDelayTimeout = setTimeout(
+                function() {
+
+                    if (isProcessingSpeech) {
+
+                        finishSpeechProcessing();
+
+                    }
+
+                },
+                350
+            );
+
+            return;
+
+        }
+
+
+        if (isRecording) {
+
+            clearTimeout(restartTimeout);
+
+            restartTimeout = setTimeout(
+                function() {
+
+                    if (!isRecording || isProcessingSpeech) {
+
+                        return;
+
+                    }
+
+                    try {
+
+                        if (recognition) {
+
+                            recognition.start();
+
+                        }
+
+                    } catch (e) {
+
+                        console.log(
+                            "[Speech] restart failed",
+                            e
+                        );
+
+                    }
+
+                },
+                180
+            );
+
+        }
+
+    };
+
+    recognition.onnomatch = function() {
+
+        console.log("[Speech] onnomatch");
+
+    };
+
+}
+
+
+/* ============================================================
    SPEECH TIMER HELPERS
 ============================================================ */
 
 function clearSpeechTimers() {
 
     clearTimeout(recognitionTimeout);
+
     clearTimeout(finishDelayTimeout);
+
     clearTimeout(restartTimeout);
 
     recognitionTimeout = null;
+
     finishDelayTimeout = null;
+
     restartTimeout = null;
 
 }
@@ -1389,7 +1415,9 @@ function setSpeechStatus(
 
 
     if (!el) {
+
         return;
+
     }
 
 
@@ -1419,7 +1447,9 @@ function setSpeechStatus(
 async function startMicTest(event) {
 
     if (event) {
+
         event.preventDefault();
+
     }
 
 
@@ -1430,10 +1460,6 @@ async function startMicTest(event) {
 
 
     try {
-
-        /*
-         * Check whether getUserMedia exists.
-         */
 
         if (
             !navigator.mediaDevices ||
@@ -1447,18 +1473,8 @@ async function startMicTest(event) {
         }
 
 
-        /*
-         * Stop any previous mic test.
-         */
-
         stopMicTest();
 
-
-        /*
-         * Request microphone.
-         *
-         * This is completely independent of Join Task.
-         */
 
         micStream =
             await navigator.mediaDevices.getUserMedia({
@@ -1485,21 +1501,12 @@ async function startMicTest(event) {
             "0.6";
 
 
-        /*
-         * Try to create an analyser.
-         */
-
         const AudioContext =
             window.AudioContext ||
             window.webkitAudioContext;
 
 
         if (!AudioContext) {
-
-            /*
-             * The microphone itself is working,
-             * even if visualisation isn't available.
-             */
 
             return;
 
@@ -1550,12 +1557,6 @@ async function startMicTest(event) {
         );
 
 
-        /*
-         * Use requestAnimationFrame rather than
-         * ScriptProcessorNode. This is more suitable
-         * for modern mobile browsers.
-         */
-
         const data =
             new Uint8Array(
                 analyser.frequencyBinCount
@@ -1565,7 +1566,9 @@ async function startMicTest(event) {
         function updateMicLevel() {
 
             if (!analyser) {
+
                 return;
+
             }
 
 
@@ -1762,15 +1765,19 @@ function stopMicTest() {
 
 
     if (dot) {
+
         dot.classList.remove(
             "active"
         );
+
     }
 
 
     if (label) {
+
         label.innerText =
             "Mic Check:";
+
     }
 
 
@@ -1791,8 +1798,10 @@ function stopMicTest() {
         );
 
     if (bar) {
+
         bar.style.width =
             "0%";
+
     }
 
 }
@@ -1930,7 +1939,9 @@ async function fetchTask() {
 
 
     if (err) {
+
         return;
+
     }
 
 
@@ -1951,13 +1962,6 @@ async function fetchTask() {
         sName.value.trim()
     );
 
-
-    /*
-     * IMPORTANT:
-     *
-     * Mic Check is stopped here,
-     * but it cannot prevent Join Task.
-     */
 
     stopMicTest();
 
@@ -2032,13 +2036,6 @@ async function fetchTask() {
         }
 
         else {
-
-            /*
-             * FIXED:
-             *
-             * Original regex contained an accidental
-             * literal asterisk after punctuation.
-             */
 
             chunks =
                 data.passage.match(
@@ -2128,10 +2125,15 @@ async function fetchTask() {
 async function showChunk() {
 
     /*
-     * Stop any old recognition session.
+     * 1. Completely tear down the prior speech recognition instance
      */
-
     cancelSpeechRecognition();
+
+
+    /*
+     * 2. Build a fresh SpeechRecognition engine instance for the chunk
+     */
+    initSpeechRecognition();
 
 
     const text =
@@ -2257,7 +2259,9 @@ async function showChunk() {
 function playText() {
 
     if (!window.speechSynthesis) {
+
         return;
+
     }
 
 
@@ -2428,6 +2432,7 @@ function toggleRecording() {
 
 
         return;
+
     }
 
 
@@ -2493,13 +2498,6 @@ function toggleRecording() {
         }
 
 
-        /*
-         * Safety timeout.
-         *
-         * This handles the exact situation where Oppo
-         * fails to fire onend.
-         */
-
         clearTimeout(
             recognitionTimeout
         );
@@ -2538,7 +2536,9 @@ function toggleRecording() {
 function finishSpeechProcessing() {
 
     if (!isProcessingSpeech) {
+
         return;
+
     }
 
 
@@ -2565,10 +2565,6 @@ function finishSpeechProcessing() {
     );
 
 
-    /*
-     * No transcript.
-     */
-
     if (!transcript) {
 
         resetRecordButton();
@@ -2587,12 +2583,9 @@ function finishSpeechProcessing() {
 
 
         return;
+
     }
 
-
-    /*
-     * Transcript received.
-     */
 
     setSpeechStatus(
         "Speech detected ✓",
@@ -2603,50 +2596,6 @@ function finishSpeechProcessing() {
     processResult(
         transcript
     );
-
-}
-
-
-/* ============================================================
-   CANCEL SPEECH
-============================================================ */
-
-function cancelSpeechRecognition() {
-
-    isRecording =
-        false;
-
-
-    isProcessingSpeech =
-        false;
-
-    recognitionStarted =
-        false;
-
-
-    finalTranscript = "";
-
-    recognitionTranscript =
-        "";
-
-
-    clearSpeechTimers();
-
-
-    if (recognition) {
-
-        try {
-
-            recognition.abort();
-
-        }
-
-        catch (e) {}
-
-    }
-
-
-    resetRecordButton();
 
 }
 
@@ -2664,7 +2613,9 @@ function resetRecordButton() {
 
 
     if (!rb) {
+
         return;
+
     }
 
 
@@ -2697,7 +2648,9 @@ function processResult(
 ) {
 
     if (!transcript) {
+
         return;
+
     }
 
 
@@ -2828,7 +2781,9 @@ function parseScore(val) {
 
 
     if (isNaN(num)) {
+
         return 0;
+
     }
 
 
@@ -2850,7 +2805,9 @@ function parseScore(val) {
 async function nextChunk() {
 
     if (isSubmitting) {
+
         return;
+
     }
 
 
@@ -2878,6 +2835,7 @@ async function nextChunk() {
         showChunk();
 
         return;
+
     }
 
 
@@ -3705,7 +3663,9 @@ function setBtnLoading(
 
 
     if (!b) {
+
         return;
+
     }
 
 
@@ -3743,7 +3703,7 @@ function setBtnLoading(
 
 </script>
 
-    <div id="appVersion" aria-hidden="true">v1.4</div>
+    <div id="appVersion" aria-hidden="true">v1.5</div>
 
 </body>
 </html>
