@@ -403,6 +403,21 @@
                 padding: 22px;
             }
         }
+
+        /* Subtle app version */
+        #appVersion {
+            position: fixed;
+            right: 8px;
+            bottom: 6px;
+            font-size: 9px;
+            line-height: 1;
+            color: rgba(0,0,0,0.25);
+            pointer-events: none;
+            user-select: none;
+            z-index: 2000;
+            letter-spacing: 0.2px;
+        }
+
     </style>
 </head>
 
@@ -890,10 +905,13 @@ let totalWords = 0;
 let recognition = null;
 let isRecording = false;
 let isProcessingSpeech = false;
+let recognitionStarted = false;
 
 let finalTranscript = "";
 let recognitionTranscript = "";
 let recognitionTimeout = null;
+let finishDelayTimeout = null;
+let restartTimeout = null;
 
 let tempMatches = 0;
 let tempTotal = 0;
@@ -948,19 +966,21 @@ window.onload = function() {
         recognition.lang = "en-US";
 
         /*
-         * For Android phones, use a single recognition session.
-         * Desktop browsers can use continuous recognition.
+         * Desktop browsers can keep a continuous session.
+         * Mobile browsers use shorter sessions and are restarted
+         * automatically while the student is still recording.
          */
         const isAndroid =
-            /Android/i.test(
-                navigator.userAgent
-            );
+            /Android/i.test(navigator.userAgent);
 
-        recognition.continuous =
-            !isAndroid;
+        recognition.continuous = !isAndroid;
 
-        recognition.interimResults = true;
-
+        /*
+         * We only need completed recognition results for scoring.
+         * This avoids relying on interim text that may disappear
+         * immediately before the session ends.
+         */
+        recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
 
@@ -970,9 +990,9 @@ window.onload = function() {
 
         recognition.onstart = function() {
 
-            console.log(
-                "[Speech] onstart"
-            );
+            recognitionStarted = true;
+
+            console.log("[Speech] onstart");
 
             setSpeechStatus(
                 "Listening…",
@@ -988,9 +1008,7 @@ window.onload = function() {
 
         recognition.onspeechstart = function() {
 
-            console.log(
-                "[Speech] onspeechstart"
-            );
+            console.log("[Speech] onspeechstart");
 
             setSpeechStatus(
                 "Listening to you…",
@@ -1006,9 +1024,7 @@ window.onload = function() {
 
         recognition.onspeechend = function() {
 
-            console.log(
-                "[Speech] onspeechend"
-            );
+            console.log("[Speech] onspeechend");
 
         };
 
@@ -1019,32 +1035,38 @@ window.onload = function() {
 
         recognition.onresult = function(event) {
 
-            console.log(
-                "[Speech] onresult",
-                event
-            );
+            console.log("[Speech] onresult", event);
 
-            let currentInterim = "";
             let currentFinal = "";
 
-            for (let i = event.resultIndex; i < event.results.length; i++) {
+            for (
+                let i = event.resultIndex;
+                i < event.results.length;
+                i++
+            ) {
+
                 if (event.results[i].isFinal) {
-                    currentFinal += event.results[i][0].transcript + " ";
-                } else {
-                    currentInterim += event.results[i][0].transcript + " ";
+
+                    currentFinal +=
+                        event.results[i][0].transcript + " ";
+
                 }
+
             }
 
-            finalTranscript += currentFinal;
-            recognitionTranscript = (finalTranscript + currentInterim).trim();
+            currentFinal = currentFinal.trim();
 
-            console.log(
-                "[Speech] transcript:",
-                recognitionTranscript
-            );
+            if (currentFinal) {
 
+                finalTranscript =
+                    (finalTranscript + " " + currentFinal).trim();
 
-            if (recognitionTranscript) {
+                recognitionTranscript = finalTranscript;
+
+                console.log(
+                    "[Speech] FINAL RESULT:",
+                    finalTranscript
+                );
 
                 setSpeechStatus(
                     "Speech detected ✓",
@@ -1068,24 +1090,19 @@ window.onload = function() {
                 event
             );
 
-
             /*
-             * IMPORTANT:
-             *
-             * "no-speech" should NOT immediately
-             * destroy the session on Android.
-             *
-             * The student may still be speaking.
+             * A no-speech event is not treated as a final failure
+             * while the student is still recording. The onend handler
+             * below will restart the recognizer.
              */
-
-            if (
-                event.error === "no-speech"
-            ) {
+            if (event.error === "no-speech") {
 
                 if (isRecording) {
 
                     setSpeechStatus(
-                        "Still listening…",
+                        finalTranscript
+                            ? "Speech captured — keep reading…"
+                            : "Listening…",
                         "active"
                     );
 
@@ -1093,20 +1110,26 @@ window.onload = function() {
 
                 }
 
+                return;
+
             }
 
 
-            if (
-                event.error === "not-allowed"
-            ) {
+            if (event.error === "aborted") {
+
+                console.log("[Speech] aborted");
+                return;
+
+            }
+
+
+            if (event.error === "not-allowed") {
 
                 isRecording = false;
                 isProcessingSpeech = false;
+                recognitionStarted = false;
 
-                clearTimeout(
-                    recognitionTimeout
-                );
-
+                clearSpeechTimers();
                 resetRecordButton();
 
                 setSpeechStatus(
@@ -1125,17 +1148,13 @@ window.onload = function() {
             }
 
 
-            if (
-                event.error === "audio-capture"
-            ) {
+            if (event.error === "audio-capture") {
 
                 isRecording = false;
                 isProcessingSpeech = false;
+                recognitionStarted = false;
 
-                clearTimeout(
-                    recognitionTimeout
-                );
-
+                clearSpeechTimers();
                 resetRecordButton();
 
                 setSpeechStatus(
@@ -1153,17 +1172,13 @@ window.onload = function() {
             }
 
 
-            if (
-                event.error === "network"
-            ) {
+            if (event.error === "network") {
 
                 isRecording = false;
                 isProcessingSpeech = false;
+                recognitionStarted = false;
 
-                clearTimeout(
-                    recognitionTimeout
-                );
-
+                clearSpeechTimers();
                 resetRecordButton();
 
                 setSpeechStatus(
@@ -1181,17 +1196,13 @@ window.onload = function() {
             }
 
 
-            if (
-                event.error === "service-not-allowed"
-            ) {
+            if (event.error === "service-not-allowed") {
 
                 isRecording = false;
                 isProcessingSpeech = false;
+                recognitionStarted = false;
 
-                clearTimeout(
-                    recognitionTimeout
-                );
-
+                clearSpeechTimers();
                 resetRecordButton();
 
                 setSpeechStatus(
@@ -1201,19 +1212,6 @@ window.onload = function() {
 
                 alert(
                     "Speech recognition is not available on this device."
-                );
-
-                return;
-
-            }
-
-
-            if (
-                event.error === "aborted"
-            ) {
-
-                console.log(
-                    "[Speech] aborted"
                 );
 
                 return;
@@ -1235,71 +1233,51 @@ window.onload = function() {
 
         recognition.onend = function() {
 
-            console.log(
-                "[Speech] onend"
-            );
+            recognitionStarted = false;
 
-            console.log(
-                "[Speech] transcript:",
-                recognitionTranscript
-            );
-
+            console.log("[Speech] onend");
+            console.log("[Speech] final transcript:", finalTranscript);
 
             /*
-             * Student pressed Stop.
+             * IMPORTANT:
              *
-             * Process the result.
+             * After stop(), allow one short grace period before
+             * processing. This gives the browser a chance to finish
+             * delivering the final result event.
              */
-
             if (isProcessingSpeech) {
 
-                finishSpeechProcessing();
+                clearTimeout(finishDelayTimeout);
 
-                return;
-
-            }
-
-
-            const isAndroid =
-                /Android/i.test(
-                    navigator.userAgent
-                );
-
-
-            /*
-             * If Android ended recognition naturally while
-             * we captured speech, finish processing it.
-             */
-
-            if (
-                isRecording &&
-                isAndroid &&
-                recognitionTranscript.trim()
-            ) {
-
-                isRecording = false;
-
-                isProcessingSpeech = true;
-
-                finishSpeechProcessing();
-
-                return;
-
-            }
-
-
-            /*
-             * If we are still actively recording (either continuous desktop
-             * session or an Android silence timeout before speaking),
-             * restart the engine to keep listening.
-             */
-
-            if (isRecording) {
-
-                setTimeout(
+                finishDelayTimeout = setTimeout(
                     function() {
 
-                        if (!isRecording) {
+                        if (isProcessingSpeech) {
+                            finishSpeechProcessing();
+                        }
+
+                    },
+                    350
+                );
+
+                return;
+
+            }
+
+
+            /*
+             * If recognition ended naturally while the student is
+             * still recording, restart it. Any completed transcript
+             * is retained.
+             */
+            if (isRecording) {
+
+                clearTimeout(restartTimeout);
+
+                restartTimeout = setTimeout(
+                    function() {
+
+                        if (!isRecording || isProcessingSpeech) {
                             return;
                         }
 
@@ -1314,17 +1292,16 @@ window.onload = function() {
                                 e
                             );
 
-                            isRecording = false;
-                            resetRecordButton();
-                            setSpeechStatus(
-                                "Mic paused. Please click Start Recording again.",
-                                "error"
-                            );
+                            /*
+                             * Another attempt will happen on the
+                             * next end event. Do not show an error
+                             * while the student is still recording.
+                             */
 
                         }
 
                     },
-                    150
+                    180
                 );
 
             }
@@ -1334,22 +1311,16 @@ window.onload = function() {
 
         recognition.onnomatch = function() {
 
-            console.log(
-                "[Speech] onnomatch"
-            );
+            console.log("[Speech] onnomatch");
 
         };
 
 
-        console.log(
-            "[Speech] SpeechRecognition available"
-        );
+        console.log("[Speech] SpeechRecognition available");
 
     } else {
 
-        console.log(
-            "[Speech] SpeechRecognition unavailable"
-        );
+        console.log("[Speech] SpeechRecognition unavailable");
 
     }
 
@@ -1383,6 +1354,23 @@ window.onload = function() {
     }
 
 };
+
+
+/* ============================================================
+   SPEECH TIMER HELPERS
+============================================================ */
+
+function clearSpeechTimers() {
+
+    clearTimeout(recognitionTimeout);
+    clearTimeout(finishDelayTimeout);
+    clearTimeout(restartTimeout);
+
+    recognitionTimeout = null;
+    finishDelayTimeout = null;
+    restartTimeout = null;
+
+}
 
 
 /* ============================================================
@@ -2535,7 +2523,7 @@ function toggleRecording() {
                     }
 
                 },
-                4000
+                6000
             );
 
     }
@@ -2568,8 +2556,7 @@ function finishSpeechProcessing() {
 
 
     const transcript =
-        recognitionTranscript
-            .trim();
+        finalTranscript.trim();
 
 
     console.log(
@@ -2633,6 +2620,9 @@ function cancelSpeechRecognition() {
     isProcessingSpeech =
         false;
 
+    recognitionStarted =
+        false;
+
 
     finalTranscript = "";
 
@@ -2640,13 +2630,7 @@ function cancelSpeechRecognition() {
         "";
 
 
-    clearTimeout(
-        recognitionTimeout
-    );
-
-
-    recognitionTimeout =
-        null;
+    clearSpeechTimers();
 
 
     if (recognition) {
@@ -3758,6 +3742,8 @@ function setBtnLoading(
 }
 
 </script>
+
+    <div id="appVersion" aria-hidden="true">v1.4</div>
 
 </body>
 </html>
