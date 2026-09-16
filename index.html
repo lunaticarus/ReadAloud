@@ -891,6 +891,7 @@ let recognition = null;
 let isRecording = false;
 let isProcessingSpeech = false;
 
+let finalTranscript = "";
 let recognitionTranscript = "";
 let recognitionTimeout = null;
 
@@ -1023,41 +1024,27 @@ window.onload = function() {
                 event
             );
 
+            let currentInterim = "";
+            let currentFinal = "";
 
-            let transcript = "";
-
-
-            /*
-             * Read every result instead of only the last one.
-             */
-
-            for (
-                let i = 0;
-                i < event.results.length;
-                i++
-            ) {
-
-                transcript +=
-                    event.results[i][0].transcript + " ";
-
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    currentFinal += event.results[i][0].transcript + " ";
+                } else {
+                    currentInterim += event.results[i][0].transcript + " ";
+                }
             }
 
-
-            transcript =
-                transcript.trim();
-
+            finalTranscript += currentFinal;
+            recognitionTranscript = (finalTranscript + currentInterim).trim();
 
             console.log(
                 "[Speech] transcript:",
-                transcript
+                recognitionTranscript
             );
 
 
-            if (transcript) {
-
-                recognitionTranscript =
-                    transcript;
-
+            if (recognitionTranscript) {
 
                 setSpeechStatus(
                     "Speech detected ✓",
@@ -1273,14 +1260,20 @@ window.onload = function() {
             }
 
 
+            const isAndroid =
+                /Android/i.test(
+                    navigator.userAgent
+                );
+
+
             /*
              * If Android ended recognition naturally while
-             * the student was still recording, do NOT blindly
-             * restart unless we are still genuinely recording.
+             * we captured speech, finish processing it.
              */
 
             if (
                 isRecording &&
+                isAndroid &&
                 recognitionTranscript.trim()
             ) {
 
@@ -1296,20 +1289,12 @@ window.onload = function() {
 
 
             /*
-             * On desktop, continuous recognition can end
-             * unexpectedly. Restart only while recording.
+             * If we are still actively recording (either continuous desktop
+             * session or an Android silence timeout before speaking),
+             * restart the engine to keep listening.
              */
 
-            const isAndroid =
-                /Android/i.test(
-                    navigator.userAgent
-                );
-
-
-            if (
-                isRecording &&
-                !isAndroid
-            ) {
+            if (isRecording) {
 
                 setTimeout(
                     function() {
@@ -1327,6 +1312,13 @@ window.onload = function() {
                             console.log(
                                 "[Speech] restart failed",
                                 e
+                            );
+
+                            isRecording = false;
+                            resetRecordButton();
+                            setSpeechStatus(
+                                "Mic paused. Please click Start Recording again.",
+                                "error"
                             );
 
                         }
@@ -2375,6 +2367,8 @@ function toggleRecording() {
         !isProcessingSpeech
     ) {
 
+        finalTranscript = "";
+
         recognitionTranscript =
             "";
 
@@ -2639,6 +2633,8 @@ function cancelSpeechRecognition() {
     isProcessingSpeech =
         false;
 
+
+    finalTranscript = "";
 
     recognitionTranscript =
         "";
