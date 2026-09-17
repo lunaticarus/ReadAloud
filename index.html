@@ -405,9 +405,30 @@ const UI = {
     }
 };
 
+/* ============================================================
+   AUDIO WAKE-UP HACK (Based on your play audio observation)
+============================================================ */
+function wakeUpAudioSystem() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        gain.gain.value = 0; // completely silent beep
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0);
+        osc.stop(ctx.currentTime + 0.01);
+        Debug.log("Silent audio ping sent to wake up hardware.", "info");
+    } catch(e) {
+        Debug.log("Silent audio ping failed: " + e.message, "warn");
+    }
+}
 
 /* ============================================================
-   SPEECH ENGINE (No-Abort Resilience Pattern)
+   SPEECH ENGINE (Audio Wake + No Abort Architecture)
 ============================================================ */
 const SpeechEngine = {
     api: null,
@@ -433,14 +454,13 @@ const SpeechEngine = {
         this.isRecording = true;
         clearTimeout(this.restartTimer);
 
-        // 1. SAFELY RETIRE OLD INSTANCE (Never use .abort() on iOS)
+        // 1. SAFELY DETACH OLD INSTANCE (Let Garbage Collection handle it to prevent locks)
         if (this.api) {
             this.api.onstart = null;
             this.api.onresult = null;
             this.api.onerror = null;
             this.api.onend = null;
-            try { this.api.stop(); } catch(e) {}
-            this.api = null;
+            this.api = null; // Do NOT call .abort() or .stop() here.
         }
 
         // 2. CREATE A BRAND NEW INSTANCE
@@ -452,7 +472,7 @@ const SpeechEngine = {
         }
 
         this.api = new SR();
-        this.api.continuous = false; // Forces OS to properly reset audio buffer
+        this.api.continuous = false; // Forces OS to naturally free buffer on pause
         this.api.interimResults = true;
         this.api.lang = 'en-US';
 
@@ -526,17 +546,17 @@ const SpeechEngine = {
     },
 
     reset: function() {
-        // Safe detachment for chunk transitions, completely avoids abort()
         Debug.log("--- RESET REQUESTED ---");
         this.isRecording = false;
         clearTimeout(this.restartTimer);
+        
+        // Quietly drop the API without commanding the OS to abort
         if (this.api) {
             this.api.onstart = null;
             this.api.onresult = null;
             this.api.onerror = null;
             this.api.onend = null;
-            try { this.api.stop(); } catch(e) {}
-            this.api = null;
+            this.api = null; 
         }
         this.transcript = "";
         this.interim = "";
@@ -615,14 +635,31 @@ window.onload = function() {
 };
 
 /* ============================================================
-   RECORDING TOGGLE
+   RECORDING TOGGLE (With Yields and Wake Hacks)
 ============================================================ */
-function toggleRecording() {
+async function toggleRecording() {
     const rb = document.getElementById("recordBtn");
     
     if (!SpeechEngine.isRecording) {
+        // Prevent double clicking
+        rb.disabled = true;
+        rb.innerText = "⏳ Preparing...";
+
+        // 1. Force kill any playing TTS to release audio lock
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+
+        // 2. Play silent ping to force OS to transition audio state to "active"
+        wakeUpAudioSystem();
+
+        // 3. Yield to OS for 250ms to allow audio buffers to completely flush
+        await new Promise(r => setTimeout(r, 250));
+
+        rb.disabled = false;
         rb.innerText = "⏹ Stop & Analyze";
         rb.classList.add("recording");
+        
         SpeechEngine.start(true);
     } else {
         rb.disabled = true;
@@ -630,6 +667,7 @@ function toggleRecording() {
         rb.classList.remove("recording");
         rb.classList.add("processing");
         UI.setStatus("Analysing...", "active");
+        
         SpeechEngine.stop();
     }
 }
@@ -798,18 +836,18 @@ async function showChunk() {
 }
 
 function playText() {
-    if (SpeechEngine.isRecording) {
-        alert("Please stop recording before playing the audio.");
-        return;
+    // You can now play text even if you were just recording. 
+    // It will cancel anything running and speak.
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
+        const voices = window.speechSynthesis.getVoices();
+        const naturalVoice = voices.find(v => v.name.includes("Google US English")) || voices.find(v => v.name.includes("Samantha")) || voices.find(v => v.lang.startsWith("en-US"));
+        if (naturalVoice) utter.voice = naturalVoice;
+        utter.lang = "en-US"; utter.rate = 0.85; utter.pitch = 1.0;
+        window.speechSynthesis.speak(utter);
+        Debug.log("Audio synthesis started.", "info");
     }
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
-    const voices = window.speechSynthesis.getVoices();
-    const naturalVoice = voices.find(v => v.name.includes("Google US English")) || voices.find(v => v.name.includes("Samantha")) || voices.find(v => v.lang.startsWith("en-US"));
-    if (naturalVoice) utter.voice = naturalVoice;
-    utter.lang = "en-US"; utter.rate = 0.85; utter.pitch = 1.0;
-    window.speechSynthesis.speak(utter);
 }
 
 /* ============================================================
@@ -975,7 +1013,7 @@ function setBtnLoading(id, spin, load, text) {
 }
 </script>
 
-<div id="appVersion" aria-hidden="true">v1.8 (No-Abort Reset Architecture)</div>
+<div id="appVersion" aria-hidden="true">v1.9 (Audio Context Wake & Timing Fix)</div>
 
 </body>
 </html>
