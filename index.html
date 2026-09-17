@@ -54,7 +54,7 @@ input,textarea{width:100%;padding:14px;border:1px solid #d2d2d7;border-radius:12
 </div>
 <div id="translationText" class="translation-text"></div>
 <button id="recordBtn" class="apple-btn" onclick="toggleRecording()" type="button">🎤 Start Recording</button>
-<div id="speechStatus"></div>
+<div id="speechStatus"></div><div id="recordHint" style="text-align:center;font-size:12px;color:var(--text-secondary);min-height:18px;margin:8px 0">Tap Start Recording and read the sentence aloud.</div><div id="feedbackPanel" style="display:none;margin-top:18px;padding:14px;border-radius:14px;background:#f9f9fb;border:1px solid #efeff4;font-size:13px;color:var(--text-secondary)"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:6px">What I heard</div><div id="transcriptText" style="color:var(--text-primary);line-height:1.5"></div></div>
 <div id="postReadingActions" style="display:none;flex-direction:column;align-items:center;width:100%">
 <button id="nextChunkBtn" class="apple-btn" style="color:var(--system-blue)" onclick="nextChunk()" type="button"><div class="spinner" id="spinNext"></div><span id="nextBtnText">Next Sentence →</span></button>
 <button style="background:none;border:none;color:var(--text-secondary);margin-top:15px;text-decoration:underline;cursor:pointer" onclick="retrySentence()" type="button">Retry this sentence</button>
@@ -149,99 +149,337 @@ setBtnLoading("btnJoin","spinJoin",false,"Join Task")
 async function showChunk(){
 cancelSpeechRecognition();const text=chunks[currentChunkIdx];document.getElementById("chunkProgress").innerText=`Sentence ${currentChunkIdx+1} of ${chunks.length}`;
 document.getElementById("passageDisplay").innerText=text;document.getElementById("passageDisplay").style.display="block";document.getElementById("feedbackArea").innerHTML="";
-document.getElementById("recordBtn").style.display="block";document.getElementById("postReadingActions").style.display="none";document.getElementById("nextBtnText").innerText=currentChunkIdx===chunks.length-1?"Finish & Submit 🎉":"Next Sentence →";setSpeechStatus("");
+document.getElementById("recordBtn").style.display="flex";document.getElementById("postReadingActions").style.display="none";if(document.getElementById("feedbackPanel")){document.getElementById("feedbackPanel").style.display="none";}if(document.getElementById("recordHint")){document.getElementById("recordHint").innerText="Tap Start Recording and read the sentence aloud.";}document.getElementById("nextBtnText").innerText=currentChunkIdx===chunks.length-1?"Finish & Submit 🎉":"Next Sentence →";setSpeechStatus("");
 const trans=document.getElementById("translationText");trans.innerText="...";
 try{const res=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|zh-TW`);const d=await res.json();trans.innerText=d.responseData?.translatedText||""}catch(e){console.error("[Translation]",e);trans.innerText=""}
 }
 function playText(){if(!window.speechSynthesis)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(chunks[currentChunkIdx]);const voices=window.speechSynthesis.getVoices();const v=voices.find(x=>x.name.includes("Google US English"))||voices.find(x=>x.name.includes("Samantha"))||voices.find(x=>x.lang.startsWith("en-US"));if(v)u.voice=v;u.lang="en-US";u.rate=.85;u.pitch=1;window.speechSynthesis.speak(u)}
 
-function createRecognitionInstance(){
-const SpeechRecognition=window.SpeechRecognitionClass;if(!SpeechRecognition)return null;const instance=new SpeechRecognition(),thisSession=++recognitionSession;
-instance.lang="en-US";instance.continuous=true;instance.interimResults=false;instance.maxAlternatives=1;
-instance.onstart=function(){if(thisSession!==recognitionSession)return;recognitionStarted=true;console.log("[Speech] START",thisSession);setSpeechStatus("Listening…","active")};
-instance.onaudiostart=function(){if(thisSession!==recognitionSession)return;recognitionAudioStarted=true;clearTimeout(audioStartWatchdog);audioStartWatchdog=null;console.log("[Speech] AUDIO START",thisSession);setSpeechStatus("Listening…","active")};
-instance.onspeechstart=function(){if(thisSession!==recognitionSession)return;setSpeechStatus("Listening to you…","active")};
-instance.onspeechend=function(){if(thisSession!==recognitionSession)return;console.log("[Speech] SPEECH END",thisSession)};
-instance.onaudioend=function(){if(thisSession!==recognitionSession)return;recognitionAudioStarted=false;console.log("[Speech] AUDIO END",thisSession)};
-instance.onresult=function(event){if(thisSession!==recognitionSession)return;let added="";for(let i=event.resultIndex;i<event.results.length;i++)if(event.results[i].isFinal){const t=event.results[i][0].transcript.trim();if(t)added+=t+" "}added=added.trim();if(!added)return;finalTranscript=(finalTranscript+" "+added).trim();recognitionTranscript=finalTranscript;console.log("[Speech] FINAL RESULT:",finalTranscript);setSpeechStatus("Speech detected ✓","success")};
-instance.onerror=function(event){
-if(thisSession!==recognitionSession)return;console.error("[Speech] ERROR:",event.error);
-if(event.error==="no-speech"){if(isRecording)setSpeechStatus(finalTranscript?"Speech captured — keep reading…":"Listening…","active");return}
-if(event.error==="aborted")return;
-if(["not-allowed","audio-capture","network","service-not-allowed"].includes(event.error)){
-isRecording=false;isProcessingSpeech=false;recognitionStarted=false;recognitionAudioStarted=false;clearSpeechTimers();clearTimeout(audioStartWatchdog);audioStartWatchdog=null;resetRecordButton();stopRecognitionMic();
-const msg=event.error==="not-allowed"?"Microphone permission was blocked.":event.error==="audio-capture"?"The microphone could not be accessed.":event.error==="network"?"Speech recognition service unavailable.":"Speech recognition is unavailable on this device.";
-setSpeechStatus(msg,"error");alert(msg);return
-}};
-instance.onend=function(){if(thisSession!==recognitionSession)return;recognitionStarted=false;recognitionAudioStarted=false;console.log("[Speech] END",thisSession,"recording:",isRecording,"processing:",isProcessingSpeech);
-if(isProcessingSpeech){clearTimeout(finishDelayTimeout);finishDelayTimeout=setTimeout(()=>{if(thisSession===recognitionSession&&isProcessingSpeech)finishSpeechProcessing()},500);return}
-if(isRecording&&!isProcessingSpeech)retryRecognitionStart()};
-instance.onnomatch=function(){if(thisSession===recognitionSession)console.log("[Speech] NO MATCH",thisSession)};
-return instance
-}
-
 /* ============================================================
-   FIXED SPEECH STARTUP
-   SpeechRecognition now owns microphone access.
-   We do NOT call getUserMedia() before recognition.start().
+   STUDENT RECORDING — SIMPLIFIED PER-SENTENCE ENGINE
+   One fresh recognition session per sentence.
+   No getUserMedia priming, no auto-restart, no cross-sentence state.
 ============================================================ */
-async function startRecognitionWithMic(){
-clearTimeout(audioStartWatchdog);audioStartWatchdog=null;stopRecognitionMic();
-if(window.speechSynthesis)try{window.speechSynthesis.cancel()}catch(e){}
-if(!isRecording||isProcessingSpeech)return;
-setSpeechStatus("Starting microphone…","active");
-recognition=createRecognitionInstance();
-if(!recognition){isRecording=false;isProcessingSpeech=false;resetRecordButton();setSpeechStatus("Speech recognition is unavailable.","error");return}
-recognitionAudioStarted=false;recognitionStarted=false;
-try{recognition.start();console.log("[Speech] recognition.start() called")}
-catch(err){console.error("[Speech] start() failed:",err);try{recognition.abort()}catch(e){}recognition=null;isRecording=false;isProcessingSpeech=false;resetRecordButton();setSpeechStatus("Could not start speech recognition.","error");return}
-clearTimeout(audioStartWatchdog);
-audioStartWatchdog=setTimeout(()=>{if(!isRecording||isProcessingSpeech)return;if(recognitionStarted||recognitionAudioStarted)return;console.warn("[Speech] Recognition did not start.");if(recognitionRetryCount<3)retryRecognitionStart();else{isRecording=false;isProcessingSpeech=false;resetRecordButton();setSpeechStatus("Microphone could not be started. Please try again.","error");alert("The microphone could not be started. Please try again.")}},4000)
+function createRecognitionForSentence(){
+    const SpeechRecognition = window.SpeechRecognitionClass;
+    if (!SpeechRecognition) return null;
+
+    const r = new SpeechRecognition();
+    r.lang = "en-US";
+    r.continuous = false;
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+    return r;
 }
 
-async function retryRecognitionStart(){
-if(!isRecording||isProcessingSpeech)return;
-if(recognitionRetryCount>=3){clearTimeout(audioStartWatchdog);audioStartWatchdog=null;isRecording=false;resetRecordButton();stopRecognitionMic();setSpeechStatus("Microphone could not be started. Please tap Start Recording again.","error");return}
-recognitionRetryCount++;
-const delay=recognitionRetryCount===1?700:recognitionRetryCount===2?1500:2500;
-console.log("[Speech] Recognition retry",recognitionRetryCount,"delay:",delay);
-clearTimeout(audioStartWatchdog);audioStartWatchdog=null;
-const oldRecognition=recognition;recognition=null;if(oldRecognition)try{oldRecognition.abort()}catch(e){}
-recognitionStarted=false;recognitionAudioStarted=false;
-await new Promise(r=>setTimeout(r,delay));if(!isRecording||isProcessingSpeech)return;
-recognition=createRecognitionInstance();if(!recognition){isRecording=false;resetRecordButton();setSpeechStatus("Speech recognition is unavailable.","error");return}
-recognitionAudioStarted=false;recognitionStarted=false;
-try{recognition.start();console.log("[Speech] Retry recognition.start() called")}
-catch(err){console.error("[Speech] Retry start failed:",err);try{recognition.abort()}catch(e){}recognition=null;if(recognitionRetryCount<3)retryRecognitionStart();else{isRecording=false;resetRecordButton();setSpeechStatus("Microphone could not be started. Please try again.","error")}return}
-clearTimeout(audioStartWatchdog);
-audioStartWatchdog=setTimeout(()=>{if(!isRecording||isProcessingSpeech)return;if(recognitionStarted||recognitionAudioStarted)return;retryRecognitionStart()},4000)
-}
+let recordingState = "idle"; // idle | starting | listening | stopping | finished
+let sentenceTranscript = "";
+let sentenceHasResult = false;
+let userRequestedStop = false;
 
 function toggleRecording(){
-const rb=document.getElementById("recordBtn");
-if(!window.SpeechRecognitionClass){alert("Speech recognition is not supported in this browser. Please use Chrome or Safari.");return}
-if(!isRecording&&!isProcessingSpeech){
-clearSpeechTimers();clearTimeout(audioStartWatchdog);audioStartWatchdog=null;recognitionRetryCount=0;finalTranscript="";recognitionTranscript="";recognitionStarted=false;recognitionAudioStarted=false;isRecording=true;isProcessingSpeech=false;
-rb.disabled=false;rb.innerText="🎤 Starting microphone…";rb.classList.add("recording");rb.classList.remove("processing");setSpeechStatus("Starting microphone…","active");startRecognitionWithMic();return
-}
-if(isRecording){
-console.log("[Speech] STUDENT STOP",recognitionSession);clearTimeout(audioStartWatchdog);audioStartWatchdog=null;isRecording=false;isProcessingSpeech=true;rb.disabled=true;rb.innerText="⏳ Analysing…";rb.classList.remove("recording");rb.classList.add("processing");setSpeechStatus("Analysing…","active");
-const activeRecognition=recognition;if(activeRecognition){try{activeRecognition.stop()}catch(e){console.error("[Speech] STOP ERROR:",e);finishSpeechProcessing()}}else finishSpeechProcessing()
-}}
+    const rb = document.getElementById("recordBtn");
 
-function finishSpeechProcessing(){
-if(!isProcessingSpeech)return;clearSpeechTimers();isProcessingSpeech=false;isRecording=false;recognitionStarted=false;recognitionAudioStarted=false;clearTimeout(audioStartWatchdog);audioStartWatchdog=null;stopRecognitionMic();const transcript=finalTranscript.trim();console.log("[Speech] FINAL FOR ANALYSIS:",transcript);
-if(!transcript){resetRecordButton();setSpeechStatus("No speech was detected.","error");alert("No speech was detected. Please try again.");return}
-setSpeechStatus("Speech detected ✓","success");processResult(transcript)
+    if (!window.SpeechRecognitionClass){
+        alert("Speech recognition is not supported in this browser. Please use Chrome or Safari.");
+        return;
+    }
+
+    if (recordingState === "idle"){
+        startSentenceRecording();
+        return;
+    }
+
+    if (recordingState === "starting" || recordingState === "listening"){
+        stopSentenceRecording();
+        return;
+    }
 }
-function cancelSpeechRecognition(){isRecording=false;isProcessingSpeech=false;recognitionStarted=false;recognitionAudioStarted=false;clearSpeechTimers();clearTimeout(audioStartWatchdog);audioStartWatchdog=null;stopRecognitionMic();recognitionSession++;finalTranscript="";recognitionTranscript="";const old=recognition;recognition=null;if(old)try{old.abort()}catch(e){}resetRecordButton()}
-function resetRecordButton(){const rb=document.getElementById("recordBtn");if(!rb)return;rb.disabled=false;rb.innerText="🎤 Start Recording";rb.classList.remove("recording","processing")}
+
+function startSentenceRecording(){
+    destroyRecognition();
+
+    sentenceTranscript = "";
+    sentenceHasResult = false;
+    userRequestedStop = false;
+    recordingState = "starting";
+
+    const rb = document.getElementById("recordBtn");
+    rb.disabled = false;
+    rb.innerText = "🎤 Starting…";
+    rb.classList.add("recording");
+    rb.classList.remove("processing");
+
+    document.getElementById("recordHint").innerText =
+        "Starting the microphone…";
+    setSpeechStatus("Starting microphone…", "active");
+
+    recognition = createRecognitionForSentence();
+
+    if (!recognition){
+        recordingState = "idle";
+        resetRecordButton();
+        setSpeechStatus("Speech recognition is unavailable.", "error");
+        return;
+    }
+
+    recognition.onstart = function(){
+        recordingState = "listening";
+        rb.innerText = "⏹ Stop & Check";
+        document.getElementById("recordHint").innerText =
+            "I'm listening. Read the sentence, then tap Stop & Check.";
+        setSpeechStatus("Listening…", "active");
+        console.log("[Speech] start");
+    };
+
+    recognition.onresult = function(event){
+        let parts = [];
+        for (let i = event.resultIndex; i < event.results.length; i++){
+            if (event.results[i].isFinal){
+                const t = event.results[i][0]?.transcript?.trim() || "";
+                if (t) parts.push(t);
+            }
+        }
+        if (parts.length){
+            sentenceTranscript = parts.join(" ").trim();
+            sentenceHasResult = true;
+            console.log("[Speech] result:", sentenceTranscript);
+            setSpeechStatus("Speech detected ✓", "success");
+        }
+    };
+
+    recognition.onspeechstart = function(){
+        if (recordingState === "starting") recordingState = "listening";
+        setSpeechStatus("Listening to you…", "active");
+    };
+
+    recognition.onerror = function(event){
+        console.error("[Speech] error:", event.error);
+
+        if (event.error === "no-speech"){
+            recordingState = "idle";
+            destroyRecognition();
+            resetRecordButton();
+            setSpeechStatus("I couldn't detect speech.", "error");
+            document.getElementById("recordHint").innerText =
+                "Tap Start Recording and try again.";
+            return;
+        }
+
+        if (event.error === "not-allowed" || event.error === "service-not-allowed"){
+            recordingState = "idle";
+            destroyRecognition();
+            resetRecordButton();
+            setSpeechStatus("Microphone permission was blocked.", "error");
+            alert("Microphone access is blocked. Please allow microphone access for this website and try again.");
+            return;
+        }
+
+        if (event.error === "audio-capture"){
+            recordingState = "idle";
+            destroyRecognition();
+            resetRecordButton();
+            setSpeechStatus("The microphone could not be accessed.", "error");
+            alert("The microphone could not be accessed. Please check the phone's microphone settings.");
+            return;
+        }
+
+        if (event.error === "network"){
+            recordingState = "idle";
+            destroyRecognition();
+            resetRecordButton();
+            setSpeechStatus("Speech recognition service unavailable.", "error");
+            alert("Speech recognition could not connect. Please check the Internet connection.");
+            return;
+        }
+
+        recordingState = "idle";
+        destroyRecognition();
+        resetRecordButton();
+        setSpeechStatus("Speech recognition could not complete.", "error");
+    };
+
+    recognition.onend = function(){
+        console.log("[Speech] end; state:", recordingState, "requested:", userRequestedStop, "result:", sentenceTranscript);
+
+        if (recordingState === "stopping" || sentenceHasResult){
+            finishSentenceRecording();
+            return;
+        }
+
+        /* Mobile browsers may close recognition unexpectedly. Do NOT restart it. */
+        recordingState = "idle";
+        destroyRecognition();
+        resetRecordButton();
+        setSpeechStatus("Recording ended before speech was captured.", "error");
+        document.getElementById("recordHint").innerText =
+            "Tap Start Recording and try again.";
+    };
+
+    try{
+        recognition.start();
+        console.log("[Speech] recognition.start() called");
+    }catch(err){
+        console.error("[Speech] start exception:", err);
+        recordingState = "idle";
+        destroyRecognition();
+        resetRecordButton();
+        setSpeechStatus("Could not start speech recognition.", "error");
+    }
+}
+
+function stopSentenceRecording(){
+    if (!recognition){
+        finishSentenceRecording();
+        return;
+    }
+
+    userRequestedStop = true;
+    recordingState = "stopping";
+
+    const rb = document.getElementById("recordBtn");
+    rb.disabled = true;
+    rb.innerText = "⏳ Checking…";
+    rb.classList.remove("recording");
+    rb.classList.add("processing");
+
+    document.getElementById("recordHint").innerText = "Checking what you said…";
+    setSpeechStatus("Checking…", "active");
+
+    try{
+        recognition.stop();
+    }catch(err){
+        console.error("[Speech] stop exception:", err);
+        finishSentenceRecording();
+    }
+}
+
+function finishSentenceRecording(){
+    if (recordingState === "finished") return;
+    recordingState = "finished";
+
+    const transcript = (sentenceTranscript || "").trim();
+    console.log("[Speech] final sentence:", transcript);
+
+    destroyRecognition();
+
+    if (!transcript){
+        recordingState = "idle";
+        resetRecordButton();
+        setSpeechStatus("No speech was captured.", "error");
+        document.getElementById("recordHint").innerText =
+            "Tap Retry this sentence and speak clearly.";
+        return;
+    }
+
+    processResult(transcript);
+}
+
+function destroyRecognition(){
+    const old = recognition;
+    recognition = null;
+
+    if (!old) return;
+
+    try{
+        old.onstart = null;
+        old.onresult = null;
+        old.onerror = null;
+        old.onend = null;
+        old.onspeechstart = null;
+    }catch(e){}
+
+    try{ old.abort(); }catch(e){}
+}
+
+function cancelSpeechRecognition(){
+    destroyRecognition();
+    recordingState = "idle";
+    sentenceTranscript = "";
+    sentenceHasResult = false;
+    userRequestedStop = false;
+    resetRecordButton();
+}
+
+function resetRecordButton(){
+    const rb = document.getElementById("recordBtn");
+    if (!rb) return;
+    rb.disabled = false;
+    rb.innerText = "🎤 Start Recording";
+    rb.classList.remove("recording");
+    rb.classList.remove("processing");
+}
 
 function processResult(transcript){
-const clean=s=>s.toLowerCase().replace(/[^\w\s]/g,"").trim();const targetWords=chunks[currentChunkIdx].trim().split(/\s+/);const userWords=clean(transcript).split(/\s+/).filter(Boolean);let html="",matches=0;
-targetWords.forEach(word=>{const cw=clean(word);if(userWords.includes(cw)){html+=`<span class="word-correct">${word} </span>`;matches++}else html+=`<span class="word-wrong">${word} </span>`});
-tempMatches=matches;tempTotal=targetWords.length;document.getElementById("passageDisplay").style.display="none";document.getElementById("feedbackArea").innerHTML=html;document.getElementById("recordBtn").style.display="none";document.getElementById("postReadingActions").style.display="flex";setSpeechStatus(`Speech analysed — ${matches}/${targetWords.length} words matched.`,"success")
+    const clean = s => s.toLowerCase().replace(/[^\w\s]/g, "").trim();
+    const targetWords = chunks[currentChunkIdx].trim().split(/\s+/);
+    const userWords = clean(transcript).split(/\s+/).filter(Boolean);
+
+    let html = "";
+    let matches = 0;
+    const used = new Set();
+
+    targetWords.forEach(function(word){
+        const target = clean(word);
+        let index = -1;
+
+        for (let i = 0; i < userWords.length; i++){
+            if (!used.has(i) && userWords[i] === target){
+                index = i;
+                break;
+            }
+        }
+
+        if (index !== -1){
+            used.add(index);
+            matches++;
+            html += `<span class="word-correct">${escapeHtml(word)} </span>`;
+        }else{
+            html += `<span class="word-wrong">${escapeHtml(word)} </span>`;
+        }
+    });
+
+    tempMatches = matches;
+    tempTotal = targetWords.length;
+
+    document.getElementById("passageDisplay").style.display = "none";
+
+    const feedback = document.getElementById("feedbackArea");
+    feedback.style.display = "block";
+    feedback.innerHTML = html;
+
+    document.getElementById("recordBtn").style.display = "none";
+    document.getElementById("postReadingActions").style.display = "flex";
+
+    const panel = document.getElementById("feedbackPanel");
+    if (panel){
+        panel.style.display = "block";
+        const transcriptEl = document.getElementById("transcriptText");
+        if (transcriptEl) transcriptEl.innerText = transcript;
+    }
+
+    const percentage = targetWords.length
+        ? Math.round(matches / targetWords.length * 100)
+        : 0;
+
+    setSpeechStatus(
+        `Speech checked — ${matches}/${targetWords.length} words matched (${percentage}%).`,
+        "success"
+    );
+
+    const hint = document.getElementById("recordHint");
+    if (hint) hint.innerText = "Green = matched. Red = not matched by the recogniser.";
 }
+
+function escapeHtml(str){
+    return String(str)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
 function parseScore(val){let num=parseFloat(val);if(isNaN(num))return 0;return num<2?Math.round(num*100):Math.round(num)}
 
 async function nextChunk(){
@@ -273,6 +511,6 @@ function downloadCSV(){if(!currentScores.length)return;const content=["Timestamp
 async function createTask(){const p=document.getElementById("tPassage").value.trim(),t=document.getElementById("tName").value.trim();if(!p||!t)return;setBtnLoading("btnCreate","spinCreate",true,"Generating...");try{const res=await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"createTask",email:t,passage:p})});const newId=await res.text();document.getElementById("displayId").innerText=newId;document.getElementById("generatedIdArea").style.display="block"}catch(e){console.error(e);alert("Failed to generate task ID.")}setBtnLoading("btnCreate","spinCreate",false,"Generate Task ID")}
 function setBtnLoading(id,spin,load,text){const b=document.getElementById(id),s=document.getElementById(spin);if(!b)return;b.disabled=load;if(s)s.style.display=load?"inline-block":"none";b.innerHTML=load?"Wait...":(spin?`<div class="spinner" id="${spin}"></div> ${text}`:text)}
 </script>
-<div id="appVersion" aria-hidden="true">v1.9</div>
+<div id="appVersion" aria-hidden="true">v2.0</div>
 </body>
 </html>
