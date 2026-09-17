@@ -407,24 +407,52 @@ const UI = {
 
 
 /* ============================================================
-   SPEECH ENGINE (Continuous=False Loop Architecture)
+   SPEECH ENGINE (No-Abort Resilience Pattern)
 ============================================================ */
 const SpeechEngine = {
     api: null,
     isRecording: false,
     transcript: "",
     interim: "",
+    restartTimer: null,
 
-    init: function() {
+    start: function(isManual = true) {
+        if (isManual) {
+            Debug.log("--- MANUAL START ---");
+            this.transcript = "";
+            this.interim = "";
+            UI.setLiveTranscript("...");
+        } else {
+            Debug.log("--- AUTO RESTART ---");
+            if (this.interim) {
+                this.transcript += " " + this.interim;
+                this.interim = "";
+            }
+        }
+        
+        this.isRecording = true;
+        clearTimeout(this.restartTimer);
+
+        // 1. SAFELY RETIRE OLD INSTANCE (Never use .abort() on iOS)
+        if (this.api) {
+            this.api.onstart = null;
+            this.api.onresult = null;
+            this.api.onerror = null;
+            this.api.onend = null;
+            try { this.api.stop(); } catch(e) {}
+            this.api = null;
+        }
+
+        // 2. CREATE A BRAND NEW INSTANCE
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SR) return false;
+        if (!SR) {
+            Debug.log("Speech API missing", "error");
+            alert("Speech Recognition not supported.");
+            return;
+        }
 
         this.api = new SR();
-        
-        // CRITICAL: Force continuous to FALSE.
-        // iOS Safari locks the mic if continuous is true between start/stops.
-        // By setting it to false, the browser natively resets the audio pipe.
-        this.api.continuous = false;
+        this.api.continuous = false; // Forces OS to properly reset audio buffer
         this.api.interimResults = true;
         this.api.lang = 'en-US';
 
@@ -435,12 +463,15 @@ const SpeechEngine = {
 
         this.api.onresult = (e) => {
             let currentInterim = "";
+            let currentFinal = "";
             for (let i = e.resultIndex; i < e.results.length; i++) {
-                if (e.results[i].isFinal) {
-                    this.transcript += " " + e.results[i][0].transcript;
-                } else {
-                    currentInterim += e.results[i][0].transcript;
-                }
+                if (e.results[i].isFinal) currentFinal += e.results[i][0].transcript;
+                else currentInterim += e.results[i][0].transcript;
+            }
+            
+            if (currentFinal) {
+                this.transcript += " " + currentFinal.trim();
+                Debug.log(`Chunk finalized: "${currentFinal.trim()}"`);
             }
             this.interim = currentInterim;
             this.updateDisplay();
@@ -458,47 +489,32 @@ const SpeechEngine = {
         this.api.onend = () => {
             Debug.log("API: onend fired");
             if (this.isRecording) {
-                // User didn't click stop. The browser ended it natively (because continuous=false).
-                // We instantly restart it to simulate a continuous session without the hardware bugs.
-                Debug.log("Auto-restarting API to maintain listening...");
-                try { 
-                    this.api.start(); 
-                } catch (err) { 
-                    Debug.log("Restart failed: " + err.message, "error"); 
-                }
-            } else {
-                Debug.log("API fully stopped by user.");
-                this.finalize();
+                Debug.log("Silence timeout. Restarting new instance.");
+                this.restartTimer = setTimeout(() => {
+                    if (this.isRecording) this.start(false);
+                }, 100);
             }
         };
-
-        return true;
-    },
-
-    start: function() {
-        if (!this.api && !this.init()) {
-            Debug.log("Speech API missing", "error");
-            alert("Speech Recognition not supported on this browser.");
-            return;
-        }
-        Debug.log("--- START REQUESTED ---");
-        this.isRecording = true;
-        this.transcript = "";
-        this.interim = "";
-        this.updateDisplay();
 
         try {
             this.api.start();
         } catch(e) {
-            Debug.log(`Start exception: ${e.message}`, "error");
+            Debug.log(`Start Exception: ${e.message}`, "error");
             UI.resetRecordBtn();
         }
     },
 
     stop: function() {
         Debug.log("--- STOP REQUESTED ---");
-        this.isRecording = false; // Setting this to false stops the auto-restart loop
+        this.isRecording = false;
+        clearTimeout(this.restartTimer);
+
         if (this.api) {
+            // Override onend to evaluate immediately
+            this.api.onend = () => {
+                Debug.log("API stopped cleanly.");
+                this.finalize();
+            };
             try { 
                 this.api.stop(); 
             } catch(e) { 
@@ -509,14 +525,21 @@ const SpeechEngine = {
         }
     },
 
-    cancel: function() {
-        Debug.log("--- CANCEL REQUESTED ---");
+    reset: function() {
+        // Safe detachment for chunk transitions, completely avoids abort()
+        Debug.log("--- RESET REQUESTED ---");
         this.isRecording = false;
+        clearTimeout(this.restartTimer);
+        if (this.api) {
+            this.api.onstart = null;
+            this.api.onresult = null;
+            this.api.onerror = null;
+            this.api.onend = null;
+            try { this.api.stop(); } catch(e) {}
+            this.api = null;
+        }
         this.transcript = "";
         this.interim = "";
-        if (this.api) {
-            try { this.api.abort(); } catch(e) {}
-        }
     },
 
     updateDisplay: function() {
@@ -526,7 +549,7 @@ const SpeechEngine = {
 
     finalize: function() {
         const fullText = (this.transcript + " " + this.interim).trim();
-        Debug.log(`Final Transcript captured: "${fullText}"`);
+        Debug.log(`Finalizing transcript: "${fullText}"`);
         Analyzer.evaluate(fullText);
     }
 };
@@ -597,14 +620,11 @@ window.onload = function() {
 function toggleRecording() {
     const rb = document.getElementById("recordBtn");
     
-    // START
     if (!SpeechEngine.isRecording) {
         rb.innerText = "⏹ Stop & Analyze";
         rb.classList.add("recording");
-        SpeechEngine.start();
-    } 
-    // STOP
-    else {
+        SpeechEngine.start(true);
+    } else {
         rb.disabled = true;
         rb.innerText = "⏳ Analysing…";
         rb.classList.remove("recording");
@@ -715,7 +735,6 @@ async function fetchTask() {
     localStorage.setItem("reader_no", sNo.value.trim());
     localStorage.setItem("reader_name", sName.value.trim());
 
-    // CRITICAL: Stop test to free microphone for Speech API
     stopMicTest(); 
 
     setBtnLoading("btnJoin", "spinJoin", true, "Join Task");
@@ -754,7 +773,7 @@ async function fetchTask() {
 async function showChunk() {
     Debug.log(`Loading chunk ${currentChunkIdx + 1}`);
     
-    SpeechEngine.cancel();
+    SpeechEngine.reset();
     UI.resetRecordBtn();
 
     const text = chunks[currentChunkIdx];
@@ -956,7 +975,7 @@ function setBtnLoading(id, spin, load, text) {
 }
 </script>
 
-<div id="appVersion" aria-hidden="true">v1.7 (Engine Continuous=False Loop)</div>
+<div id="appVersion" aria-hidden="true">v1.8 (No-Abort Reset Architecture)</div>
 
 </body>
 </html>
