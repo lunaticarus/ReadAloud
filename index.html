@@ -25,7 +25,7 @@
             background-color: var(--system-gray-bg);
             color: var(--text-primary);
             margin: 0;
-            padding: 100px 20px 70px 20px; /* Increased bottom padding for debug panel */
+            padding: 100px 20px 70px 20px; 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -152,7 +152,6 @@
             border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
 
-        /* NEW: Live Transcript Area */
         #liveTranscriptArea {
             min-height: 30px; font-size: 14px; color: #888; font-style: italic;
             margin-bottom: 15px; border-left: 3px solid #d2d2d7; padding-left: 10px;
@@ -170,7 +169,7 @@
         #speechStatus.success { color: var(--system-green); }
         #speechStatus.error { color: var(--system-red); }
 
-        /* NEW: Debug Panel Styles */
+        /* Debug Panel Styles */
         #debugPanel {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #1e1e1e; color: #fff; font-family: monospace; font-size: 11px;
@@ -253,7 +252,7 @@
             
             <div id="translationText" class="translation-text"></div>
             
-            <!-- NEW: Live Transcript Area -->
+            <!-- Live Transcript Area -->
             <div id="liveTranscriptArea"></div>
 
             <button id="recordBtn" class="apple-btn" onclick="toggleRecording()" type="button">
@@ -319,7 +318,7 @@
     </div>
 </div>
 
-<!-- NEW: Debug Panel -->
+<!-- Debug Panel -->
 <div id="debugPanel" class="debug-closed">
     <div class="debug-header" onclick="toggleDebug()">
         <span>🐛 Debug Console</span>
@@ -345,7 +344,7 @@ let currentScores = [];
 let isSubmitting = false;
 
 /* ============================================================
-   DEBUG & UI CONTROLLERS (New Architecture)
+   DEBUG & UI CONTROLLERS
 ============================================================ */
 const Debug = {
     log: function(msg, type='info') {
@@ -408,116 +407,101 @@ const UI = {
 
 
 /* ============================================================
-   SPEECH ENGINE (Just-in-Time Architecture)
+   SPEECH ENGINE (Continuous=False Loop Architecture)
 ============================================================ */
 const SpeechEngine = {
     api: null,
-    isActive: false,       
-    shouldBeActive: false, 
-    accumulatedTranscript: "",
-    currentInterim: "", // NEW: Tracks words still being processed
-    
-    start: function() {
-        Debug.log("User requested START", "info");
-        this.shouldBeActive = true;
-        this.accumulatedTranscript = "";
-        this.currentInterim = "";
-        UI.setLiveTranscript("...");
+    isRecording: false,
+    transcript: "",
+    interim: "",
 
-        // 1. Destroy any existing instance completely to prevent "Deaf Mic"
-        if (this.api) {
-            this.api.onstart = null;
-            this.api.onresult = null;
-            this.api.onerror = null;
-            this.api.onend = null;
-            try { this.api.abort(); } catch(e) {}
-            this.api = null;
-        }
-        
-        // 2. Build a brand new instance strictly tied to this exact button click
+    init: function() {
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SR) {
-            Debug.log("Speech API not supported.", "error");
-            return;
-        }
+        if (!SR) return false;
 
         this.api = new SR();
-        const isAndroid = /Android/i.test(navigator.userAgent);
-        this.api.continuous = !isAndroid; 
-        this.api.interimResults = true;   
+        
+        // CRITICAL: Force continuous to FALSE.
+        // iOS Safari locks the mic if continuous is true between start/stops.
+        // By setting it to false, the browser natively resets the audio pipe.
+        this.api.continuous = false;
+        this.api.interimResults = true;
         this.api.lang = 'en-US';
 
         this.api.onstart = () => {
-            this.isActive = true;
             Debug.log("API: onstart fired", "success");
             UI.setStatus("Listening...", "active");
         };
 
         this.api.onresult = (e) => {
-            let interim = "";
-            let finalStr = "";
+            let currentInterim = "";
             for (let i = e.resultIndex; i < e.results.length; i++) {
-                if (e.results[i].isFinal) finalStr += e.results[i][0].transcript;
-                else interim += e.results[i][0].transcript;
+                if (e.results[i].isFinal) {
+                    this.transcript += " " + e.results[i][0].transcript;
+                } else {
+                    currentInterim += e.results[i][0].transcript;
+                }
             }
-            
-            // Constantly update what the browser is currently guessing
-            this.currentInterim = interim;
-
-            if (finalStr) {
-                this.accumulatedTranscript += " " + finalStr.trim();
-                this.accumulatedTranscript = this.accumulatedTranscript.trim();
-                Debug.log(`API: Final captured: "${finalStr.trim()}"`, "info");
-            }
-            
-            const displayHtml = this.accumulatedTranscript + (interim ? " <span style='color:#bbb'>" + interim + "</span>" : "");
-            UI.setLiveTranscript(displayHtml || "...");
+            this.interim = currentInterim;
+            this.updateDisplay();
         };
 
         this.api.onerror = (e) => {
-            Debug.log(`API: onerror [${e.error}]`, "warn");
+            Debug.log(`API Error: ${e.error}`, "warn");
             if (e.error === 'not-allowed' || e.error === 'audio-capture') {
-                this.shouldBeActive = false;
+                this.isRecording = false;
                 UI.resetRecordBtn();
                 UI.setStatus("Microphone access failed.", "error");
             }
         };
 
         this.api.onend = () => {
-            this.isActive = false;
-            Debug.log("API: onend fired", "warn");
-            
-            if (this.shouldBeActive) {
-                Debug.log("API: Auto-restarting engine to maintain capture...");
-                setTimeout(() => {
-                    if (this.shouldBeActive && !this.isActive && this.api) {
-                        try { this.api.start(); } 
-                        catch(err) { Debug.log("Restart failed: " + err.message, "error"); }
-                    }
-                }, 150);
+            Debug.log("API: onend fired");
+            if (this.isRecording) {
+                // User didn't click stop. The browser ended it natively (because continuous=false).
+                // We instantly restart it to simulate a continuous session without the hardware bugs.
+                Debug.log("Auto-restarting API to maintain listening...");
+                try { 
+                    this.api.start(); 
+                } catch (err) { 
+                    Debug.log("Restart failed: " + err.message, "error"); 
+                }
             } else {
-                Debug.log("API: Cleanly stopped by user.", "success");
+                Debug.log("API fully stopped by user.");
                 this.finalize();
             }
         };
 
+        return true;
+    },
+
+    start: function() {
+        if (!this.api && !this.init()) {
+            Debug.log("Speech API missing", "error");
+            alert("Speech Recognition not supported on this browser.");
+            return;
+        }
+        Debug.log("--- START REQUESTED ---");
+        this.isRecording = true;
+        this.transcript = "";
+        this.interim = "";
+        this.updateDisplay();
+
         try {
             this.api.start();
         } catch(e) {
-            Debug.log(`Start Exception: ${e.message}`, "error");
+            Debug.log(`Start exception: ${e.message}`, "error");
             UI.resetRecordBtn();
         }
     },
 
     stop: function() {
-        Debug.log("User requested STOP", "info");
-        this.shouldBeActive = false; // Prevents auto-restart
-        
-        if (this.isActive && this.api) {
-            try {
-                this.api.stop(); // Triggers onend -> finalize()
-            } catch(e) {
-                Debug.log(`Stop Exception: ${e.message}`, "error");
+        Debug.log("--- STOP REQUESTED ---");
+        this.isRecording = false; // Setting this to false stops the auto-restart loop
+        if (this.api) {
+            try { 
+                this.api.stop(); 
+            } catch(e) { 
                 this.finalize(); 
             }
         } else {
@@ -526,26 +510,27 @@ const SpeechEngine = {
     },
 
     cancel: function() {
-        Debug.log("Engine CANCEL/RESET requested", "warn");
-        this.shouldBeActive = false;
-        this.accumulatedTranscript = "";
-        this.currentInterim = "";
-        if (this.isActive && this.api) {
+        Debug.log("--- CANCEL REQUESTED ---");
+        this.isRecording = false;
+        this.transcript = "";
+        this.interim = "";
+        if (this.api) {
             try { this.api.abort(); } catch(e) {}
         }
-        this.isActive = false;
+    },
+
+    updateDisplay: function() {
+        const text = (this.transcript + " " + this.interim).trim();
+        UI.setLiveTranscript(text || "...");
     },
 
     finalize: function() {
-        // NEW: Salvage any unfinalized text that gets orphaned when "Stop" is pressed
-        let fullText = this.accumulatedTranscript;
-        if (this.currentInterim && this.currentInterim.trim().length > 0) {
-            fullText += " " + this.currentInterim.trim();
-            Debug.log(`API: Salvaged interim text: "${this.currentInterim.trim()}"`, "info");
-        }
+        const fullText = (this.transcript + " " + this.interim).trim();
+        Debug.log(`Final Transcript captured: "${fullText}"`);
         Analyzer.evaluate(fullText);
     }
 };
+
 
 /* ============================================================
    ANALYZER (Scoring Engine)
@@ -555,7 +540,7 @@ const Analyzer = {
         Debug.log(`Analyzer evaluating: "${transcript}"`);
         
         if (!transcript || !transcript.trim()) {
-            UI.setStatus("No words caught. Try again, and pause a second before hitting stop.", "error");
+            UI.setStatus("No speech detected. Please speak closer to the mic.", "error");
             UI.resetRecordBtn();
             return;
         }
@@ -613,7 +598,7 @@ function toggleRecording() {
     const rb = document.getElementById("recordBtn");
     
     // START
-    if (!SpeechEngine.shouldBeActive) {
+    if (!SpeechEngine.isRecording) {
         rb.innerText = "⏹ Stop & Analyze";
         rb.classList.add("recording");
         SpeechEngine.start();
@@ -755,7 +740,7 @@ async function fetchTask() {
             document.getElementById("readingSection").style.display = "block";
             
             currentChunkIdx = 0; totalMatches = 0; totalWords = 0; tempMatches = 0; tempTotal = 0;
-                       
+            
             showChunk();
         }
     }
@@ -769,7 +754,6 @@ async function fetchTask() {
 async function showChunk() {
     Debug.log(`Loading chunk ${currentChunkIdx + 1}`);
     
-    // Safely abort previous listening without tearing down object
     SpeechEngine.cancel();
     UI.resetRecordBtn();
 
@@ -795,6 +779,10 @@ async function showChunk() {
 }
 
 function playText() {
+    if (SpeechEngine.isRecording) {
+        alert("Please stop recording before playing the audio.");
+        return;
+    }
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(chunks[currentChunkIdx]);
@@ -968,7 +956,7 @@ function setBtnLoading(id, spin, load, text) {
 }
 </script>
 
-<div id="appVersion" aria-hidden="true">v1.7 (State Machine)</div>
+<div id="appVersion" aria-hidden="true">v1.7 (Engine Continuous=False Loop)</div>
 
 </body>
 </html>
