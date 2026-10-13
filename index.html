@@ -439,18 +439,25 @@ function wakeUpAudioSystem() {
 /* ============================================================
    SPEECH ENGINE (With Timeout Deadman's Switch)
 ============================================================ */
+/* ============================================================
+   SPEECH ENGINE (Android Safe-Loop Architecture v1.13)
+============================================================ */
 const SpeechEngine = {
     api: null,
     isRecording: false,
     transcript: "",
     interim: "",
     restartTimer: null,
+    consecutiveErrors: 0, // Prevents infinite loop on hardware lock
 
     start: function(isManual = true) {
+        const isAndroid = /Android/i.test(navigator.userAgent);
+
         if (isManual) {
             Debug.log("--- MANUAL START ---");
             this.transcript = "";
             this.interim = "";
+            this.consecutiveErrors = 0;
             UI.setLiveTranscript("...");
         } else {
             Debug.log("--- AUTO RESTART ---");
@@ -463,6 +470,7 @@ const SpeechEngine = {
         this.isRecording = true;
         clearTimeout(this.restartTimer);
 
+        // Safely retire previous instance listeners
         if (this.api) {
             this.api.onstart = null;
             this.api.onresult = null;
@@ -479,12 +487,14 @@ const SpeechEngine = {
         }
 
         this.api = new SR();
-        this.api.continuous = false;
+        // Android handles continuous mode natively; iOS requires single-shot restarts
+        this.api.continuous = isAndroid; 
         this.api.interimResults = true;
         this.api.lang = 'en-US';
 
         this.api.onstart = () => {
             Debug.log("API: onstart fired", "success");
+            this.consecutiveErrors = 0; // Reset error tracker on success
             UI.setStatus("Listening...", "active");
         };
 
@@ -506,20 +516,47 @@ const SpeechEngine = {
 
         this.api.onerror = (e) => {
             Debug.log(`API Error: ${e.error}`, "warn");
+            
+            if (e.error === 'service-not-allowed') {
+                this.isRecording = false;
+                UI.resetRecordBtn();
+                UI.setStatus("Speech recognition service blocked by OS.", "error");
+                return;
+            }
+
             if (e.error === 'not-allowed' || e.error === 'audio-capture') {
                 this.isRecording = false;
                 UI.resetRecordBtn();
                 UI.setStatus("Microphone access failed.", "error");
+                return;
+            }
+
+            // Track rapid consecutive aborts
+            if (e.error === 'aborted' || e.error === 'network') {
+                this.consecutiveErrors++;
             }
         };
 
         this.api.onend = () => {
             Debug.log("API: onend fired");
+            
             if (this.isRecording) {
-                Debug.log("Silence timeout. Restarting new instance.");
+                // Prevent infinite crash loop if hardware keeps aborting
+                if (this.consecutiveErrors > 3) {
+                    Debug.log("Too many consecutive abort errors. Halting engine to protect UI.", "error");
+                    this.isRecording = false;
+                    UI.setStatus("Audio capture error. Please tap record again.", "error");
+                    UI.resetRecordBtn();
+                    return;
+                }
+
+                // Add dynamic delay: 400ms on Android to give HAL time to release
+                const restartDelay = isAndroid ? 400 : 150;
+                Debug.log(`Restarting instance in ${restartDelay}ms...`);
+                
                 this.restartTimer = setTimeout(() => {
                     if (this.isRecording) this.start(false);
-                }, 100);
+                }, restartDelay);
             }
         };
 
@@ -593,8 +630,7 @@ const SpeechEngine = {
         Analyzer.evaluate(fullText);
     }
 };
-
-
+    
 /* ============================================================
    ANALYZER (Scoring Engine - Go Easy Mode)
 ============================================================ */
