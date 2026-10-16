@@ -3,71 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ReadAloud</title>
+    <title>ReadAloud - Liquid Glass Edition</title>
     <style>
         :root {
             --system-blue: #007aff;
             --system-green: #34c759;
             --system-red: #ff3b30;
-            --system-gray-bg: #f2f2f7;
-            --glass-bg: rgba(255, 255, 255, 0.55);
-            --glass-bg-hover: rgba(255, 255, 255, 0.7);
-            --glass-card: rgba(255, 255, 255, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.8);
-            --glass-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.08);
+            --system-gray-bg: #f5f5f7;
+            --system-card-bg: rgba(255, 255, 255, 0.65);
+            --system-btn-grey: rgba(0, 0, 0, 0.05);
+            --system-btn-active: rgba(0, 0, 0, 0.12);
+            --system-border: rgba(255, 255, 255, 0.65);
             --text-primary: #1d1d1f;
             --text-secondary: #6e6e73;
-            --radius: 24px;
+            --text-tertiary: #86868b;
+            --radius: 22px;
             --sab: env(safe-area-inset-bottom, 0px);
             --sat: env(safe-area-inset-top, 0px);
+
+            /* Liquid Glass Optics & Specular Highlights */
+            --glass-bg: rgba(255, 255, 255, 0.58);
+            --glass-border: rgba(255, 255, 255, 0.7);
+            --glass-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -1px 2px rgba(0, 0, 0, 0.05);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
-            background-color: #eef2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", sans-serif;
+            background-color: #f0f1f5;
             color: var(--text-primary);
             margin: 0;
-            padding: calc(90px + var(--sat)) 20px calc(70px + var(--sab)) 20px; 
+            padding: calc(96px + var(--sat)) 20px calc(70px + var(--sab)) 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
-            overscroll-behavior-y: contain;
             overflow-x: hidden;
             position: relative;
         }
 
-        /* Animated Ambient Fluid Background Canvas */
-        #fluidCanvas {
+        /* Ambient Liquid Fluid Canvas */
+        #liquidCanvas {
             position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             z-index: -1;
             pointer-events: none;
-            filter: blur(50px);
+            filter: blur(42px);
             opacity: 0.85;
         }
 
-        /* Clean Liquid Glass Header */
+        /* Liquid Refractive Floating Island Header */
         header {
             position: fixed;
-            top: 0; left: 0; right: 0;
-            height: calc(74px + var(--sat));
-            padding-top: var(--sat);
-            background: rgba(255, 255, 255, 0.35);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            top: calc(16px + var(--sat)); 
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 760px;
+            height: 64px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(28px) saturate(190%);
+            -webkit-backdrop-filter: blur(28px) saturate(190%);
             z-index: 900;
             display: flex;
             align-items: center;
-            padding-left: 30px; padding-right: 30px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+            justify-content: space-between;
+            padding: 0 24px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
         }
 
-        h1 { font-weight: 700; font-size: 24px; margin: 0; letter-spacing: -0.5px; }
+        h1 { 
+            font-weight: 700; 
+            font-size: 22px; 
+            margin: 0; 
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #1d1d1f 0%, #434345 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Header Mode Switcher */
+        .mode-nav {
+            display: flex; gap: 6px; align-items: center;
+            background: rgba(0, 0, 0, 0.04);
+            padding: 4px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .mode-btn {
+            border: none; background: transparent; padding: 6px 14px;
+            border-radius: 10px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            color: var(--text-secondary);
+        }
+
+        .mode-btn.active {
+            background: rgba(255, 255, 255, 0.85);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.8);
+        }
 
         .spinner {
             display: none; width: 14px; height: 14px;
@@ -77,98 +120,76 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Liquid Glass Navigation Bar */
-        .mode-nav {
-            position: fixed; top: calc(20px + var(--sat)); right: 30px;
-            background: rgba(255, 255, 255, 0.45);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            padding: 5px; border-radius: 16px;
-            border: 1px solid var(--glass-border);
-            display: flex; gap: 4px; z-index: 1000;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
-        }
-
-        .mode-btn {
-            border: none; background: transparent; padding: 7px 16px;
-            border-radius: 12px; font-size: 13px; font-weight: 600;
-            cursor: pointer; transition: all 0.25s ease; color: var(--text-secondary);
-        }
-
-        .mode-btn.active {
-            background: rgba(255, 255, 255, 0.9); color: var(--text-primary);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-        }
-
         .container {
-            width: 100%; max-width: 600px; display: none;
+            width: 100%; max-width: 620px; display: none;
             animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .container.active { display: block; }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(12px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Glassmorphic Card Container */
         .card {
-            background: var(--glass-card);
-            backdrop-filter: blur(30px) saturate(190%);
-            -webkit-backdrop-filter: blur(30px) saturate(190%);
+            background: var(--glass-bg);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
             padding: 30px;
             border-radius: var(--radius);
-            box-shadow: var(--glass-shadow);
+            box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.08);
             border: 1px solid var(--glass-border);
             margin-bottom: 20px;
             position: relative;
             overflow: hidden;
         }
 
-        .card::before {
-            content: "";
-            position: absolute; top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
-        }
-
         input, textarea, select {
-            width: 100%; padding: 14px 16px; border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 14px; font-size: 16px; margin-bottom: 14px;
-            box-sizing: border-box; outline: none; font-family: inherit;
-            background: rgba(255, 255, 255, 0.6);
+            width: 100%; padding: 12px 16px; margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.55);
+            border: none;
+            border-radius: 14px; font-size: 15px; font-weight: 500;
+            color: var(--text-primary); font-family: inherit;
+            box-sizing: border-box; outline: none; transition: all 0.2s ease;
             backdrop-filter: blur(10px);
-            transition: all 0.2s ease;
-            color: var(--text-primary);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
         }
         input:focus, textarea:focus, select:focus {
-            border-color: var(--system-blue);
             background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
         }
-        input.error { border-color: var(--system-red) !important; background: rgba(255, 59, 48, 0.05); }
+        input.error { border: 1px solid var(--system-red) !important; background: rgba(255, 59, 48, 0.06); }
         .uppercase-input { text-transform: uppercase; }
 
-        /* Liquid Glass Button */
+        /* Apple Glass Button */
         .apple-btn {
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.6);
             color: var(--text-primary);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            padding: 14px 24px; border-radius: 24px;
-            font-weight: 600; cursor: pointer; width: 100%; font-size: 15px;
-            transition: all 0.25s ease; display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+            padding: 12px 24px; border-radius: 20px;
+            font-weight: 600; cursor: pointer; width: 100%; font-size: 14px;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03), inset 0 1px 1px rgba(255,255,255,0.7);
         }
-        .apple-btn:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-1px); }
-        .apple-btn:active { transform: scale(0.98); }
+        .apple-btn:hover {
+            background: rgba(255, 255, 255, 0.78);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.9);
+        }
+        .apple-btn:active { transform: scale(0.96); }
         .apple-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .apple-btn.recording {
             background: var(--system-red); color: white; border-color: transparent;
             animation: pulse 1.5s infinite;
-            box-shadow: 0 8px 25px rgba(255, 59, 48, 0.4);
+            box-shadow: 0 8px 24px rgba(255, 59, 48, 0.35);
         }
-        .apple-btn.processing { background: var(--system-blue); color: white; border-color: transparent; }
+        .apple-btn.processing {
+            background: linear-gradient(135deg, #007aff 0%, #0056b3 100%);
+            color: white; border-color: transparent;
+        }
 
         @keyframes pulse {
             0% { opacity: 1; transform: scale(1); }
@@ -177,11 +198,11 @@
         }
 
         .mic-test-container {
-            margin: 10px 0 20px 0; padding: 14px 16px;
-            background: rgba(255, 255, 255, 0.5);
+            margin: 10px 0 20px 0; padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.45);
             backdrop-filter: blur(10px);
             border-radius: 14px; display: flex; align-items: center; gap: 12px;
-            font-size: 13px; border: 1px solid rgba(255,255,255,0.7);
+            font-size: 13px; border: 1px solid rgba(255,255,255,0.6);
         }
         .mic-visualizer { flex-grow: 1; height: 6px; background: rgba(0,0,0,0.06); border-radius: 3px; overflow: hidden; position: relative; }
         .mic-bar { height: 100%; width: 0%; background: var(--system-green); transition: width 0.1s ease; }
@@ -200,14 +221,14 @@
         .progress-text { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; }
 
         .speak-icon {
-            width: 44px; height: 44px; background: rgba(255, 255, 255, 0.7);
-            border: 1px solid var(--glass-border);
+            width: 44px; height: 44px; background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.6);
             border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
         }
-        .speak-icon:hover { transform: scale(1.08); background: white; }
+        .speak-icon:hover { background: rgba(255, 255, 255, 0.9); transform: scale(1.08); box-shadow: 0 4px 10px rgba(0,0,0,0.06); }
         .speak-icon.playing { background: var(--system-blue); color: white; transform: scale(1.08); border-color: transparent; }
 
         #liveTranscriptArea {
@@ -270,30 +291,28 @@
         .log-success { color: #30d158; }
 
         @media (max-width: 600px) {
-            body { padding-left: 14px; padding-right: 14px; }
-            header { padding-left: 18px; padding-right: 18px; }
-            header h1 { font-size: 20px; }
-            .mode-nav { right: 14px; }
+            body { padding-left: 12px; padding-right: 12px; padding-top: 90px; }
+            header { width: calc(100% - 24px); padding: 0 16px; top: 12px; }
+            header h1 { font-size: 19px; }
             .card { padding: 22px; }
         }
 
-        #appVersion { position: fixed; right: 8px; bottom: calc(38px + var(--sab)); font-size: 9px; color: rgba(0,0,0,0.25); pointer-events: none; z-index: 2000; }
+        #appVersion { position: fixed; right: 12px; bottom: 6px; font-size: 10px; font-weight: 500; color: rgba(0,0,0,0.35); pointer-events: none; z-index: 2000; }
     </style>
 </head>
 
 <body>
 
-<!-- Fluid Animated Mesh Background -->
-<canvas id="fluidCanvas"></canvas>
+<!-- Dynamic Liquid Mesh Canvas -->
+<canvas id="liquidCanvas"></canvas>
 
 <header>
     <h1>Read Aloud</h1>
+    <div class="mode-nav">
+        <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
+        <button class="mode-btn" id="btnTeacher">Teacher</button>
+    </div>
 </header>
-
-<div class="mode-nav">
-    <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
-    <button class="mode-btn" id="btnTeacher">Teacher</button>
-</div>
 
 <!-- =========================================================
      STUDENT VIEW
@@ -344,7 +363,7 @@
             <div id="speechStatus"></div>
 
             <div id="postReadingActions" style="display:none; flex-direction:column; align-items:center; width:100%;">
-                <button id="nextChunkBtn" class="apple-btn" style="background:var(--system-blue); color:white; border-color:transparent;" onclick="nextChunk()" type="button">
+                <button id="nextChunkBtn" class="apple-btn" style="background:linear-gradient(135deg, #007aff 0%, #0056b3 100%); color:white; border-color:transparent;" onclick="nextChunk()" type="button">
                     <div class="spinner" id="spinNext"></div>
                     <span id="nextBtnText">Next Sentence →</span>
                 </button>
@@ -371,7 +390,7 @@
      TEACHER VIEW
 ========================================================= -->
 <div id="teacherView" class="container">
-    <div class="sub-nav" style="display:flex; gap:6px; margin-bottom:20px; background:rgba(255,255,255,0.4); backdrop-filter:blur(20px); padding:4px; border-radius:16px; width:fit-content; border:1px solid var(--glass-border);">
+    <div class="sub-nav" style="display:flex; gap:6px; margin-bottom:20px; background:rgba(0,0,0,0.04); padding:4px; border-radius:14px; width:fit-content; border:1px solid rgba(255,255,255,0.5);">
         <button class="mode-btn active" id="subSet" onclick="toggleTeacherMode('setup')" type="button">Setup Task</button>
         <button class="mode-btn" id="subScore" onclick="toggleTeacherMode('scores')" type="button">Check Scores</button>
     </div>
@@ -420,53 +439,50 @@
 
 <script>
 /* ============================================================
-   FLUID CANVAS ANIMATION
+   AMBIENT LIQUID MESH CANVAS ANIMATION
 ============================================================ */
-const canvas = document.getElementById('fluidCanvas');
+const canvas = document.getElementById('liquidCanvas');
 const ctx = canvas.getContext('2d');
-let blobs = [];
+let width, height;
 
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
 }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
-class Blob {
-    constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 0.6;
-        this.vy = (Math.random() - 0.5) * 0.6;
-        this.radius = Math.random() * 200 + 150;
-        this.color = ['rgba(0, 122, 255, 0.25)', 'rgba(52, 199, 89, 0.2)', 'rgba(255, 149, 0, 0.2)', 'rgba(175, 82, 222, 0.2)'][Math.floor(Math.random() * 4)];
-    }
-    update() {
-        this.x += this.vx; this.y += this.vy;
-        if (this.x < -this.radius || this.x > canvas.width + this.radius) this.vx *= -1;
-        if (this.y < -this.radius || this.y > canvas.height + this.radius) this.vy *= -1;
-    }
-    draw() {
+const blobs = [
+    { x: 0.25, y: 0.25, r: 0.42, color: 'rgba(120, 180, 255, 0.7)', vx: 0.0005, vy: 0.0006 },
+    { x: 0.75, y: 0.2, r: 0.48, color: 'rgba(215, 170, 255, 0.75)', vx: -0.0006, vy: 0.0004 },
+    { x: 0.5, y: 0.75, r: 0.52, color: 'rgba(255, 195, 210, 0.7)', vx: 0.0004, vy: -0.0005 },
+    { x: 0.2, y: 0.8, r: 0.38, color: 'rgba(160, 230, 245, 0.65)', vx: -0.0003, vy: -0.0006 }
+];
+
+function animateBlobs() {
+    ctx.clearRect(0, 0, width, height);
+    blobs.forEach(b => {
+        b.x += b.vx;
+        b.y += b.vy;
+
+        if (b.x < 0 || b.x > 1) b.vx *= -1;
+        if (b.y < 0 || b.y > 1) b.vy *= -1;
+
+        const grad = ctx.createRadialGradient(
+            b.x * width, b.y * height, 0,
+            b.x * width, b.y * height, b.r * Math.max(width, height)
+        );
+        grad.addColorStop(0, b.color);
+        grad.addColorStop(1, 'rgba(240, 241, 245, 0)');
+
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
-        g.addColorStop(0, this.color);
-        g.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = g;
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.arc(b.x * width, b.y * height, b.r * Math.max(width, height), 0, Math.PI * 2);
         ctx.fill();
-    }
+    });
+    requestAnimationFrame(animateBlobs);
 }
-
-function initCanvas() {
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    blobs = Array.from({ length: 6 }, () => new Blob());
-    function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        blobs.forEach(b => { b.update(); b.draw(); });
-        requestAnimationFrame(animate);
-    }
-    animate();
-}
+animateBlobs();
 
 /* ============================================================
    CONFIGURATION & GLOBALS
@@ -929,7 +945,6 @@ function applyVoiceAndSpeak(utter, voices) {
    PAGE LOAD
 ============================================================ */
 window.onload = function() {
-    initCanvas();
     initDOMCache();
     Debug.log("App loaded. Restoring cached user details.");
     
@@ -1470,7 +1485,7 @@ function setBtnLoading(id, spin, load, text) {
 }
 </script>
 
-<div id="appVersion" aria-hidden="true">v2.1 | Made with ❤️ by Icarus Lai</div>
+<div id="appVersion" aria-hidden="true">v2.1 | Liquid Glass Edition</div>
 
 </body>
 </html>
