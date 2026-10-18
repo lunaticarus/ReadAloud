@@ -3,48 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ReadAloud - Liquid Glass Edition</title>
+    <title>ReadAloud</title>
     <style>
+        /* Liquid Glass Design System Tokens */
         :root {
-            --system-blue: #007aff;
-            --system-green: #34c759;
-            --system-red: #ff3b30;
-            --system-gray-bg: #f5f5f7;
-            --system-card-bg: rgba(255, 255, 255, 0.65);
-            --system-btn-grey: rgba(0, 0, 0, 0.05);
-            --system-btn-active: rgba(0, 0, 0, 0.12);
-            --system-border: rgba(255, 255, 255, 0.65);
-            --text-primary: #1d1d1f;
-            --text-secondary: #6e6e73;
-            --text-tertiary: #86868b;
-            --radius: 22px;
+            /* High Transparency Glass Fills */
+            --glass-bg-primary: rgba(255, 255, 255, 0.08);
+            --glass-bg-card: rgba(255, 255, 255, 0.06);
+            --glass-bg-hover: rgba(255, 255, 255, 0.18);
+            --glass-bg-input: rgba(255, 255, 255, 0.12);
+            
+            /* Glass Border Highlights */
+            --glass-border-light: rgba(255, 255, 255, 0.18);
+            --glass-border-strong: rgba(255, 255, 255, 0.3);
+            
+            /* Depth Shadows */
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --glass-shadow-sm: 0 4px 16px 0 rgba(0, 0, 0, 0.25);
+            
+            /* Typography & System Colors */
+            --text-main: #ffffff;
+            --text-sub: rgba(255, 255, 255, 0.85);
+            --text-muted: rgba(255, 255, 255, 0.65);
+            --accent-blue: #0a84ff;
+            --accent-green: #30d158;
+            --accent-orange: #ff9f0a;
+            --accent-red: #ff453a;
+            
+            /* System Border Radius & Insets */
+            --radius-container: 20px;
+            --radius-element: 12px;
+            --radius-full: 9999px;
             --sab: env(safe-area-inset-bottom, 0px);
             --sat: env(safe-area-inset-top, 0px);
-
-            /* Liquid Glass Optics & Specular Highlights */
-            --glass-bg: rgba(255, 255, 255, 0.58);
-            --glass-border: rgba(255, 255, 255, 0.7);
-            --glass-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -1px 2px rgba(0, 0, 0, 0.05);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
+        html, body {
+            width: 100vw;
+            min-height: 100vh;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", sans-serif;
-            background-color: #f0f1f5;
-            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1f1c2c;
+            color: var(--text-main);
             margin: 0;
             padding: calc(96px + var(--sat)) 20px calc(70px + var(--sab)) 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
             position: relative;
         }
 
-        /* Ambient Liquid Fluid Canvas */
+        /* Fixed Mobile Safari Compatibility Background Layer */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #1f1c2c 0%, #928dab 50%, #2c3e50 100%);
+            z-index: -2;
+            pointer-events: none;
+            transform: translateZ(0);
+        }
+
+        /* Ambient Dynamic Background Canvas */
         #liquidCanvas {
             position: fixed;
             top: 0;
@@ -53,257 +82,480 @@
             height: 100vh;
             z-index: -1;
             pointer-events: none;
-            filter: blur(42px);
-            opacity: 0.85;
+            filter: blur(40px);
+            opacity: 0.75;
+            transform: translateZ(0);
         }
 
-        /* Liquid Refractive Floating Island Header */
+        /* Fixed Glass Header Container */
         header {
             position: fixed;
-            top: calc(16px + var(--sat)); 
+            top: calc(16px + var(--sat));
             left: 50%;
-            transform: translateX(-50%);
+            transform: translateX(-50%) translateZ(0);
             width: calc(100% - 32px);
             max-width: 760px;
             height: 64px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(28px) saturate(190%);
-            -webkit-backdrop-filter: blur(28px) saturate(190%);
+            background: var(--glass-bg-primary);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-container);
+            box-shadow: var(--glass-shadow-sm);
             z-index: 900;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 24px;
-            border-radius: 20px;
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.08);
+            padding: 0 20px;
             transition: all 0.3s ease;
         }
 
-        h1 { 
-            font-weight: 700; 
-            font-size: 22px; 
-            margin: 0; 
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #1d1d1f 0%, #434345 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            letter-spacing: -0.3px;
         }
 
-        /* Header Mode Switcher */
+        /* Mode Switcher Group */
         .mode-nav {
-            display: flex; gap: 6px; align-items: center;
-            background: rgba(0, 0, 0, 0.04);
+            display: flex; 
+            gap: 6px; 
+            align-items: center;
+            background: var(--glass-bg-primary);
             padding: 4px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: var(--radius-element);
+            border: 1px solid var(--glass-border-light);
         }
 
         .mode-btn {
-            border: none; background: transparent; padding: 6px 14px;
-            border-radius: 10px; font-size: 13px; font-weight: 600;
-            cursor: pointer; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            color: var(--text-secondary);
+            border: none; 
+            background: transparent; 
+            padding: 6px 14px;
+            border-radius: 8px; 
+            font-size: 13px; 
+            font-weight: 600;
+            cursor: pointer; 
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+            outline: none;
         }
 
         .mode-btn.active {
-            background: rgba(255, 255, 255, 0.85);
-            color: var(--text-primary);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.8);
+            background: var(--glass-bg-hover);
+            color: var(--text-main);
+            border: 1px solid var(--glass-border-light);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
         .spinner {
-            display: none; width: 14px; height: 14px;
-            border: 2px solid rgba(0,0,0,0.1);
-            border-top-color: currentColor; border-radius: 50%;
-            animation: spin 0.8s linear infinite; margin-right: 8px;
+            display: none; 
+            width: 14px; 
+            height: 14px;
+            border: 2px solid var(--glass-border-light);
+            border-top-color: var(--text-main); 
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite; 
+            margin-right: 8px;
         }
+
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .container {
-            width: 100%; max-width: 620px; display: none;
-            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            width: 100%; 
+            max-width: 620px; 
+            display: none;
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .container.active { display: block; }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Glassmorphic Card Container */
+        /* Glass Card Component */
         .card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(28px) saturate(180%);
-            -webkit-backdrop-filter: blur(28px) saturate(180%);
-            padding: 30px;
-            border-radius: var(--radius);
-            box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.08);
-            border: 1px solid var(--glass-border);
+            background: var(--glass-bg-card);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 28px;
+            border-radius: var(--radius-container);
+            box-shadow: var(--glass-shadow);
+            border: 1px solid var(--glass-border-light);
             margin-bottom: 20px;
             position: relative;
             overflow: hidden;
+            transform: translateZ(0);
         }
 
         input, textarea, select {
-            width: 100%; padding: 12px 16px; margin-bottom: 12px;
-            background: rgba(255, 255, 255, 0.55);
-            border: none;
-            border-radius: 14px; font-size: 15px; font-weight: 500;
-            color: var(--text-primary); font-family: inherit;
-            box-sizing: border-box; outline: none; transition: all 0.2s ease;
-            backdrop-filter: blur(10px);
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+            width: 100%; 
+            padding: 12px 16px; 
+            margin-bottom: 12px;
+            background: var(--glass-bg-input);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-element); 
+            font-size: 14px; 
+            font-weight: 500;
+            color: var(--text-main); 
+            font-family: inherit;
+            box-sizing: border-box; 
+            outline: none; 
+            transition: all 0.2s ease;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            transform: translateZ(0);
         }
+
+        input::placeholder, textarea::placeholder {
+            color: var(--text-muted);
+        }
+
         input:focus, textarea:focus, select:focus {
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--glass-border-strong);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
-        input.error { border: 1px solid var(--system-red) !important; background: rgba(255, 59, 48, 0.06); }
+
+        input.error { 
+            border: 1px solid var(--accent-red) !important; 
+            background: rgba(255, 69, 58, 0.15); 
+        }
+
         .uppercase-input { text-transform: uppercase; }
 
-        /* Apple Glass Button */
-        .apple-btn {
-            background: rgba(255, 255, 255, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            color: var(--text-primary);
-            padding: 12px 24px; border-radius: 20px;
-            font-weight: 600; cursor: pointer; width: 100%; font-size: 14px;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03), inset 0 1px 1px rgba(255,255,255,0.7);
-        }
-        .apple-btn:hover {
-            background: rgba(255, 255, 255, 0.78);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.9);
-        }
-        .apple-btn:active { transform: scale(0.96); }
-        .apple-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .apple-btn.recording {
-            background: var(--system-red); color: white; border-color: transparent;
-            animation: pulse 1.5s infinite;
-            box-shadow: 0 8px 24px rgba(255, 59, 48, 0.35);
-        }
-        .apple-btn.processing {
-            background: linear-gradient(135deg, #007aff 0%, #0056b3 100%);
-            color: white; border-color: transparent;
+        /* Custom Inverted Select Options */
+        select option {
+            background-color: #1f1c2c;
+            color: var(--text-main);
         }
 
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.85; transform: scale(0.99); }
-            100% { opacity: 1; transform: scale(1); }
+        /* Glass Primary Button */
+        .glass-btn {
+            background: var(--glass-bg-primary);
+            border: 1px solid var(--glass-border-light);
+            color: var(--text-main);
+            padding: 12px 24px; 
+            border-radius: var(--radius-element);
+            font-weight: 600; 
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            transform: translateZ(0);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            outline: none;
+            user-select: none;
         }
 
+        .glass-btn:hover {
+            background: var(--glass-bg-hover);
+            border-color: var(--glass-border-strong);
+        }
+
+        .glass-btn:active { 
+            transform: scale(0.96) translateZ(0); 
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .glass-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .glass-btn.recording {
+            background: rgba(255, 69, 58, 0.35); 
+            color: #ffffff; 
+            border-color: rgba(255, 69, 58, 0.8);
+            animation: glassPulse 1.2s infinite alternate ease-in-out;
+        }
+
+        .glass-btn.processing {
+            background: rgba(10, 132, 255, 0.35);
+            color: #ffffff; 
+            border-color: rgba(10, 132, 255, 0.6);
+        }
+
+        @keyframes glassPulse {
+            0% {
+                background: rgba(255, 69, 58, 0.28);
+                border-color: rgba(255, 69, 58, 0.8);
+                box-shadow: 0 0 20px rgba(255, 69, 58, 0.4);
+            }
+            100% {
+                background: rgba(255, 159, 10, 0.32);
+                border-color: rgba(255, 159, 10, 0.9);
+                box-shadow: 0 0 30px rgba(255, 159, 10, 0.5);
+            }
+        }
+
+        /* Mic Test Indicator */
         .mic-test-container {
-            margin: 10px 0 20px 0; padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.45);
-            backdrop-filter: blur(10px);
-            border-radius: 14px; display: flex; align-items: center; gap: 12px;
-            font-size: 13px; border: 1px solid rgba(255,255,255,0.6);
+            margin: 10px 0 20px 0; 
+            padding: 12px 16px;
+            background: var(--glass-bg-primary);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border-radius: var(--radius-element); 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            font-size: 13px; 
+            border: 1px solid var(--glass-border-light);
+            color: var(--text-sub);
         }
-        .mic-visualizer { flex-grow: 1; height: 6px; background: rgba(0,0,0,0.06); border-radius: 3px; overflow: hidden; position: relative; }
-        .mic-bar { height: 100%; width: 0%; background: var(--system-green); transition: width 0.1s ease; }
-        .mic-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #d1d1d6; flex-shrink: 0; }
-        .mic-status-dot.active { background: var(--system-green); box-shadow: 0 0 10px var(--system-green); }
 
+        .mic-visualizer { 
+            flex-grow: 1; 
+            height: 6px; 
+            background: rgba(255, 255, 255, 0.1); 
+            border-radius: 3px; 
+            overflow: hidden; 
+            position: relative; 
+        }
+
+        .mic-bar { 
+            height: 100%; 
+            width: 0%; 
+            background: var(--accent-green); 
+            transition: width 0.1s ease; 
+        }
+
+        .mic-status-dot { 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            background: var(--text-muted); 
+            flex-shrink: 0; 
+        }
+
+        .mic-status-dot.active { 
+            background: var(--accent-green); 
+            box-shadow: 0 0 10px var(--accent-green); 
+        }
+
+        /* Passage Display */
         .passage-wrapper {
-            display: grid; grid-template-columns: 1fr 44px; align-items: center;
-            gap: 16px; margin: 25px 0 10px 0; min-height: 80px;
+            display: grid; 
+            grid-template-columns: 1fr 44px; 
+            align-items: center;
+            gap: 16px; 
+            margin: 20px 0 10px 0; 
+            min-height: 80px;
         }
-        #passageDisplay, #feedbackArea { font-size: 22px; font-weight: 600; line-height: 1.5; margin: 0; letter-spacing: -0.3px; }
-        .word-correct { color: var(--system-green); }
-        .word-wrong { color: var(--system-red); text-decoration: underline; text-decoration-color: rgba(255,59,48,0.4); }
 
-        .translation-text { font-size: 15px; color: var(--text-secondary); opacity: 0.9; margin-bottom: 20px; min-height: 20px; }
-        .progress-text { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; }
+        #passageDisplay, #feedbackArea { 
+            font-size: 20px; 
+            font-weight: 600; 
+            line-height: 1.5; 
+            margin: 0; 
+            letter-spacing: -0.3px;
+            color: var(--text-main);
+        }
 
+        .word-correct { color: var(--accent-green); }
+        .word-wrong { color: var(--accent-red); text-decoration: underline; text-decoration-color: rgba(255, 69, 58, 0.6); }
+
+        .translation-text { 
+            font-size: 14px; 
+            color: var(--text-muted); 
+            margin-bottom: 20px; 
+            min-height: 20px; 
+        }
+
+        .progress-text { 
+            font-size: 11px; 
+            font-weight: 700; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px; 
+        }
+
+        /* Play Audio Icon Button */
         .speak-icon {
-            width: 44px; height: 44px; background: rgba(255, 255, 255, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            width: 44px; 
+            height: 44px; 
+            background: var(--glass-bg-primary);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-full); 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            color: var(--text-main);
+            outline: none;
         }
-        .speak-icon:hover { background: rgba(255, 255, 255, 0.9); transform: scale(1.08); box-shadow: 0 4px 10px rgba(0,0,0,0.06); }
-        .speak-icon.playing { background: var(--system-blue); color: white; transform: scale(1.08); border-color: transparent; }
+
+        .speak-icon:hover { 
+            background: var(--glass-bg-hover); 
+            border-color: var(--glass-border-strong);
+            transform: scale(1.05);
+        }
+
+        .speak-icon.playing { 
+            background: rgba(10, 132, 255, 0.35); 
+            color: #ffffff; 
+            border-color: rgba(10, 132, 255, 0.6);
+            transform: scale(1.05); 
+        }
 
         #liveTranscriptArea {
-            min-height: 30px; font-size: 14px; color: #555; font-style: italic;
-            margin-bottom: 15px; border-left: 3px solid var(--system-blue); padding-left: 12px;
-            display: none; line-height: 1.4;
+            min-height: 30px; 
+            font-size: 14px; 
+            color: var(--text-sub); 
+            font-style: italic;
+            margin-bottom: 15px; 
+            border-left: 3px solid var(--accent-blue); 
+            padding-left: 12px;
+            display: none; 
+            line-height: 1.4;
         }
 
+        /* Data Tables */
         #scoreTableArea { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; margin: 15px 0; }
-        th { 
-            background: rgba(255, 255, 255, 0.4); color: var(--text-secondary); font-size: 11px; 
-            padding: 12px 10px; border-bottom: 1px solid rgba(0,0,0,0.05); text-transform: uppercase; letter-spacing: 0.5px;
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            text-align: left; 
+            margin: 15px 0; 
         }
+
+        th { 
+            background: var(--glass-bg-primary); 
+            color: var(--text-muted); 
+            font-size: 11px; 
+            padding: 12px 10px; 
+            border-bottom: 1px solid var(--glass-border-light); 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+        }
+
         th.sortable { cursor: pointer; user-select: none; transition: background 0.15s; }
-        th.sortable:hover { background: rgba(255, 255, 255, 0.7); color: var(--system-blue); }
-        .sort-icon { display: inline-block; margin-left: 4px; font-size: 10px; color: var(--system-blue); }
-        td { padding: 12px 10px; border-bottom: 1px solid rgba(0,0,0,0.03); font-size: 13px; }
+        th.sortable:hover { background: var(--glass-bg-hover); color: var(--text-main); }
+        .sort-icon { display: inline-block; margin-left: 4px; font-size: 10px; color: var(--accent-blue); }
+
+        td { 
+            padding: 12px 10px; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
+            font-size: 13px; 
+            color: var(--text-sub);
+        }
+
         .id-badge {
-            background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(15px);
-            padding: 20px; border-radius: 16px; text-align: center; font-family: SFMono-Regular, Menlo, Monaco, monospace;
-            font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 20px 0; border: 1px solid var(--glass-border);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            background: var(--glass-bg-primary); 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 18px; 
+            border-radius: var(--radius-element); 
+            text-align: center; 
+            font-family: SFMono-Regular, Menlo, Monaco, monospace;
+            font-size: 22px; 
+            font-weight: 700; 
+            color: var(--text-main); 
+            margin: 20px 0; 
+            border: 1px solid var(--glass-border-light);
+            box-shadow: var(--glass-shadow-sm);
         }
 
         .preview-box {
-            background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 14px;
-            padding: 15px; margin-top: 15px; font-size: 13px; color: var(--text-primary);
+            background: var(--glass-bg-primary); 
+            border: 1px solid var(--glass-border-light); 
+            border-radius: var(--radius-element);
+            padding: 15px; 
+            margin-top: 15px; 
+            font-size: 13px; 
+            color: var(--text-sub);
         }
-        .preview-sentence { padding: 8px 0; border-bottom: 1px dashed rgba(0,0,0,0.08); }
+
+        .preview-sentence { padding: 8px 0; border-bottom: 1px dashed rgba(255, 255, 255, 0.1); }
         .preview-sentence:last-child { border-bottom: none; }
 
-        #speechStatus { text-align: center; font-size: 12px; min-height: 18px; margin-top: 10px; margin-bottom: 10px; color: var(--text-secondary); font-weight: 500; }
-        #speechStatus.active { color: var(--system-red); }
-        #speechStatus.success { color: var(--system-green); }
-        #speechStatus.error { color: var(--system-red); }
+        #speechStatus { 
+            text-align: center; 
+            font-size: 12px; 
+            min-height: 18px; 
+            margin-top: 10px; 
+            margin-bottom: 10px; 
+            color: var(--text-muted); 
+            font-weight: 500; 
+        }
+
+        #speechStatus.active { color: var(--accent-orange); }
+        #speechStatus.success { color: var(--accent-green); }
+        #speechStatus.error { color: var(--accent-red); }
 
         /* Liquid Glass Debug Console */
         #debugPanel {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: rgba(30, 30, 30, 0.85);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            color: #fff; font-family: SFMono-Regular, Menlo, Monaco, monospace; font-size: 11px;
-            z-index: 9999; transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0;
+            background: rgba(15, 15, 25, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: var(--text-main); 
+            font-family: SFMono-Regular, Menlo, Monaco, monospace; 
+            font-size: 11px;
+            z-index: 9999; 
+            transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             padding-bottom: var(--sab);
-            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            border-top: 1px solid var(--glass-border-light);
         }
+
         .debug-closed { height: calc(32px + var(--sab)); overflow: hidden; }
         .debug-open { height: 250px; overflow-y: auto; }
+
         .debug-header {
-            background: rgba(255, 255, 255, 0.05); color: white; padding: 8px 15px; font-weight: bold;
-            cursor: pointer; position: sticky; top: 0; display: flex; justify-content: space-between;
+            background: rgba(255, 255, 255, 0.05); 
+            color: var(--text-main); 
+            padding: 8px 15px; 
+            font-weight: bold;
+            cursor: pointer; 
+            position: sticky; 
+            top: 0; 
+            display: flex; 
+            justify-content: space-between;
         }
+
         #debugContent { padding: 10px; overflow-y: auto; max-height: 218px; box-sizing: border-box; }
-        .log-line { margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .log-info { color: #cccccc; }
-        .log-warn { color: #ffcc00; }
-        .log-error { color: #ff453a; font-weight: bold; }
-        .log-success { color: #30d158; }
+        .log-line { margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .log-info { color: var(--text-sub); }
+        .log-warn { color: var(--accent-orange); }
+        .log-error { color: var(--accent-red); font-weight: bold; }
+        .log-success { color: var(--accent-green); }
 
         @media (max-width: 600px) {
             body { padding-left: 12px; padding-right: 12px; padding-top: 90px; }
             header { width: calc(100% - 24px); padding: 0 16px; top: 12px; }
-            header h1 { font-size: 19px; }
-            .card { padding: 22px; }
+            header h1 { font-size: 18px; }
+            .card { padding: 20px; }
         }
 
-        #appVersion { position: fixed; right: 12px; bottom: 6px; font-size: 10px; font-weight: 500; color: rgba(0,0,0,0.35); pointer-events: none; z-index: 2000; }
+        #appVersion { 
+            position: fixed; 
+            right: 12px; 
+            bottom: 4px; 
+            font-size: 10px; 
+            font-weight: 500; 
+            color: var(--text-muted); 
+            pointer-events: none; 
+            z-index: 2000; 
+        }
     </style>
 </head>
 
 <body>
 
-<!-- Dynamic Liquid Mesh Canvas -->
+<!-- Ambient Dynamic Background Canvas -->
 <canvas id="liquidCanvas"></canvas>
 
 <header>
@@ -314,9 +566,7 @@
     </div>
 </header>
 
-<!-- =========================================================
-     STUDENT VIEW
-========================================================= -->
+<!-- STUDENT VIEW -->
 <div id="studentView" class="container active">
     <div class="card" id="studentEntry">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
@@ -330,10 +580,10 @@
             <div class="mic-status-dot" id="micDot"></div>
             <div style="flex-shrink:0; font-weight:600;" id="micLabel">Mic Check:</div>
             <div class="mic-visualizer"><div class="mic-bar" id="micBar"></div></div>
-            <button onclick="startMicTest(event)" type="button" style="font-size:11px; padding:6px 12px; border-radius:10px; border:none; background:var(--system-blue); color:white; cursor:pointer; font-weight:600;" id="micTestBtn">Test Mic</button>
+            <button onclick="startMicTest(event)" type="button" style="font-size:11px; padding:6px 12px; border-radius:8px; border:1px solid var(--glass-border-light); background:var(--glass-bg-primary); color:var(--text-main); cursor:pointer; font-weight:600;" id="micTestBtn">Test Mic</button>
         </div>
 
-        <button class="apple-btn" id="btnJoin" onclick="fetchTask()" type="button">
+        <button class="glass-btn" id="btnJoin" onclick="fetchTask()" type="button">
             <div class="spinner" id="spinJoin"></div> Join Task
         </button>
     </div>
@@ -354,20 +604,19 @@
             </div>
             
             <div id="translationText" class="translation-text"></div>
-            
             <div id="liveTranscriptArea"></div>
 
-            <button id="recordBtn" class="apple-btn" onclick="toggleRecording()" type="button">
+            <button id="recordBtn" class="glass-btn" onclick="toggleRecording()" type="button">
                 🎤 Start Recording
             </button>
             <div id="speechStatus"></div>
 
             <div id="postReadingActions" style="display:none; flex-direction:column; align-items:center; width:100%;">
-                <button id="nextChunkBtn" class="apple-btn" style="background:linear-gradient(135deg, #007aff 0%, #0056b3 100%); color:white; border-color:transparent;" onclick="nextChunk()" type="button">
+                <button id="nextChunkBtn" class="glass-btn" style="background:rgba(10, 132, 255, 0.25); border-color:rgba(10, 132, 255, 0.4);" onclick="nextChunk()" type="button">
                     <div class="spinner" id="spinNext"></div>
                     <span id="nextBtnText">Next Sentence →</span>
                 </button>
-                <button style="background:none; border:none; color:var(--text-secondary); margin-top:15px; text-decoration:underline; cursor:pointer; font-size:13px;" onclick="retrySentence()" type="button">
+                <button style="background:none; border:none; color:var(--text-muted); margin-top:15px; text-decoration:underline; cursor:pointer; font-size:13px;" onclick="retrySentence()" type="button">
                     Retry this sentence
                 </button>
             </div>
@@ -376,21 +625,19 @@
         <div id="resultScreen" style="display:none; text-align:center; padding:20px 0;">
             <div style="font-size:48px; margin-bottom:10px;">🎉</div>
             <h2 style="margin-bottom:5px; font-weight:700;">Mission Complete!</h2>
-            <div style="font-size:46px; font-weight:800; color:var(--system-green); margin-bottom:20px;" id="finalScoreDisplay">0%</div>
-            <div id="studentLeaderboard" style="margin-top:20px; border-top:1px solid rgba(0,0,0,0.06); padding-top:20px;">
-                <h3 style="font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.8px;">Top Performers</h3>
+            <div style="font-size:46px; font-weight:800; color:var(--accent-green); margin-bottom:20px;" id="finalScoreDisplay">0%</div>
+            <div id="studentLeaderboard" style="margin-top:20px; border-top:1px solid var(--glass-border-light); padding-top:20px;">
+                <h3 style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px;">Top Performers</h3>
                 <div id="leaderboardList"></div>
             </div>
-            <button class="apple-btn" onclick="location.reload()" style="margin-top:20px;" type="button">Back to Home</button>
+            <button class="glass-btn" onclick="location.reload()" style="margin-top:20px;" type="button">Back to Home</button>
         </div>
     </div>
 </div>
 
-<!-- =========================================================
-     TEACHER VIEW
-========================================================= -->
+<!-- TEACHER VIEW -->
 <div id="teacherView" class="container">
-    <div class="sub-nav" style="display:flex; gap:6px; margin-bottom:20px; background:rgba(0,0,0,0.04); padding:4px; border-radius:14px; width:fit-content; border:1px solid rgba(255,255,255,0.5);">
+    <div class="sub-nav" style="display:flex; gap:6px; margin-bottom:20px; background:var(--glass-bg-primary); padding:4px; border-radius:var(--radius-element); width:fit-content; border:1px solid var(--glass-border-light);">
         <button class="mode-btn active" id="subSet" onclick="toggleTeacherMode('setup')" type="button">Setup Task</button>
         <button class="mode-btn" id="subScore" onclick="toggleTeacherMode('scores')" type="button">Check Scores</button>
     </div>
@@ -398,7 +645,7 @@
     <div id="setupMode" class="card">
         <input type="text" id="tName" placeholder="Teacher Name">
         <textarea id="tPassage" placeholder="Paste reading passage..." rows="5"></textarea>
-        <button class="apple-btn" id="btnCreate" onclick="createTask()" type="button">
+        <button class="glass-btn" id="btnCreate" onclick="createTask()" type="button">
             <div class="spinner" id="spinCreate"></div> Generate Task ID
         </button>
         <div id="generatedIdArea" style="display:none">
@@ -409,7 +656,7 @@
 
     <div id="scoreMode" class="card" style="display:none">
         <input type="text" id="tSearchId" class="uppercase-input" placeholder="ENTER TASK ID" value="ID-" oninput="handleTaskIdInput(this)">
-        <button class="apple-btn" id="btnLoadScores" onclick="getScores()" type="button">
+        <button class="glass-btn" id="btnLoadScores" onclick="getScores()" type="button">
             <div class="spinner" id="spinScores"></div> Load Scores
         </button>
         
@@ -419,7 +666,7 @@
                 <option value="best">Highest Score Only</option>
                 <option value="latest">Latest Attempt Only</option>
             </select>
-            <button class="apple-btn" onclick="downloadCSV()" type="button" style="font-size:13px; padding:10px;">
+            <button class="glass-btn" onclick="downloadCSV()" type="button" style="font-size:13px; padding:10px;">
                 📥 Download CSV
             </button>
         </div>
@@ -428,7 +675,7 @@
     </div>
 </div>
 
-<!-- Debug Panel -->
+<!-- Liquid Glass Debug Console -->
 <div id="debugPanel" class="debug-closed">
     <div class="debug-header" onclick="toggleDebug()">
         <span>🐛 Debug Console</span>
@@ -438,33 +685,37 @@
 </div>
 
 <script>
-/* ============================================================
-   AMBIENT LIQUID MESH CANVAS ANIMATION
-============================================================ */
+/* Ambient Dynamic Background Canvas Engine */
 const canvas = document.getElementById('liquidCanvas');
 const ctx = canvas.getContext('2d');
-let width, height;
+let width, height, dpr;
 
 function resizeCanvas() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
 }
-window.addEventListener('resize', resizeCanvas);
+
+window.addEventListener('resize', () => {
+    if (canvas.width !== window.innerWidth * (window.devicePixelRatio || 1)) {
+        resizeCanvas();
+    }
+});
 resizeCanvas();
 
 const blobs = [
-    { x: 0.25, y: 0.25, r: 0.42, color: 'rgba(120, 180, 255, 0.7)', vx: 0.0005, vy: 0.0006 },
-    { x: 0.75, y: 0.2, r: 0.48, color: 'rgba(215, 170, 255, 0.75)', vx: -0.0006, vy: 0.0004 },
-    { x: 0.5, y: 0.75, r: 0.52, color: 'rgba(255, 195, 210, 0.7)', vx: 0.0004, vy: -0.0005 },
-    { x: 0.2, y: 0.8, r: 0.38, color: 'rgba(160, 230, 245, 0.65)', vx: -0.0003, vy: -0.0006 }
+    { x: 0.2, y: 0.3, r: 0.45, color: 'rgba(100, 140, 255, 0.6)', vx: 0.0005, vy: 0.0004 },
+    { x: 0.8, y: 0.2, r: 0.5, color: 'rgba(180, 100, 255, 0.55)', vx: -0.0004, vy: 0.0005 },
+    { x: 0.5, y: 0.8, r: 0.4, color: 'rgba(255, 120, 180, 0.5)', vx: 0.0003, vy: -0.0004 }
 ];
 
 function animateBlobs() {
     ctx.clearRect(0, 0, width, height);
     blobs.forEach(b => {
-        b.x += b.vx;
-        b.y += b.vy;
-
+        b.x += b.vx; b.y += b.vy;
         if (b.x < 0 || b.x > 1) b.vx *= -1;
         if (b.y < 0 || b.y > 1) b.vy *= -1;
 
@@ -473,7 +724,7 @@ function animateBlobs() {
             b.x * width, b.y * height, b.r * Math.max(width, height)
         );
         grad.addColorStop(0, b.color);
-        grad.addColorStop(1, 'rgba(240, 241, 245, 0)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
         ctx.fillStyle = grad;
         ctx.beginPath();
@@ -484,9 +735,7 @@ function animateBlobs() {
 }
 animateBlobs();
 
-/* ============================================================
-   CONFIGURATION & GLOBALS
-============================================================ */
+/* Application Configuration & State */
 const API_URL = "https://script.google.com/macros/s/AKfycbwe3Oci_vG0U4Qgi9IBCdj62xuStlwhrIxsOvVdGvYUtn_vO29KcJ1DDL9utPMWvmsI/exec";
 
 let chunks = [];
@@ -499,13 +748,10 @@ let pressTimer;
 let currentScores = [];
 let isSubmitting = false;
 
-// Teacher Sorting State
 let currentSortCol = 'class';
 let currentSortAsc = true;
 
-/* ============================================================
-   DOM CACHE OBJECT
-============================================================ */
+/* DOM Cache Container */
 const DOM = {};
 
 function initDOMCache() {
@@ -526,9 +772,7 @@ function initDOMCache() {
     });
 }
 
-/* ============================================================
-   FETCH WITH TIMEOUT & RETRY HELPER
-============================================================ */
+/* Fetch Timeout Engine */
 async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -542,9 +786,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
     }
 }
 
-/* ============================================================
-   DEBUG & UI CONTROLLERS
-============================================================ */
+/* Debug & UI Services */
 const Debug = {
     log: function(msg, type='info') {
         const d = new Date();
@@ -598,9 +840,7 @@ const UI = {
     }
 };
 
-/* ============================================================
-   AUDIO WAKE-UP HACK
-============================================================ */
+/* Audio Hardware Wake-Up */
 function wakeUpAudioSystem() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -620,9 +860,7 @@ function wakeUpAudioSystem() {
     }
 }
 
-/* ============================================================
-   SPEECH ENGINE (Android Safe-Loop v1.14)
-============================================================ */
+/* Speech Recognition Engine */
 const SpeechEngine = {
     api: null,
     isRecording: false,
@@ -805,9 +1043,7 @@ const SpeechEngine = {
     }
 };
 
-/* ============================================================
-   ANALYZER (Sequential Window Matching + Number Normalizer)
-============================================================ */
+/* Speech Evaluation & Alignment */
 const Analyzer = {
     numToWordsMap: {
         "0": "zero", "1": "one", "2": "two", "3": "three", "4": "four", "5": "five",
@@ -903,9 +1139,7 @@ const Analyzer = {
     }
 };
 
-/* ============================================================
-   TEXT-TO-SPEECH (TTS) ENHANCED
-============================================================ */
+/* TTS Audio Player */
 function playText() {
     if (!window.speechSynthesis) return;
 
@@ -941,9 +1175,7 @@ function applyVoiceAndSpeak(utter, voices) {
     Debug.log("Audio synthesis started.", "info");
 }
 
-/* ============================================================
-   PAGE LOAD
-============================================================ */
+/* Initialization */
 window.onload = function() {
     initDOMCache();
     Debug.log("App loaded. Restoring cached user details.");
@@ -960,9 +1192,7 @@ window.onload = function() {
     }
 };
 
-/* ============================================================
-   RECORDING TOGGLE
-============================================================ */
+/* Recording Toggle Control */
 async function toggleRecording() {
     if (!SpeechEngine.isRecording) {
         DOM.recordBtn.disabled = true;
@@ -989,9 +1219,7 @@ async function toggleRecording() {
     }
 }
 
-/* ============================================================
-   MIC TEST LOGIC
-============================================================ */
+/* Mic Hardware Level Visualizer */
 let audioContext = null, analyser = null, microphone = null, micStream = null, micAnimationFrame = null;
 
 async function startMicTest(event) {
@@ -1056,9 +1284,7 @@ function stopMicTest() {
     Debug.log("Mic Test Stopped.");
 }
 
-/* ============================================================
-   TASK LOGIC & ROBUST PASSAGE SPLITTER
-============================================================ */
+/* Passage Parsing & Task Fetching */
 function handleTaskIdInput(input) {
     if (!input.value.startsWith("ID-")) input.value = "ID-";
     input.value = input.value.toUpperCase();
@@ -1190,9 +1416,7 @@ async function showChunk() {
     }
 }
 
-/* ============================================================
-   PROGRESS, PERSISTENCE & SUBMISSION WITH RETRY
-============================================================ */
+/* Progress Session & Submission API */
 function parseScore(val) {
     let num = parseFloat(val);
     if (isNaN(num)) return 0;
@@ -1222,7 +1446,6 @@ async function nextChunk() {
         return;
     }
 
-    // FINAL SUBMISSION
     isSubmitting = true;
     setBtnLoading("nextChunkBtn", "spinNext", true, "Saving...");
     const score = totalWords > 0 ? Math.max(0, Math.min(100, Math.round((totalMatches / totalWords) * 100))) : 0;
@@ -1262,7 +1485,7 @@ async function nextChunk() {
             board += "</table>";
             DOM.leaderboardList.innerHTML = board;
         } catch(e) {
-            DOM.leaderboardList.innerHTML = "<p style='font-size:12px;color:#888'>Leaderboard unavailable.</p>";
+            DOM.leaderboardList.innerHTML = "<p style='font-size:12px;color:var(--text-muted)'>Leaderboard unavailable.</p>";
         }
 
         DOM.practiceArea.style.display = "none";
@@ -1280,9 +1503,7 @@ function retrySentence() {
     showChunk();
 }
 
-/* ============================================================
-   TEACHER ACCESS & SCORE MANAGEMENT
-============================================================ */
+/* Teacher View & Score Data Management */
 function setupTeacherAccess() {
     const btn = document.getElementById("btnTeacher");
     const start = function(e) {
@@ -1376,12 +1597,12 @@ function renderScoreTable() {
     const processed = getProcessedScores();
 
     if (!processed.length) {
-        DOM.scoreTableArea.innerHTML = "<p style='text-align:center; color:#888; font-size:13px; margin-top:20px;'>No student records found.</p>";
+        DOM.scoreTableArea.innerHTML = "<p style='text-align:center; color:var(--text-muted); font-size:13px; margin-top:20px;'>No student records found.</p>";
         return;
     }
 
     const getArrow = (col) => {
-        if (currentSortCol !== col) return '<span style="color:#ccc; font-weight:normal;"> ↕</span>';
+        if (currentSortCol !== col) return '<span style="color:var(--text-muted); font-weight:normal;"> ↕</span>';
         return `<span class="sort-icon">${currentSortAsc ? '▲' : '▼'}</span>`;
     };
 
@@ -1400,10 +1621,10 @@ function renderScoreTable() {
             dateDisplay = isNaN(d) ? rawDate : `${d.toLocaleDateString()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`;
         }
         h += `<tr>
-            <td style="font-size:10px;color:#888">${dateDisplay}</td>
+            <td style="font-size:10px;color:var(--text-muted)">${dateDisplay}</td>
             <td>${r[2]}-${r[3]}</td>
             <td><b>${r[4]}</b></td>
-            <td style="color:var(--system-green); font-weight:700; text-align:right;">${parseScore(r[5])}%</td>
+            <td style="color:var(--accent-green); font-weight:700; text-align:right;">${parseScore(r[5])}%</td>
         </tr>`;
     });
     h += "</table>";
@@ -1445,7 +1666,6 @@ function downloadCSV() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/* Teacher: Create Task with Preview */
 async function createTask() {
     const p = DOM.tPassage.value.trim();
     const t = DOM.tName.value.trim();
@@ -1462,7 +1682,7 @@ async function createTask() {
         DOM.displayId.innerText = taskId;
         
         const previewChunks = splitIntoSentences(p);
-        let previewHtml = `<div style="font-weight:600; margin-bottom:8px; color:var(--system-blue);">Task Created! Split into ${previewChunks.length} sentences:</div>`;
+        let previewHtml = `<div style="font-weight:600; margin-bottom:8px; color:var(--accent-blue);">Task Created! Split into ${previewChunks.length} sentences:</div>`;
         previewChunks.forEach((s, idx) => {
             previewHtml += `<div class="preview-sentence"><b>${idx + 1}.</b> ${s}</div>`;
         });
@@ -1485,7 +1705,7 @@ function setBtnLoading(id, spin, load, text) {
 }
 </script>
 
-<div id="appVersion" aria-hidden="true">v2.1 | Liquid Glass Edition</div>
+<div id="appVersion" aria-hidden="true">v3.2 | Liquid Glass</div>
 
 </body>
 </html>
