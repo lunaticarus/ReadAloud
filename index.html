@@ -860,7 +860,7 @@ function wakeUpAudioSystem() {
     }
 }
 
-/* Speech Recognition Engine (v1.15 Deduplication Fix Included) */
+/* Speech Recognition Engine (Fixed Android De-duplication) */
 const SpeechEngine = {
     api: null,
     isRecording: false,
@@ -916,22 +916,23 @@ const SpeechEngine = {
         };
 
         this.api.onresult = (e) => {
-            let currentSessionFinal = "";
+            let latestFinal = "";
             let currentInterim = "";
 
             for (let i = e.resultIndex; i < e.results.length; i++) {
                 const text = e.results[i][0].transcript.trim();
                 if (e.results[i].isFinal) {
-                    currentSessionFinal += text + " ";
+                    latestFinal += " " + text;
                 } else {
-                    currentInterim += text + " ";
+                    currentInterim += " " + text;
                 }
             }
 
-            if (currentSessionFinal) {
-                if (!this.transcript.endsWith(currentSessionFinal.trim())) {
-                    this.transcript = (this.transcript + " " + currentSessionFinal).trim();
-                    Debug.log(`Chunk finalized: "${currentSessionFinal.trim()}"`);
+            if (latestFinal.trim()) {
+                const cleanedFinal = latestFinal.trim();
+                if (!this.transcript.includes(cleanedFinal)) {
+                    this.transcript = cleanedFinal; 
+                    Debug.log(`Updated final: "${this.transcript}"`);
                 }
             }
 
@@ -1713,7 +1714,7 @@ function setBtnLoading(id, spin, load, text) {
 }
 </script>
 
-<div id="appVersion" aria-hidden="true">v3.3 | Liquid Glass (Anti-Duplication Fix)</div>
+<div id="appVersion" aria-hidden="true">v3.4 | Liquid Glass (Android Fix)</div>
 
 </body>
 </html>
