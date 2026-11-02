@@ -116,13 +116,6 @@
             color: var(--text-main);
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
             letter-spacing: -0.3px;
-            cursor: pointer;
-            user-select: none;
-            transition: opacity 0.2s;
-        }
-
-        h1:hover {
-            opacity: 0.8;
         }
 
         /* Mode Switcher Group */
@@ -154,6 +147,30 @@
             color: var(--text-main);
             border: 1px solid var(--glass-border-light);
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Flat Home Icon Button Styles */
+        .home-btn {
+            border: 1px solid var(--glass-border-light);
+            background: var(--glass-bg-primary);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-main);
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+
+        .home-btn:hover {
+            background: var(--glass-bg-hover);
+            border-color: var(--glass-border-strong);
         }
 
         .spinner {
@@ -566,10 +583,13 @@
 <canvas id="liquidCanvas"></canvas>
 
 <header>
-    <h1 onclick="handleTitleClick()">Read Aloud</h1>
-    <div class="mode-nav">
-        <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
-        <button class="mode-btn" id="btnTeacher">Teacher</button>
+    <h1>Read Aloud</h1>
+    <!-- Header Right Control Area -->
+    <div id="headerRightControl">
+        <div class="mode-nav" id="modeNavContainer">
+            <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
+            <button class="mode-btn" id="btnTeacher">Teacher</button>
+        </div>
     </div>
 </header>
 
@@ -637,7 +657,7 @@
                 <h3 style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px;">Top Performers</h3>
                 <div id="leaderboardList"></div>
             </div>
-            <button class="glass-btn" onclick="returnToHome()" style="margin-top:20px;" type="button">Back to Home</button>
+            <button class="glass-btn" onclick="location.reload()" style="margin-top:20px;" type="button">Back to Home</button>
         </div>
     </div>
 </div>
@@ -772,7 +792,8 @@ function initDOMCache() {
         "btnCreate", "spinCreate", "generatedIdArea", "displayId",
         "taskPreviewBox", "tSearchId", "btnLoadScores", "spinScores",
         "scoreActionArea", "scoreDisplayMode", "scoreTableArea", "debugPanel",
-        "debugContent", "debugToggleIcon", "micDot", "micLabel", "micBar", "micTestBtn"
+        "debugContent", "debugToggleIcon", "micDot", "micLabel", "micBar", "micTestBtn",
+        "headerRightControl", "modeNavContainer"
     ];
     ids.forEach(id => {
         DOM[id] = document.getElementById(id);
@@ -844,8 +865,39 @@ const UI = {
         DOM.recordBtn.style.display = "none";
         DOM.postReadingActions.style.display = "flex";
         DOM.liveTranscriptArea.style.display = "none";
+    },
+    setInTaskHeader: function(inTask) {
+        if (!DOM.headerRightControl) return;
+        if (inTask) {
+            DOM.headerRightControl.innerHTML = `
+                <button class="home-btn" onclick="returnToHome()" title="Back to Home" type="button">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </button>
+            `;
+        } else {
+            DOM.headerRightControl.innerHTML = `
+                <div class="mode-nav" id="modeNavContainer">
+                    <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
+                    <button class="mode-btn" id="btnTeacher">Teacher</button>
+                </div>
+            `;
+            setupTeacherAccess();
+        }
     }
 };
+
+function returnToHome() {
+    stopMicTest();
+    SpeechEngine.reset();
+    DOM.readingSection.style.display = "none";
+    DOM.resultScreen.style.display = "none";
+    DOM.studentEntry.style.display = "block";
+    UI.setInTaskHeader(false);
+    executeSwitch("student");
+}
 
 /* Audio Hardware Wake-Up */
 function wakeUpAudioSystem() {
@@ -1208,34 +1260,6 @@ window.onload = function() {
     }
 };
 
-/* Title Click Navigation & Confirmation Handler */
-function handleTitleClick() {
-    const isInTask = DOM.readingSection && DOM.readingSection.style.display === "block";
-    const isFinished = DOM.resultScreen && DOM.resultScreen.style.display === "block";
-
-    if (isInTask && !isFinished) {
-        if (confirm("Are you sure you want to go back? Your current task progress will be lost.")) {
-            returnToHome();
-        }
-    } else {
-        returnToHome();
-    }
-}
-
-function returnToHome() {
-    SpeechEngine.reset();
-    stopMicTest();
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-    
-    // Reset views
-    DOM.readingSection.style.display = "none";
-    DOM.studentEntry.style.display = "block";
-    DOM.practiceArea.style.display = "block";
-    DOM.resultScreen.style.display = "none";
-    
-    executeSwitch("student");
-}
-
 /* Recording Toggle Control */
 async function toggleRecording() {
     if (!SpeechEngine.isRecording) {
@@ -1399,6 +1423,9 @@ async function fetchTask() {
             DOM.studentEntry.style.display = "none";
             DOM.readingSection.style.display = "block";
             
+            // 隱藏 Student / Teacher 按鈕，改為 Home 返回按鈕
+            UI.setInTaskHeader(true);
+            
             const sessionKey = `readaloud_session_${cleanedId}_${studentClass}_${studentNo}_${studentName}`;
             const savedSession = localStorage.getItem(sessionKey);
 
@@ -1550,6 +1577,7 @@ function retrySentence() {
 /* Teacher View & Score Data Management */
 function setupTeacherAccess() {
     const btn = document.getElementById("btnTeacher");
+    if (!btn) return;
     const start = function(e) {
         if (e.type === "touchstart") e.preventDefault();
         pressTimer = setTimeout(function() { executeSwitch("teacher"); }, 2500);
@@ -1575,7 +1603,8 @@ function executeSwitch(v) {
     document.querySelectorAll(".container").forEach(c => c.classList.remove("active"));
     document.getElementById(v + "View").classList.add("active");
     document.querySelectorAll(".mode-nav .mode-btn").forEach(b => b.classList.remove("active"));
-    document.getElementById("btn" + v.charAt(0).toUpperCase() + v.slice(1)).classList.add("active");
+    const btnTarget = document.getElementById("btn" + v.charAt(0).toUpperCase() + v.slice(1));
+    if (btnTarget) btnTarget.classList.add("active");
 }
 
 function filterScoresByDisplayMode(data) {
@@ -1749,7 +1778,7 @@ function setBtnLoading(id, spin, load, text) {
 }
 </script>
 
-<div id="appVersion" aria-hidden="true">v3.5 | Liquid Glass (Title Navigation Added)</div>
+<div id="appVersion" aria-hidden="true">v3.5 | Liquid Glass (Home Button Feature)</div>
 
 </body>
 </html>
