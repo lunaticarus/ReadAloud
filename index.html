@@ -116,6 +116,13 @@
             color: var(--text-main);
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
             letter-spacing: -0.3px;
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s;
+        }
+
+        h1:hover {
+            opacity: 0.8;
         }
 
         /* Mode Switcher Group */
@@ -559,7 +566,7 @@
 <canvas id="liquidCanvas"></canvas>
 
 <header>
-    <h1>Read Aloud</h1>
+    <h1 onclick="handleTitleClick()">Read Aloud</h1>
     <div class="mode-nav">
         <button class="mode-btn active" id="btnStudent" onclick="switchView('student')">Student</button>
         <button class="mode-btn" id="btnTeacher">Teacher</button>
@@ -630,7 +637,7 @@
                 <h3 style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px;">Top Performers</h3>
                 <div id="leaderboardList"></div>
             </div>
-            <button class="glass-btn" onclick="location.reload()" style="margin-top:20px;" type="button">Back to Home</button>
+            <button class="glass-btn" onclick="returnToHome()" style="margin-top:20px;" type="button">Back to Home</button>
         </div>
     </div>
 </div>
@@ -1201,6 +1208,34 @@ window.onload = function() {
     }
 };
 
+/* Title Click Navigation & Confirmation Handler */
+function handleTitleClick() {
+    const isInTask = DOM.readingSection && DOM.readingSection.style.display === "block";
+    const isFinished = DOM.resultScreen && DOM.resultScreen.style.display === "block";
+
+    if (isInTask && !isFinished) {
+        if (confirm("Are you sure you want to go back? Your current task progress will be lost.")) {
+            returnToHome();
+        }
+    } else {
+        returnToHome();
+    }
+}
+
+function returnToHome() {
+    SpeechEngine.reset();
+    stopMicTest();
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    
+    // Reset views
+    DOM.readingSection.style.display = "none";
+    DOM.studentEntry.style.display = "block";
+    DOM.practiceArea.style.display = "block";
+    DOM.resultScreen.style.display = "none";
+    
+    executeSwitch("student");
+}
+
 /* Recording Toggle Control */
 async function toggleRecording() {
     if (!SpeechEngine.isRecording) {
@@ -1714,7 +1749,7 @@ function setBtnLoading(id, spin, load, text) {
 }
 </script>
 
-<div id="appVersion" aria-hidden="true">v3.4 | Liquid Glass (Android Fix)</div>
+<div id="appVersion" aria-hidden="true">v3.5 | Liquid Glass (Title Navigation Added)</div>
 
 </body>
 </html>
